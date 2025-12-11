@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 import { Providers } from "./providers";
 import { cn } from "@/lib/utils";
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-plus-jakarta",
+  display: "swap",
 });
 const geistMono = localFont({
   src: "./fonts/GeistMonoVF.woff",
@@ -14,8 +16,9 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Front | Turborepo starter",
-  description: "Next.js front-end wired with TanStack Query and shadcn/ui.",
+  title: "Arunika LMS | Frontend",
+  description:
+    "LMS & school management front-end dengan tema elegan modern berbasis Next.js.",
 };
 
 export default function RootLayout({
@@ -24,11 +27,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="id" suppressHydrationWarning>
       <body
         className={cn(
-          "min-h-screen bg-background text-foreground",
-          geistSans.variable,
+          "min-h-screen bg-background text-foreground antialiased",
+          plusJakarta.variable,
           geistMono.variable,
         )}
       >

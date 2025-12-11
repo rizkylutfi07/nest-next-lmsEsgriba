@@ -3,26 +3,26 @@
 @tailwind utilities;
 
 :root {
-  --background: 224 24% 8%;
+  --background: 228 44% 5%;
   --foreground: 210 40% 98%;
-  --muted: 222 14% 25%;
-  --muted-foreground: 215 18% 68%;
-  --card: 225 22% 11%;
+  --muted: 230 24% 20%;
+  --muted-foreground: 216 16% 72%;
+  --card: 232 38% 9%;
   --card-foreground: 210 40% 98%;
-  --popover: 225 22% 11%;
+  --popover: 232 38% 9%;
   --popover-foreground: 210 40% 98%;
-  --border: 221 15% 22%;
-  --input: 221 15% 22%;
-  --primary: 195 100% 50%;
+  --border: 227 22% 20%;
+  --input: 227 22% 20%;
+  --primary: 193 92% 65%;
   --primary-foreground: 210 40% 98%;
-  --secondary: 17 88% 62%;
-  --secondary-foreground: 17 20% 10%;
-  --accent: 160 85% 47%;
+  --secondary: 271 84% 71%;
+  --secondary-foreground: 227 24% 16%;
+  --accent: 151 75% 48%;
   --accent-foreground: 210 40% 98%;
-  --destructive: 0 84% 60%;
+  --destructive: 0 82% 58%;
   --destructive-foreground: 210 40% 98%;
-  --ring: 195 100% 50%;
-  --radius: 0.9rem;
+  --ring: 193 92% 65%;
+  --radius: 1rem;
 }
 
 @layer base {
@@ -31,13 +31,13 @@
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-background text-foreground;
     background-image:
-      radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.06), transparent 22%),
-      radial-gradient(circle at 80% 10%, rgba(56, 189, 248, 0.14), transparent 30%),
-      radial-gradient(circle at 30% 80%, rgba(248, 113, 113, 0.1), transparent 28%),
-      radial-gradient(circle at 75% 70%, rgba(16, 185, 129, 0.12), transparent 26%),
-      linear-gradient(135deg, rgba(32, 38, 74, 0.65) 0%, rgba(16, 20, 35, 0.9) 65%);
+      radial-gradient(circle at 18% 20%, rgba(120, 131, 255, 0.14), transparent 28%),
+      radial-gradient(circle at 82% 12%, rgba(0, 186, 255, 0.12), transparent 30%),
+      radial-gradient(circle at 15% 78%, rgba(74, 222, 128, 0.1), transparent 28%),
+      radial-gradient(circle at 75% 70%, rgba(244, 114, 182, 0.08), transparent 26%),
+      linear-gradient(135deg, rgba(8, 12, 30, 0.95) 0%, rgba(10, 17, 38, 0.92) 40%, rgba(5, 12, 25, 0.94) 100%);
   }
 
   a {

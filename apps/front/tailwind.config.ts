@@ -54,7 +54,13 @@ const config: Config = {
         sm: "0.45rem",
       },
       fontFamily: {
-        sans: ["var(--font-geist-sans)", "Inter", "system-ui", "sans-serif"],
+        sans: [
+          "var(--font-plus-jakarta)",
+          "Plus Jakarta Sans",
+          "Inter",
+          "system-ui",
+          "sans-serif",
+        ],
         mono: ["var(--font-geist-mono)", "monospace"],
       },
       boxShadow: {
