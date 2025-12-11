@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Providers } from "./providers";
 import { cn } from "@/lib/utils";
+import { RoleProvider } from "./(dashboard)/role-context";
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -35,7 +36,9 @@ export default function RootLayout({
           geistMono.variable,
         )}
       >
-        <Providers>{children}</Providers>
+        <RoleProvider>
+          <Providers>{children}</Providers>
+        </RoleProvider>
       </body>
     </html>
   );
