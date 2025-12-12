@@ -1,165 +1,333 @@
 "use client";
 
-import Link from "next/link";
-import { Building2, CalendarDays, Sparkles, Users } from "lucide-react";
-
-import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Plus, Search, Pencil, Trash2, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useRole } from "../role-context";
 
-const classes = [
-  { name: "XI IPA 1", advisor: "Bu Diah", capacity: "32/34", schedule: "Senin-Kamis" },
-  { name: "XII RPL", advisor: "Pak Ardi", capacity: "28/30", schedule: "Senin-Jumat" },
-  { name: "XI DKV", advisor: "Bu Sari", capacity: "30/32", schedule: "Senin-Kamis" },
-  { name: "X IPS 2", advisor: "Pak Fajar", capacity: "31/33", schedule: "Senin-Kamis" },
-];
+// TODO: Create API client in lib/kelas-api.ts
+const kelasApi = {
+  getAll: async (params: any, token: string | null) => {
+    const searchParams = new URLSearchParams();
+    if (params.page) searchParams.set('page', params.page.toString());
+    if (params.limit) searchParams.set('limit', params.limit.toString());
+    if (params.search) searchParams.set('search', params.search);
+    
+    const res = await fetch(`http://localhost:3001/kelas?${searchParams}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return res.json();
+  },
+  create: async (data: any, token: string | null) => {
+    const res = await fetch(`http://localhost:3001/kelas`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  },
+  update: async (id: string, data: any, token: string | null) => {
+    const res = await fetch(`http://localhost:3001/kelas/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  },
+  delete: async (id: string, token: string | null) => {
+    const res = await fetch(`http://localhost:3001/kelas/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return res.json();
+  },
+};
 
-export default function ClassesPage() {
+export default function KelasPage() {
+  const { token } = useRole();
+  const queryClient = useQueryClient();
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<any>(null);
+  const [deletingItem, setDeletingItem] = useState<any>(null);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["kelas", page, search],
+    queryFn: () => kelasApi.getAll({ page, limit: 10, search: search || undefined }, token),
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (data: any) => kelasApi.create(data, token),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["kelas"] });
+      setIsCreateModalOpen(false);
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => kelasApi.update(id, data, token),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["kelas"] });
+      setEditingItem(null);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => kelasApi.delete(id, token),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["kelas"] });
+      setDeletingItem(null);
+    },
+  });
+
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-        <Card className="border-primary/40 bg-gradient-to-br from-primary/10 via-card/60 to-background/80">
-          <CardHeader className="gap-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge tone="info" className="uppercase tracking-[0.18em]">
-                Data Kelas
-              </Badge>
-              <Badge tone="success" className="gap-2">
-                <Sparkles size={14} />
-                Jadwal sinkron
-              </Badge>
-            </div>
-            <CardTitle className="text-3xl">Kelola kelas & wali</CardTitle>
-            <CardDescription className="text-base text-muted-foreground md:max-w-3xl">
-              Buat kelas baru, tetapkan wali, atur kapasitas, dan sinkron jadwal belajar.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-wrap items-center gap-3">
-            <Button size="sm">Tambah kelas</Button>
-            <Button size="sm" variant="outline" asChild>
-              <Link href="/siswa">Kelola siswa</Link>
-            </Button>
-            <Button size="sm" variant="ghost" className="text-muted-foreground" asChild>
-              <Link href="/">Kembali ke dasbor</Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="border-white/10 bg-card/70">
-          <CardHeader className="pb-2">
-            <CardTitle>Ringkasan kelas</CardTitle>
-            <CardDescription>Pengisian kapasitas.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-2">
-            {[
-              { title: "Total kelas", value: "246", accent: "from-primary/20 to-cyan-500/15" },
-              { title: "Kapasitas rata-rata", value: "32 siswa", accent: "from-secondary/25 to-purple-500/15" },
-              { title: "Kelas penuh", value: "18", accent: "from-amber-400/25 to-orange-500/15" },
-              { title: "Slot tersedia", value: "142", accent: "from-emerald-400/25 to-teal-500/15" },
-            ].map((item) => (
-              <div
-                key={item.title}
-                className={cn(
-                  "rounded-xl border border-white/10 p-3",
-                  "bg-gradient-to-br",
-                  item.accent,
-                )}
-              >
-                <p className="text-xs uppercase text-muted-foreground">{item.title}</p>
-                <p className="text-xl font-semibold">{item.value}</p>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Data Kelas</h1>
+          <p className="text-muted-foreground">Kelola data data kelas</p>
+        </div>
+        <Button onClick={() => setIsCreateModalOpen(true)}>
+          <Plus size={16} />
+          Tambah Kelas
+        </Button>
       </div>
 
-      <Card className="border-white/10 bg-card/70">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Daftar kelas</CardTitle>
-            <CardDescription>Periksa wali kelas, kapasitas, dan jadwal.</CardDescription>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm">
-              Ekspor CSV
-            </Button>
-            <Button size="sm">Impor</Button>
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <CardTitle>Daftar Data Kelas</CardTitle>
+              <CardDescription>Total {data?.meta.total || 0} data</CardDescription>
+            </div>
+            <div className="relative flex-1 md:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+              <input
+                type="text"
+                placeholder="Cari..."
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                className="w-full rounded-lg border border-white/10 bg-white/5 py-2 pl-10 pr-4 text-sm outline-none transition focus:border-primary/60 focus:bg-white/10"
+              />
+            </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid gap-2 rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-muted-foreground sm:grid-cols-[1fr_1fr_1fr_0.8fr]">
-            <span>Nama Kelas</span>
-            <span>Wali</span>
-            <span>Kapasitas</span>
-            <span>Jadwal</span>
-          </div>
-          <div className="space-y-2">
-            {classes.map((item) => (
-              <div
-                key={item.name}
-                className="grid items-center gap-2 rounded-xl border border-white/10 bg-background/70 p-3 text-sm sm:grid-cols-[1fr_1fr_1fr_0.8fr]"
-              >
-                <div className="flex items-center gap-2">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15 text-primary">
-                    <Building2 size={16} />
-                  </div>
-                  <span className="font-semibold">{item.name}</span>
-                </div>
-                <span className="text-muted-foreground">{item.advisor}</span>
-                <Badge tone="info">{item.capacity}</Badge>
-                <span className="text-muted-foreground">{item.schedule}</span>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="animate-spin text-muted-foreground" size={32} />
+            </div>
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-white/10 text-left text-sm text-muted-foreground">
+                      <th className="pb-3 font-medium">Nama Kelas</th>
+                      <th className="pb-3 font-medium">Tingkat</th>
+                      <th className="pb-3 font-medium">Jurusan</th>
+                      <th className="pb-3 font-medium">Kapasitas</th>
+                      <th className="pb-3 font-medium text-right">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data?.data.map((item: any) => (
+                      <tr key={item.id} className="border-b border-white/5 transition hover:bg-white/5">
+                        <td className="py-4">{item.nama}</td>
+                        <td className="py-4">{item.tingkat}</td>
+                        <td className="py-4">{item.jurusan}</td>
+                        <td className="py-4">{item.kapasitas}</td>
+                        <td className="py-4 text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="sm" onClick={() => setEditingItem(item)}>
+                              <Pencil size={14} />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => setDeletingItem(item)}>
+                              <Trash2 size={14} />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            ))}
-          </div>
+
+              {data && data.meta.totalPages > 1 && (
+                <div className="mt-6 flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    Halaman {data.meta.page} dari {data.meta.totalPages}
+                  </p>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(page - 1)}>
+                      Sebelumnya
+                    </Button>
+                    <Button variant="outline" size="sm" disabled={page === data.meta.totalPages} onClick={() => setPage(page + 1)}>
+                      Selanjutnya
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </CardContent>
       </Card>
 
-      <Card className="border-white/10 bg-card/70">
+      {isCreateModalOpen && (
+        <FormModal
+          title="Tambah Kelas"
+          onClose={() => setIsCreateModalOpen(false)}
+          onSubmit={(data) => createMutation.mutate(data)}
+          isLoading={createMutation.isPending}
+        />
+      )}
+
+      {editingItem && (
+        <FormModal
+          title="Edit Kelas"
+          item={editingItem}
+          onClose={() => setEditingItem(null)}
+          onSubmit={(data) => updateMutation.mutate({ id: editingItem.id, data })}
+          isLoading={updateMutation.isPending}
+        />
+      )}
+
+      {deletingItem && (
+        <DeleteModal
+          item={deletingItem}
+          onClose={() => setDeletingItem(null)}
+          onConfirm={() => deleteMutation.mutate(deletingItem.id)}
+          isLoading={deleteMutation.isPending}
+        />
+      )}
+    </div>
+  );
+}
+
+function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
+  const [formData, setFormData] = useState(item || {});
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+      <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Kalender & ruangan</CardTitle>
-          <CardDescription>Pastikan benturan jadwal bisa terdeteksi.</CardDescription>
+          <div className="flex items-center justify-between">
+            <CardTitle>{title}</CardTitle>
+            <Button variant="ghost" size="icon" onClick={onClose}>
+              <X size={18} />
+            </Button>
+          </div>
         </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {[
-            {
-              icon: CalendarDays,
-              title: "Kalender kelas",
-              desc: "Sync ke kalender guru dan siswa.",
-            },
-            {
-              icon: Users,
-              title: "Rotasi ruangan",
-              desc: "Optimalkan kapasitas dan peralatan.",
-            },
-            {
-              icon: Sparkles,
-              title: "Penjadwalan pintar",
-              desc: "Rekomendasi otomatis dari slot kosong.",
-            },
-          ].map((item) => {
-            const Icon = item.icon;
-            return (
-              <div
-                key={item.title}
-                className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/5 p-4"
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="mb-2 block text-sm font-medium">Nama Kelas</label>
+              <input
+                type="text"
+                required
+                placeholder="X IPA 1"
+                
+                
+                value={formData.nama || ''}
+                onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium">Tingkat</label>
+              <select
+                required
+                value={formData.tingkat || ''}
+                onChange={(e) => setFormData({ ...formData, tingkat: e.target.value })}
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/15 text-primary">
-                  <Icon size={16} />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold">{item.title}</p>
-                  <p className="text-xs text-muted-foreground">{item.desc}</p>
-                </div>
-              </div>
-            );
-          })}
+                <option value="">Pilih Tingkat</option>
+                <option value="X">X</option>
+                <option value="XI">XI</option>
+                <option value="XII">XII</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium">Jurusan</label>
+              <input
+                type="text"
+                required
+                placeholder="IPA, IPS, RPL, dll"
+                
+                
+                value={formData.jurusan || ''}
+                onChange={(e) => setFormData({ ...formData, jurusan: e.target.value })}
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium">Kapasitas</label>
+              <input
+                type="number"
+                required
+                
+                min="1"
+                
+                value={formData.kapasitas || ''}
+                onChange={(e) => setFormData({ ...formData, kapasitas: parseInt(e.target.value) })}
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium">Tahun Ajaran</label>
+              <input
+                type="select-api"
+                required
+                
+                
+                
+                value={formData.tahunAjaranId || ''}
+                onChange={(e) => setFormData({ ...formData, tahunAjaranId: e.target.value })}
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+              />
+            </div>
+            <div className="flex gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+                Batal
+              </Button>
+              <Button type="submit" disabled={isLoading} className="flex-1">
+                {isLoading ? <Loader2 className="animate-spin" size={16} /> : "Simpan"}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function DeleteModal({ item, onClose, onConfirm, isLoading }: any) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Hapus Kelas</CardTitle>
+          <CardDescription>
+            Apakah Anda yakin ingin menghapus data ini? Tindakan ini tidak dapat dibatalkan.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onClose} className="flex-1">
+              Batal
+            </Button>
+            <Button variant="destructive" onClick={onConfirm} disabled={isLoading} className="flex-1">
+              {isLoading ? <Loader2 className="animate-spin" size={16} /> : "Hapus"}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

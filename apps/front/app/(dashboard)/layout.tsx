@@ -27,9 +27,10 @@ import {
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { type Role, useRole } from "./role-context";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const accessByRole: Record<Role, string[]> = {
-  ADMIN: ["/", "/siswa", "/guru", "/kelas", "/tahun-ajaran", "/mata-pelajaran", "/cbt", "/laporan", "/keuangan", "/keamanan"],
+  ADMIN: ["/", "/users", "/siswa", "/guru", "/kelas", "/tahun-ajaran", "/mata-pelajaran", "/cbt", "/laporan", "/keuangan", "/keamanan"],
   GURU: ["/", "/kelas", "/mata-pelajaran", "/cbt", "/laporan"],
   SISWA: ["/", "/kelas", "/mata-pelajaran", "/cbt", "/keamanan"],
 };
@@ -249,6 +250,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                   <CalendarRange size={16} />
                   Atur jadwal
                 </Button>
+                <ThemeToggle />
                 <Button variant="ghost" size="icon" className="relative">
                   <Bell size={18} />
                   <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-secondary" />

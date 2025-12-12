@@ -1,171 +1,331 @@
 "use client";
 
-import Link from "next/link";
-import { CalendarClock, CalendarRange, RefreshCcw, Sparkles } from "lucide-react";
-
-import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Plus, Search, Pencil, Trash2, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useRole } from "../role-context";
 
-const years = [
-  { label: "2025 / 2026", status: "Aktif", start: "15 Jul 2025", end: "30 Jun 2026" },
-  { label: "2024 / 2025", status: "Selesai", start: "17 Jul 2024", end: "28 Jun 2025" },
-  { label: "2023 / 2024", status: "Arsip", start: "18 Jul 2023", end: "29 Jun 2024" },
-];
+// TODO: Create API client in lib/tahun-ajaran-api.ts
+const tahunajaranApi = {
+  getAll: async (params: any, token: string | null) => {
+    const searchParams = new URLSearchParams();
+    if (params.page) searchParams.set('page', params.page.toString());
+    if (params.limit) searchParams.set('limit', params.limit.toString());
+    if (params.search) searchParams.set('search', params.search);
+    
+    const res = await fetch(`http://localhost:3001/tahun-ajaran?${searchParams}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return res.json();
+  },
+  create: async (data: any, token: string | null) => {
+    const res = await fetch(`http://localhost:3001/tahun-ajaran`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  },
+  update: async (id: string, data: any, token: string | null) => {
+    const res = await fetch(`http://localhost:3001/tahun-ajaran/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  },
+  delete: async (id: string, token: string | null) => {
+    const res = await fetch(`http://localhost:3001/tahun-ajaran/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return res.json();
+  },
+};
 
-export default function AcademicYearPage() {
+export default function TahunAjaranPage() {
+  const { token } = useRole();
+  const queryClient = useQueryClient();
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<any>(null);
+  const [deletingItem, setDeletingItem] = useState<any>(null);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["tahun-ajaran", page, search],
+    queryFn: () => tahunajaranApi.getAll({ page, limit: 10, search: search || undefined }, token),
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (data: any) => tahunajaranApi.create(data, token),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tahun-ajaran"] });
+      setIsCreateModalOpen(false);
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => tahunajaranApi.update(id, data, token),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tahun-ajaran"] });
+      setEditingItem(null);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => tahunajaranApi.delete(id, token),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tahun-ajaran"] });
+      setDeletingItem(null);
+    },
+  });
+
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-        <Card className="border-primary/40 bg-gradient-to-br from-primary/10 via-card/60 to-background/80">
-          <CardHeader className="gap-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge tone="info" className="uppercase tracking-[0.18em]">
-                Tahun Ajaran
-              </Badge>
-              <Badge tone="success" className="gap-2">
-                <Sparkles size={14} />
-                Sinkron kalender
-              </Badge>
-            </div>
-            <CardTitle className="text-3xl">Atur tahun ajaran aktif</CardTitle>
-            <CardDescription className="text-base text-muted-foreground md:max-w-3xl">
-              Tentukan periode aktif, kunci kalender akademik, dan hubungkan ke penjadwalan kelas.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-wrap items-center gap-3">
-            <Button size="sm">Setel tahun ajaran</Button>
-            <Button size="sm" variant="outline" asChild>
-              <Link href="/kelas">Sinkron ke jadwal</Link>
-            </Button>
-            <Button size="sm" variant="ghost" className="text-muted-foreground" asChild>
-              <Link href="/">Kembali ke dasbor</Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="border-white/10 bg-card/70">
-          <CardHeader className="pb-2">
-            <CardTitle>Pengingat</CardTitle>
-            <CardDescription>Seragamkan kalender.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-2">
-            {[
-              { title: "Hari efektif", value: "198 hari", accent: "from-primary/20 to-cyan-500/15" },
-              { title: "Libur nasional", value: "16", accent: "from-secondary/25 to-purple-500/15" },
-              { title: "Ujian semester", value: "4 jadwal", accent: "from-amber-400/25 to-orange-500/15" },
-              { title: "Rapat akademik", value: "6 agenda", accent: "from-emerald-400/25 to-teal-500/15" },
-            ].map((item) => (
-              <div
-                key={item.title}
-                className={cn(
-                  "rounded-xl border border-white/10 p-3",
-                  "bg-gradient-to-br",
-                  item.accent,
-                )}
-              >
-                <p className="text-xs uppercase text-muted-foreground">{item.title}</p>
-                <p className="text-xl font-semibold">{item.value}</p>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Tahun Ajaran</h1>
+          <p className="text-muted-foreground">Kelola data tahun ajaran</p>
+        </div>
+        <Button onClick={() => setIsCreateModalOpen(true)}>
+          <Plus size={16} />
+          Tambah Tahun Ajaran
+        </Button>
       </div>
 
-      <Card className="border-white/10 bg-card/70">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Daftar tahun ajaran</CardTitle>
-            <CardDescription>Aktifkan hanya satu periode utama.</CardDescription>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm">
-              Arsipkan
-            </Button>
-            <Button size="sm">Tambah periode</Button>
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <CardTitle>Daftar Tahun Ajaran</CardTitle>
+              <CardDescription>Total {data?.meta.total || 0} data</CardDescription>
+            </div>
+            <div className="relative flex-1 md:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+              <input
+                type="text"
+                placeholder="Cari..."
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                className="w-full rounded-lg border border-white/10 bg-white/5 py-2 pl-10 pr-4 text-sm outline-none transition focus:border-primary/60 focus:bg-white/10"
+              />
+            </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-2">
-          {years.map((item) => (
-            <div
-              key={item.label}
-              className="flex flex-col gap-2 rounded-xl border border-white/10 bg-background/70 p-3 sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/15 text-primary">
-                  <CalendarClock size={16} />
-                </div>
-                <div>
-                  <p className="font-semibold">{item.label}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {item.start} - {item.end}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge tone={item.status === "Aktif" ? "success" : "info"}>{item.status}</Badge>
-                {item.status === "Aktif" ? (
-                  <Button size="sm" variant="outline" className="gap-2">
-                    <RefreshCcw size={14} />
-                    Perbarui kalender
-                  </Button>
-                ) : (
-                  <Button size="sm" variant="ghost">
-                    Jadikan aktif
-                  </Button>
-                )}
-              </div>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="animate-spin text-muted-foreground" size={32} />
             </div>
-          ))}
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-white/10 text-left text-sm text-muted-foreground">
+                      <th className="pb-3 font-medium">Tahun</th>
+                      <th className="pb-3 font-medium">Semester</th>
+                      <th className="pb-3 font-medium">Status</th>
+                      <th className="pb-3 font-medium text-right">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data?.data.map((item: any) => (
+                      <tr key={item.id} className="border-b border-white/5 transition hover:bg-white/5">
+                        <td className="py-4">{item.tahun}</td>
+                        <td className="py-4">{item.semester}</td>
+                        <td className="py-4">{item.status}</td>
+                        <td className="py-4 text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="sm" onClick={() => setEditingItem(item)}>
+                              <Pencil size={14} />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => setDeletingItem(item)}>
+                              <Trash2 size={14} />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {data && data.meta.totalPages > 1 && (
+                <div className="mt-6 flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    Halaman {data.meta.page} dari {data.meta.totalPages}
+                  </p>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(page - 1)}>
+                      Sebelumnya
+                    </Button>
+                    <Button variant="outline" size="sm" disabled={page === data.meta.totalPages} onClick={() => setPage(page + 1)}>
+                      Selanjutnya
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </CardContent>
       </Card>
 
-      <Card className="border-white/10 bg-card/70">
+      {isCreateModalOpen && (
+        <FormModal
+          title="Tambah Tahun Ajaran"
+          onClose={() => setIsCreateModalOpen(false)}
+          onSubmit={(data) => createMutation.mutate(data)}
+          isLoading={createMutation.isPending}
+        />
+      )}
+
+      {editingItem && (
+        <FormModal
+          title="Edit Tahun Ajaran"
+          item={editingItem}
+          onClose={() => setEditingItem(null)}
+          onSubmit={(data) => updateMutation.mutate({ id: editingItem.id, data })}
+          isLoading={updateMutation.isPending}
+        />
+      )}
+
+      {deletingItem && (
+        <DeleteModal
+          item={deletingItem}
+          onClose={() => setDeletingItem(null)}
+          onConfirm={() => deleteMutation.mutate(deletingItem.id)}
+          isLoading={deleteMutation.isPending}
+        />
+      )}
+    </div>
+  );
+}
+
+function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
+  const [formData, setFormData] = useState(item || {});
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+      <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Agenda akademik</CardTitle>
-          <CardDescription>Blok penting tahun ajaran aktif.</CardDescription>
+          <div className="flex items-center justify-between">
+            <CardTitle>{title}</CardTitle>
+            <Button variant="ghost" size="icon" onClick={onClose}>
+              <X size={18} />
+            </Button>
+          </div>
         </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {[
-            {
-              icon: CalendarRange,
-              title: "Kalender akademik",
-              desc: "Sinkron otomatis ke jadwal kelas.",
-            },
-            {
-              icon: Sparkles,
-              title: "Template ujian",
-              desc: "Konfigurasi UTS, UAS, dan ujian sekolah.",
-            },
-            {
-              icon: RefreshCcw,
-              title: "Roll-over data",
-              desc: "Naik kelas, reset kelas, dan arsip otomatis.",
-            },
-          ].map((item) => {
-            const Icon = item.icon;
-            return (
-              <div
-                key={item.title}
-                className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/5 p-4"
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="mb-2 block text-sm font-medium">Tahun</label>
+              <input
+                type="text"
+                required
+                placeholder="2024/2025"
+                
+                
+                value={formData.tahun || ''}
+                onChange={(e) => setFormData({ ...formData, tahun: e.target.value })}
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium">Semester</label>
+              <input
+                type="number"
+                required
+                
+                min="1"
+                max="2"
+                value={formData.semester || ''}
+                onChange={(e) => setFormData({ ...formData, semester: parseInt(e.target.value) })}
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium">Tanggal Mulai</label>
+              <input
+                type="date"
+                required
+                
+                
+                
+                value={formData.tanggalMulai || ''}
+                onChange={(e) => setFormData({ ...formData, tanggalMulai: e.target.value })}
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium">Tanggal Selesai</label>
+              <input
+                type="date"
+                required
+                
+                
+                
+                value={formData.tanggalSelesai || ''}
+                onChange={(e) => setFormData({ ...formData, tanggalSelesai: e.target.value })}
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium">Status</label>
+              <select
+                required
+                value={formData.status || ''}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/15 text-primary">
-                  <Icon size={16} />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold">{item.title}</p>
-                  <p className="text-xs text-muted-foreground">{item.desc}</p>
-                </div>
-              </div>
-            );
-          })}
+                <option value="">Pilih Status</option>
+                <option value="AKTIF">AKTIF</option>
+                <option value="SELESAI">SELESAI</option>
+                <option value="AKAN_DATANG">AKAN_DATANG</option>
+              </select>
+            </div>
+            <div className="flex gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+                Batal
+              </Button>
+              <Button type="submit" disabled={isLoading} className="flex-1">
+                {isLoading ? <Loader2 className="animate-spin" size={16} /> : "Simpan"}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function DeleteModal({ item, onClose, onConfirm, isLoading }: any) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Hapus Tahun Ajaran</CardTitle>
+          <CardDescription>
+            Apakah Anda yakin ingin menghapus data ini? Tindakan ini tidak dapat dibatalkan.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onClose} className="flex-1">
+              Batal
+            </Button>
+            <Button variant="destructive" onClick={onConfirm} disabled={isLoading} className="flex-1">
+              {isLoading ? <Loader2 className="animate-spin" size={16} /> : "Hapus"}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

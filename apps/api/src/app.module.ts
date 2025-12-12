@@ -4,6 +4,12 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
+import { TahunAjaranModule } from './tahun-ajaran/tahun-ajaran.module';
+import { MataPelajaranModule } from './mata-pelajaran/mata-pelajaran.module';
+import { GuruModule } from './guru/guru.module';
+import { KelasModule } from './kelas/kelas.module';
+import { SiswaModule } from './siswa/siswa.module';
 
 @Module({
   imports: [
@@ -13,8 +19,14 @@ import { AuthModule } from './auth/auth.module';
     }),
     PrismaModule,
     AuthModule,
+    UsersModule,
+    TahunAjaranModule,
+    MataPelajaranModule,
+    GuruModule,
+    KelasModule,
+    SiswaModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }

@@ -21,3 +21,107 @@ enum Role {
   GURU
   SISWA
 }
+
+model TahunAjaran {
+  id             String            @id @default(cuid())
+  tahun          String // e.g., "2024/2025"
+  semester       Int // 1 or 2
+  tanggalMulai   DateTime
+  tanggalSelesai DateTime
+  status         StatusTahunAjaran @default(AKAN_DATANG)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  deletedAt      DateTime? // soft delete
+
+  kelas Kelas[]
+
+  @@unique([tahun, semester])
+}
+
+enum StatusTahunAjaran {
+  AKTIF
+  SELESAI
+  AKAN_DATANG
+}
+
+model MataPelajaran {
+  id           String    @id @default(cuid())
+  kode         String    @unique
+  nama         String
+  jamPelajaran Int // SKS/Jam per minggu
+  deskripsi    String?
+  tingkat      String // "X", "XI", "XII", "SEMUA"
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime? // soft delete
+
+  guru Guru[]
+}
+
+model Guru {
+  id           String     @id @default(cuid())
+  nip          String     @unique
+  nama         String
+  email        String     @unique
+  nomorTelepon String?
+  status       StatusGuru @default(AKTIF)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  deletedAt    DateTime? // soft delete
+
+  mataPelajaranId String?
+  mataPelajaran   MataPelajaran? @relation(fields: [mataPelajaranId], references: [id])
+
+  kelasWali Kelas[] @relation("WaliKelas")
+}
+
+enum StatusGuru {
+  AKTIF
+  CUTI
+  PENSIUN
+}
+
+model Kelas {
+  id        String    @id @default(cuid())
+  nama      String // e.g., "XI IPA 1"
+  tingkat   String // "X", "XI", "XII"
+  jurusan   String // "IPA", "IPS", "RPL", "DKV", etc.
+  kapasitas Int       @default(32)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // soft delete
+
+  tahunAjaranId String
+  tahunAjaran   TahunAjaran @relation(fields: [tahunAjaranId], references: [id])
+
+  waliKelasId String?
+  waliKelas   Guru?   @relation("WaliKelas", fields: [waliKelasId], references: [id])
+
+  siswa Siswa[]
+
+  @@unique([nama, tahunAjaranId])
+}
+
+model Siswa {
+  id           String      @id @default(cuid())
+  nisn         String      @unique
+  nama         String
+  tanggalLahir DateTime
+  alamat       String?
+  nomorTelepon String?
+  email        String?
+  status       StatusSiswa @default(AKTIF)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  deletedAt    DateTime? // soft delete
+
+  kelasId String?
+  kelas   Kelas?  @relation(fields: [kelasId], references: [id])
+}
+
+enum StatusSiswa {
+  AKTIF
+  MAGANG
+  PINDAH
+  ALUMNI
+}

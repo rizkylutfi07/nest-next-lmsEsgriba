@@ -3,6 +3,31 @@
 @tailwind utilities;
 
 :root {
+  /* Light mode colors */
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --primary: 193 92% 55%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 271 84% 65%;
+  --secondary-foreground: 0 0% 100%;
+  --accent: 151 75% 48%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 82% 58%;
+  --destructive-foreground: 210 40% 98%;
+  --ring: 193 92% 55%;
+  --radius: 1rem;
+}
+
+.dark {
+  /* Dark mode colors */
   --background: 228 44% 5%;
   --foreground: 210 40% 98%;
   --muted: 230 24% 20%;
@@ -22,7 +47,6 @@
   --destructive: 0 82% 58%;
   --destructive-foreground: 210 40% 98%;
   --ring: 193 92% 65%;
-  --radius: 1rem;
 }
 
 @layer base {
@@ -31,7 +55,10 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground transition-colors duration-300;
+  }
+
+  .dark body {
     background-image:
       radial-gradient(circle at 18% 20%, rgba(120, 131, 255, 0.14), transparent 28%),
       radial-gradient(circle at 82% 12%, rgba(0, 186, 255, 0.12), transparent 30%),

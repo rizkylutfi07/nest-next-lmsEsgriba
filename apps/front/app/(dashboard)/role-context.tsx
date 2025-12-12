@@ -52,6 +52,7 @@ const RoleContext = createContext<RoleContextValue | undefined>(undefined);
 const navByRole: Record<Role, NavItem[]> = {
   ADMIN: [
     { label: "Dasbor", icon: LayoutDashboard, href: "/", note: "Sorotan hari ini" },
+    { label: "Kelola User", icon: Users2, href: "/users", note: "Manajemen pengguna" },
     { label: "Data Siswa", icon: Users2, href: "/siswa", note: "Profil & kehadiran" },
     { label: "Data Guru", icon: Users2, href: "/guru", note: "Penugasan & KPI" },
     { label: "Data Kelas", icon: CalendarRange, href: "/kelas", note: "Struktur & jadwal" },
