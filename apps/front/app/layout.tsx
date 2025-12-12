@@ -17,7 +17,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Arunika LMS | Frontend",
+  title: "Egriba | Frontend",
   description:
     "LMS & school management front-end dengan tema elegan modern berbasis Next.js.",
 };

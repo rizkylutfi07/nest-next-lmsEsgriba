@@ -6,7 +6,7 @@ import { QueryGuruDto } from './dto/query-guru.dto';
 
 @Injectable()
 export class GuruService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async findAll(query: QueryGuruDto) {
     const { page = 1, limit = 10, search } = query;
@@ -26,6 +26,15 @@ export class GuruService {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
+        include: {
+          mataPelajaran: {
+            select: {
+              id: true,
+              kode: true,
+              nama: true,
+            },
+          },
+        },
       }),
       this.prisma.guru.count({ where }),
     ]);
@@ -44,6 +53,15 @@ export class GuruService {
   async findOne(id: string) {
     const item = await this.prisma.guru.findFirst({
       where: { id, deletedAt: null },
+      include: {
+        mataPelajaran: {
+          select: {
+            id: true,
+            kode: true,
+            nama: true,
+          },
+        },
+      },
     });
 
     if (!item) {
@@ -54,16 +72,51 @@ export class GuruService {
   }
 
   async create(dto: CreateGuruDto) {
+    const exists = await this.prisma.guru.findFirst({
+      where: {
+        OR: [
+          { nip: dto.nip },
+          { email: dto.email },
+        ],
+        deletedAt: null,
+      },
+    });
+
+    if (exists) {
+      throw new BadRequestException('NIP atau Email sudah terdaftar');
+    }
+
+    const { mataPelajaranIds, ...guruData } = dto;
+
     return this.prisma.guru.create({
-      data: dto as any,
+      data: {
+        ...guruData,
+        mataPelajaran: {
+          connect: mataPelajaranIds?.map(id => ({ id })) || [],
+        },
+      },
+      include: {
+        mataPelajaran: true,
+      },
     });
   }
 
   async update(id: string, dto: UpdateGuruDto) {
     await this.findOne(id);
+
+    const { mataPelajaranIds, ...guruData } = dto;
+
     return this.prisma.guru.update({
       where: { id },
-      data: dto as any,
+      data: {
+        ...guruData,
+        mataPelajaran: {
+          set: mataPelajaranIds?.map(id => ({ id })) || [],
+        },
+      },
+      include: {
+        mataPelajaran: true,
+      },
     });
   }
 

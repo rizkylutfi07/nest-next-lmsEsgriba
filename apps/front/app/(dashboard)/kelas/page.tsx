@@ -152,7 +152,7 @@ export default function KelasPage() {
                       <th className="pb-3 font-medium">Nama Kelas</th>
                       <th className="pb-3 font-medium">Tingkat</th>
                       <th className="pb-3 font-medium">Jurusan</th>
-                      <th className="pb-3 font-medium">Kapasitas</th>
+                      <th className="pb-3 font-medium">Wali Kelas</th>
                       <th className="pb-3 font-medium text-right">Aksi</th>
                     </tr>
                   </thead>
@@ -162,7 +162,7 @@ export default function KelasPage() {
                         <td className="py-4">{item.nama}</td>
                         <td className="py-4">{item.tingkat}</td>
                         <td className="py-4">{item.jurusan?.nama || '-'}</td>
-                        <td className="py-4">{item.kapasitas}</td>
+                        <td className="py-4">{item.waliKelas?.nama || '-'}</td>
                         <td className="py-4 text-right">
                           <div className="flex justify-end gap-2">
                             <Button variant="ghost" size="sm" onClick={() => setEditingItem(item)}>

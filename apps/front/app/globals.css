@@ -70,4 +70,36 @@
   a {
     @apply text-foreground;
   }
+
+  /* Fix select dropdown in dark mode */
+  .dark select {
+    color-scheme: dark;
+  }
+
+  .dark select option {
+    background-color: hsl(var(--card));
+    color: hsl(var(--card-foreground));
+  }
+
+  /* Ensure select text is visible */
+  select {
+    color: hsl(var(--foreground));
+  }
+}
+
+/* Mobile responsive table */
+@media (max-width: 768px) {
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  .overflow-x-auto table {
+    min-width: 600px;
+  }
+}
+
+/* Card content should allow overflow for tables */
+[class*="CardContent"] {
+  overflow: visible;
 }

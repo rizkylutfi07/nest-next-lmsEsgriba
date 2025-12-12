@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString, IsInt, IsEnum, IsDateString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsEmail, IsEnum, IsArray } from 'class-validator';
 import { StatusGuru } from '@prisma/client';
 
 export class CreateGuruDto {
@@ -10,7 +10,7 @@ export class CreateGuruDto {
   @IsNotEmpty()
   nama: string;
 
-  @IsString()
+  @IsEmail()
   @IsNotEmpty()
   email: string;
 
@@ -19,11 +19,11 @@ export class CreateGuruDto {
   nomorTelepon?: string;
 
   @IsEnum(StatusGuru)
-  @IsNotEmpty()
-  status: StatusGuru;
-
-  @IsString()
   @IsOptional()
-  mataPelajaranId?: string;
+  status?: StatusGuru;
 
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  mataPelajaranIds?: string[];
 }

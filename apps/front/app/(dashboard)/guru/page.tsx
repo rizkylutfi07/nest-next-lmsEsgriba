@@ -138,38 +138,48 @@ export default function GuruPage() {
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-white/10 text-left text-sm text-muted-foreground">
-                      <th className="pb-3 font-medium">NIP</th>
-                      <th className="pb-3 font-medium">Nama Lengkap</th>
-                      <th className="pb-3 font-medium">Email</th>
-                      <th className="pb-3 font-medium">Status</th>
-                      <th className="pb-3 font-medium text-right">Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data?.data.map((item: any) => (
-                      <tr key={item.id} className="border-b border-white/5 transition hover:bg-white/5">
-                        <td className="py-4">{item.nip}</td>
-                        <td className="py-4">{item.nama}</td>
-                        <td className="py-4">{item.email}</td>
-                        <td className="py-4">{item.status}</td>
-                        <td className="py-4 text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button variant="ghost" size="sm" onClick={() => setEditingItem(item)}>
-                              <Pencil size={14} />
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => setDeletingItem(item)}>
-                              <Trash2 size={14} />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="overflow-x-auto -mx-6 px-6 md:mx-0 md:px-0">
+                <div className="inline-block min-w-full align-middle">
+                  <div className="overflow-hidden">
+                    <table className="min-w-full w-full">
+                      <thead>
+                        <tr className="border-b border-white/10 text-left text-sm text-muted-foreground">
+                          <th className="pb-3 font-medium">NIP</th>
+                          <th className="pb-3 font-medium">Nama Lengkap</th>
+                          <th className="pb-3 font-medium">Email</th>
+                          <th className="pb-3 font-medium">Mata Pelajaran</th>
+                          <th className="pb-3 font-medium">Status</th>
+                          <th className="pb-3 font-medium text-right">Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {data?.data.map((item: any) => (
+                          <tr key={item.id} className="border-b border-white/5 transition hover:bg-white/5">
+                            <td className="py-4">{item.nip}</td>
+                            <td className="py-4">{item.nama}</td>
+                            <td className="py-4">{item.email}</td>
+                            <td className="py-4">
+                              {item.mataPelajaran?.length > 0
+                                ? item.mataPelajaran.map((mp: any) => mp.nama).join(', ')
+                                : '-'}
+                            </td>
+                            <td className="py-4">{item.status}</td>
+                            <td className="py-4 text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button variant="ghost" size="sm" onClick={() => setEditingItem(item)}>
+                                  <Pencil size={14} />
+                                </Button>
+                                <Button variant="ghost" size="sm" onClick={() => setDeletingItem(item)}>
+                                  <Trash2 size={14} />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
 
               {data && data.meta.totalPages > 1 && (
@@ -224,17 +234,45 @@ export default function GuruPage() {
 }
 
 function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
-  const [formData, setFormData] = useState(item || {});
+  const { token } = useRole();
+  const [formData, setFormData] = useState(() => {
+    // Initialize mataPelajaranIds from item.mataPelajaran array
+    const initialData = item || {};
+    if (item?.mataPelajaran) {
+      initialData.mataPelajaranIds = item.mataPelajaran.map((mp: any) => mp.id);
+    }
+    return initialData;
+  });
+
+  // Fetch mata pelajaran list
+  const { data: mataPelajaranList } = useQuery({
+    queryKey: ["mata-pelajaran-list"],
+    queryFn: async () => {
+      const res = await fetch(`http://localhost:3001/mata-pelajaran?limit=100`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.json();
+    },
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Remove system fields before submitting
-    const { id, createdAt, updatedAt, deletedAt, mataPelajaranId, ...cleanData } = formData;
+    // Remove system fields and relation objects before submitting
+    const { id, createdAt, updatedAt, deletedAt, mataPelajaran, ...cleanData } = formData;
+    console.log('Submitting guru data:', cleanData);
     onSubmit(cleanData);
   };
 
+  const toggleMataPelajaran = (mpId: string) => {
+    const current = formData.mataPelajaranIds || [];
+    const newIds = current.includes(mpId)
+      ? current.filter((id: string) => id !== mpId)
+      : [...current, mpId];
+    setFormData({ ...formData, mataPelajaranIds: newIds });
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md">
       <Card className="w-full max-w-md">
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -311,6 +349,31 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
                 <option value="CUTI">CUTI</option>
                 <option value="PENSIUN">PENSIUN</option>
               </select>
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium">Mata Pelajaran</label>
+              <div className="max-h-48 overflow-y-auto rounded-lg border border-white/10 bg-white/5 p-3">
+                {mataPelajaranList?.data?.length > 0 ? (
+                  <div className="space-y-2">
+                    {mataPelajaranList.data.map((mp: any) => (
+                      <label key={mp.id} className="flex items-center gap-2 cursor-pointer hover:bg-white/5 p-2 rounded">
+                        <input
+                          type="checkbox"
+                          checked={(formData.mataPelajaranIds || []).includes(mp.id)}
+                          onChange={() => toggleMataPelajaran(mp.id)}
+                          className="rounded border-white/20"
+                        />
+                        <span className="text-sm">{mp.nama} ({mp.kode})</span>
+                      </label>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Loading mata pelajaran...</p>
+                )}
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Pilih satu atau lebih mata pelajaran
+              </p>
             </div>
             <div className="flex gap-2 pt-4">
               <Button type="button" variant="outline" onClick={onClose} className="flex-1">

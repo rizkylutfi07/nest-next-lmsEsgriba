@@ -216,7 +216,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
           </div>
         </aside>
 
-        <div className="flex-1 md:pl-0">
+        <div className="flex-1 min-w-0 md:pl-0">
           <header className="sticky top-0 z-20 border-b border-white/5 bg-background/70 backdrop-blur-xl">
             <div className="flex items-center justify-between gap-3 px-4 py-4 md:px-8">
               <div className="flex flex-1 items-center gap-3">
