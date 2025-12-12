@@ -22,7 +22,7 @@ import { Role } from '@prisma/client';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN)
 export class GuruController {
-  constructor(private readonly guruService: GuruService) {}
+  constructor(private readonly guruService: GuruService) { }
 
   @Get()
   findAll(@Query() query: QueryGuruDto) {
@@ -35,8 +35,14 @@ export class GuruController {
   }
 
   @Post()
-  create(@Body() createDto: CreateGuruDto) {
-    return this.guruService.create(createDto);
+  create(@Body() createDto: any) {
+    const { createUserAccount, ...dto } = createDto;
+
+    if (createUserAccount) {
+      return this.guruService.createWithUser(dto);
+    }
+
+    return this.guruService.create(dto);
   }
 
   @Put(':id')

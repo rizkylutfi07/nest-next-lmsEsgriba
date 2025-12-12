@@ -20,7 +20,8 @@
     "next": "^16.0.7",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "tailwind-merge": "^3.4.0"
+    "tailwind-merge": "^3.4.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@repo/eslint-config": "*",
@@ -31,8 +32,8 @@
     "autoprefixer": "^10.4.22",
     "eslint": "^9.39.1",
     "postcss": "^8.4.31",
-    "tailwindcss-animate": "^1.0.7",
     "tailwindcss": "^3.4.17",
+    "tailwindcss-animate": "^1.0.7",
     "typescript": "5.9.2"
   }
 }

@@ -128,4 +128,41 @@ export class GuruService {
     });
     return { message: 'Guru berhasil dihapus' };
   }
+
+  async createWithUser(dto: CreateGuruDto, password?: string) {
+    // Create user account first
+    const bcrypt = require('bcrypt');
+    const hashedPassword = await bcrypt.hash(password || dto.nip, 10);
+
+    const user = await this.prisma.user.create({
+      data: {
+        email: dto.email,
+        name: dto.nama,
+        role: 'GURU',
+        password: hashedPassword,
+      },
+    });
+
+    // Prepare mataPelajaran connection
+    const mataPelajaranConnect = dto.mataPelajaranIds?.length
+      ? { connect: dto.mataPelajaranIds.map((id) => ({ id })) }
+      : undefined;
+
+    // Create guru linked to user
+    return this.prisma.guru.create({
+      data: {
+        nip: dto.nip,
+        nama: dto.nama,
+        email: dto.email,
+        nomorTelepon: dto.nomorTelepon,
+        status: dto.status,
+        userId: user.id,
+        mataPelajaran: mataPelajaranConnect,
+      },
+      include: {
+        mataPelajaran: true,
+        user: true,
+      },
+    });
+  }
 }

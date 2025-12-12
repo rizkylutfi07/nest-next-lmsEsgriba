@@ -6,7 +6,7 @@ import { QuerySiswaDto } from './dto/query-siswa.dto';
 
 @Injectable()
 export class SiswaService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async findAll(query: QuerySiswaDto) {
     const { page = 1, limit = 10, search } = query;
@@ -17,6 +17,7 @@ export class SiswaService {
     if (search) {
       where.OR = [
         { nama: { contains: search, mode: 'insensitive' } },
+        { nisn: { contains: search, mode: 'insensitive' } },
       ];
     }
 
@@ -26,6 +27,9 @@ export class SiswaService {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
+        include: {
+          kelas: true,
+        },
       }),
       this.prisma.siswa.count({ where }),
     ]);
@@ -44,6 +48,9 @@ export class SiswaService {
   async findOne(id: string) {
     const item = await this.prisma.siswa.findFirst({
       where: { id, deletedAt: null },
+      include: {
+        kelas: true,
+      },
     });
 
     if (!item) {
@@ -54,16 +61,62 @@ export class SiswaService {
   }
 
   async create(dto: CreateSiswaDto) {
+    // Validate kelas exists if kelasId provided
+    if (dto.kelasId) {
+      const kelas = await this.prisma.kelas.findUnique({
+        where: { id: dto.kelasId },
+      });
+      if (!kelas) {
+        throw new BadRequestException(`Kelas dengan ID ${dto.kelasId} tidak ditemukan`);
+      }
+    }
+
     return this.prisma.siswa.create({
-      data: dto as any,
+      data: {
+        nisn: dto.nisn,
+        nama: dto.nama,
+        tanggalLahir: new Date(dto.tanggalLahir),
+        alamat: dto.alamat,
+        nomorTelepon: dto.nomorTelepon,
+        email: dto.email,
+        status: dto.status,
+        kelasId: dto.kelasId,
+      },
+      include: {
+        kelas: true,
+      },
     });
   }
 
   async update(id: string, dto: UpdateSiswaDto) {
     await this.findOne(id);
+
+    // Validate kelas exists if kelasId provided
+    if (dto.kelasId) {
+      const kelas = await this.prisma.kelas.findUnique({
+        where: { id: dto.kelasId },
+      });
+      if (!kelas) {
+        throw new BadRequestException(`Kelas dengan ID ${dto.kelasId} tidak ditemukan`);
+      }
+    }
+
+    const updateData: any = {};
+    if (dto.nisn !== undefined) updateData.nisn = dto.nisn;
+    if (dto.nama !== undefined) updateData.nama = dto.nama;
+    if (dto.tanggalLahir !== undefined) updateData.tanggalLahir = new Date(dto.tanggalLahir);
+    if (dto.alamat !== undefined) updateData.alamat = dto.alamat;
+    if (dto.nomorTelepon !== undefined) updateData.nomorTelepon = dto.nomorTelepon;
+    if (dto.email !== undefined) updateData.email = dto.email;
+    if (dto.status !== undefined) updateData.status = dto.status;
+    if (dto.kelasId !== undefined) updateData.kelasId = dto.kelasId;
+
     return this.prisma.siswa.update({
       where: { id },
-      data: dto as any,
+      data: updateData,
+      include: {
+        kelas: true,
+      },
     });
   }
 
@@ -74,5 +127,117 @@ export class SiswaService {
       data: { deletedAt: new Date() },
     });
     return { message: 'Siswa berhasil dihapus' };
+  }
+
+  async createWithUser(dto: CreateSiswaDto, password?: string) {
+    // Create user account first
+    const bcrypt = require('bcrypt');
+    const hashedPassword = await bcrypt.hash(password || dto.nisn, 10);
+
+    const user = await this.prisma.user.create({
+      data: {
+        email: dto.email || `${dto.nisn}@student.school.com`,
+        name: dto.nama,
+        role: 'SISWA',
+        password: hashedPassword,
+      },
+    });
+
+    // Create siswa linked to user
+    return this.prisma.siswa.create({
+      data: {
+        nisn: dto.nisn,
+        nama: dto.nama,
+        tanggalLahir: new Date(dto.tanggalLahir),
+        alamat: dto.alamat,
+        nomorTelepon: dto.nomorTelepon,
+        email: dto.email,
+        status: dto.status,
+        kelasId: dto.kelasId,
+        userId: user.id,
+      },
+      include: {
+        kelas: true,
+        user: true,
+      },
+    });
+  }
+
+  async importFromExcel(rows: any[]): Promise<{
+    success: number;
+    failed: number;
+    skipped: number;
+    errors: Array<{ row: number; error: string; data: any }>;
+  }> {
+    const results = {
+      success: 0,
+      failed: 0,
+      skipped: 0,
+      errors: [] as Array<{ row: number; error: string; data: any }>,
+    };
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      try {
+        // Check if NISN already exists (including soft-deleted)
+        const existingSiswa = await this.prisma.siswa.findUnique({
+          where: { nisn: row.nisn },
+        });
+
+        if (existingSiswa) {
+          results.skipped++;
+          results.errors.push({
+            row: i + 2,
+            error: `NISN ${row.nisn} sudah ada di database (${existingSiswa.deletedAt ? 'soft-deleted' : 'aktif'})`,
+            data: row,
+          });
+          continue;
+        }
+
+        // Resolve kelas by name if provided
+        let kelasId: string | undefined;
+        if (row.kelasNama) {
+          const kelas = await this.prisma.kelas.findFirst({
+            where: {
+              nama: row.kelasNama,
+              deletedAt: null,
+            },
+          });
+          if (kelas) {
+            kelasId = kelas.id;
+          }
+        }
+
+        // Create siswa
+        const siswaData: CreateSiswaDto = {
+          nisn: row.nisn,
+          nama: row.nama,
+          tanggalLahir: row.tanggalLahir,
+          alamat: row.alamat,
+          nomorTelepon: row.nomorTelepon,
+          email: row.email,
+          status: row.status || 'AKTIF',
+          kelasId,
+        };
+
+        // Create with or without user account
+        if (row.createUserAccount) {
+          await this.createWithUser(siswaData);
+        } else {
+          await this.create(siswaData);
+        }
+
+        results.success++;
+      } catch (error) {
+        results.failed++;
+        results.errors.push({
+          row: i + 2, // +2 because Excel is 1-indexed and has header row
+          error: error.message || 'Unknown error',
+          data: row,
+        });
+      }
+    }
+
+    return results;
   }
 }

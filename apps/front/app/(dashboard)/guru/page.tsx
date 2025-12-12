@@ -375,6 +375,26 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
                 Pilih satu atau lebih mata pelajaran
               </p>
             </div>
+
+            {!item && (
+              <div className="rounded-lg border border-white/10 bg-white/5 p-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.createUserAccount || false}
+                    onChange={(e) => setFormData({ ...formData, createUserAccount: e.target.checked })}
+                    className="rounded border-white/20"
+                  />
+                  <span className="text-sm font-medium">Buat akun user untuk login</span>
+                </label>
+                {formData.createUserAccount && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Password default: NIP guru (dapat diubah nanti)
+                  </p>
+                )}
+              </div>
+            )}
+
             <div className="flex gap-2 pt-4">
               <Button type="button" variant="outline" onClick={onClose} className="flex-1">
                 Batal
