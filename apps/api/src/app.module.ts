@@ -10,6 +10,7 @@ import { MataPelajaranModule } from './mata-pelajaran/mata-pelajaran.module';
 import { GuruModule } from './guru/guru.module';
 import { KelasModule } from './kelas/kelas.module';
 import { SiswaModule } from './siswa/siswa.module';
+import { JurusanModule } from './jurusan/jurusan.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { SiswaModule } from './siswa/siswa.module';
     GuruModule,
     KelasModule,
     SiswaModule,
+    JurusanModule,
   ],
   controllers: [AppController],
   providers: [AppService],

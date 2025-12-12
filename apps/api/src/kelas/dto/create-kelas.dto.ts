@@ -9,17 +9,13 @@ export class CreateKelasDto {
   @IsNotEmpty()
   tingkat: string;
 
-  @IsString()
-  @IsNotEmpty()
-  jurusan: string;
-
   @IsInt()
   @IsNotEmpty()
   kapasitas: number;
 
   @IsString()
-  @IsNotEmpty()
-  tahunAjaranId: string;
+  @IsOptional()
+  jurusanId?: string;
 
   @IsString()
   @IsOptional()

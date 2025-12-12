@@ -81,25 +81,38 @@ enum StatusGuru {
   PENSIUN
 }
 
+model Jurusan {
+  id        String    @id @default(cuid())
+  kode      String    @unique
+  nama      String
+  deskripsi String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // soft delete
+
+  kelas Kelas[]
+}
+
 model Kelas {
   id        String    @id @default(cuid())
   nama      String // e.g., "XI IPA 1"
   tingkat   String // "X", "XI", "XII"
-  jurusan   String // "IPA", "IPS", "RPL", "DKV", etc.
   kapasitas Int       @default(32)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime? // soft delete
 
-  tahunAjaranId String
-  tahunAjaran   TahunAjaran @relation(fields: [tahunAjaranId], references: [id])
+  jurusanId String?
+  jurusan   Jurusan? @relation(fields: [jurusanId], references: [id])
 
   waliKelasId String?
   waliKelas   Guru?   @relation("WaliKelas", fields: [waliKelasId], references: [id])
 
-  siswa Siswa[]
+  siswa         Siswa[]
+  tahunAjaran   TahunAjaran? @relation(fields: [tahunAjaranId], references: [id])
+  tahunAjaranId String?
 
-  @@unique([nama, tahunAjaranId])
+  @@unique([nama, jurusanId])
 }
 
 model Siswa {

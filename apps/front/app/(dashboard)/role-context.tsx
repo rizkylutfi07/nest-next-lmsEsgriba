@@ -56,6 +56,7 @@ const navByRole: Record<Role, NavItem[]> = {
     { label: "Data Siswa", icon: Users2, href: "/siswa", note: "Profil & kehadiran" },
     { label: "Data Guru", icon: Users2, href: "/guru", note: "Penugasan & KPI" },
     { label: "Data Kelas", icon: CalendarRange, href: "/kelas", note: "Struktur & jadwal" },
+    { label: "Data Jurusan", icon: BookOpen, href: "/jurusan", note: "Program studi" },
     { label: "Tahun Ajaran", icon: CalendarClock, href: "/tahun-ajaran", note: "Periode aktif" },
     { label: "Mata Pelajaran", icon: BookOpen, href: "/mata-pelajaran", note: "Silabus & mapel" },
     { label: "CBT", icon: ClipboardCheck, href: "/cbt", note: "Soal, ujian, sesi", badge: "CBT" },

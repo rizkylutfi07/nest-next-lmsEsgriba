@@ -14,7 +14,7 @@ const guruApi = {
     if (params.page) searchParams.set('page', params.page.toString());
     if (params.limit) searchParams.set('limit', params.limit.toString());
     if (params.search) searchParams.set('search', params.search);
-    
+
     const res = await fetch(`http://localhost:3001/guru?${searchParams}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -26,6 +26,10 @@ const guruApi = {
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify(data),
     });
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.message || 'Failed to create guru');
+    }
     return res.json();
   },
   update: async (id: string, data: any, token: string | null) => {
@@ -34,6 +38,10 @@ const guruApi = {
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify(data),
     });
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.message || 'Failed to update guru');
+    }
     return res.json();
   },
   delete: async (id: string, token: string | null) => {
@@ -65,6 +73,10 @@ export default function GuruPage() {
       queryClient.invalidateQueries({ queryKey: ["guru"] });
       setIsCreateModalOpen(false);
     },
+    onError: (error: any) => {
+      console.error('Create error:', error);
+      alert(error.message || 'Gagal menambah data guru');
+    },
   });
 
   const updateMutation = useMutation({
@@ -72,6 +84,10 @@ export default function GuruPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["guru"] });
       setEditingItem(null);
+    },
+    onError: (error: any) => {
+      console.error('Update error:', error);
+      alert(error.message || 'Gagal mengupdate data guru');
     },
   });
 
@@ -212,7 +228,9 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    // Remove system fields before submitting
+    const { id, createdAt, updatedAt, deletedAt, mataPelajaranId, ...cleanData } = formData;
+    onSubmit(cleanData);
   };
 
   return (
@@ -233,9 +251,9 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
               <input
                 type="text"
                 required
-                
-                
-                
+
+
+
                 value={formData.nip || ''}
                 onChange={(e) => setFormData({ ...formData, nip: e.target.value })}
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
@@ -246,9 +264,9 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
               <input
                 type="text"
                 required
-                
-                
-                
+
+
+
                 value={formData.nama || ''}
                 onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
@@ -259,9 +277,9 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
               <input
                 type="email"
                 required
-                
-                
-                
+
+
+
                 value={formData.email || ''}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
@@ -271,10 +289,10 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
               <label className="mb-2 block text-sm font-medium">Nomor Telepon</label>
               <input
                 type="tel"
-                
-                
-                
-                
+
+
+
+
                 value={formData.nomorTelepon || ''}
                 onChange={(e) => setFormData({ ...formData, nomorTelepon: e.target.value })}
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"

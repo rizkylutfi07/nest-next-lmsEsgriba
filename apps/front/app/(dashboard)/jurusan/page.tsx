@@ -7,52 +7,36 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRole } from "../role-context";
 
-// TODO: Create API client in lib/kelas-api.ts
-const kelasApi = {
+const jurusanApi = {
   getAll: async (params: any, token: string | null) => {
     const searchParams = new URLSearchParams();
     if (params.page) searchParams.set('page', params.page.toString());
     if (params.limit) searchParams.set('limit', params.limit.toString());
     if (params.search) searchParams.set('search', params.search);
 
-    const res = await fetch(`http://localhost:3001/kelas?${searchParams}`, {
+    const res = await fetch(`http://localhost:3001/jurusan?${searchParams}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     return res.json();
   },
   create: async (data: any, token: string | null) => {
-    const res = await fetch(`http://localhost:3001/kelas`, {
+    const res = await fetch(`http://localhost:3001/jurusan`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify(data),
     });
-    if (!res.ok) {
-      const error = await res.json();
-      throw new Error(error.message || 'Failed to create kelas');
-    }
     return res.json();
   },
   update: async (id: string, data: any, token: string | null) => {
-    const res = await fetch(`http://localhost:3001/kelas/${id}`, {
+    const res = await fetch(`http://localhost:3001/jurusan/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify(data),
     });
-    if (!res.ok) {
-      let errorMessage = 'Failed to update kelas';
-      try {
-        const error = await res.json();
-        errorMessage = error.message || errorMessage;
-      } catch (e) {
-        // Response is not JSON, use status text
-        errorMessage = res.statusText || errorMessage;
-      }
-      throw new Error(errorMessage);
-    }
     return res.json();
   },
   delete: async (id: string, token: string | null) => {
-    const res = await fetch(`http://localhost:3001/kelas/${id}`, {
+    const res = await fetch(`http://localhost:3001/jurusan/${id}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -60,7 +44,7 @@ const kelasApi = {
   },
 };
 
-export default function KelasPage() {
+export default function JurusanPage() {
   const { token } = useRole();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
@@ -70,38 +54,30 @@ export default function KelasPage() {
   const [deletingItem, setDeletingItem] = useState<any>(null);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["kelas", page, search],
-    queryFn: () => kelasApi.getAll({ page, limit: 10, search: search || undefined }, token),
+    queryKey: ["jurusan", page, search],
+    queryFn: () => jurusanApi.getAll({ page, limit: 10, search: search || undefined }, token),
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: any) => kelasApi.create(data, token),
+    mutationFn: (data: any) => jurusanApi.create(data, token),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["kelas"] });
+      queryClient.invalidateQueries({ queryKey: ["jurusan"] });
       setIsCreateModalOpen(false);
-    },
-    onError: (error: any) => {
-      console.error('Create error:', error);
-      alert(error.message || 'Gagal menambah data kelas');
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => kelasApi.update(id, data, token),
+    mutationFn: ({ id, data }: { id: string; data: any }) => jurusanApi.update(id, data, token),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["kelas"] });
+      queryClient.invalidateQueries({ queryKey: ["jurusan"] });
       setEditingItem(null);
-    },
-    onError: (error: any) => {
-      console.error('Update error:', error);
-      alert(error.message || 'Gagal mengupdate data kelas');
     },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => kelasApi.delete(id, token),
+    mutationFn: (id: string) => jurusanApi.delete(id, token),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["kelas"] });
+      queryClient.invalidateQueries({ queryKey: ["jurusan"] });
       setDeletingItem(null);
     },
   });
@@ -110,12 +86,12 @@ export default function KelasPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Data Kelas</h1>
-          <p className="text-muted-foreground">Kelola data data kelas</p>
+          <h1 className="text-3xl font-bold">Data Jurusan</h1>
+          <p className="text-muted-foreground">Kelola data jurusan/program studi</p>
         </div>
         <Button onClick={() => setIsCreateModalOpen(true)}>
           <Plus size={16} />
-          Tambah Kelas
+          Tambah Jurusan
         </Button>
       </div>
 
@@ -123,14 +99,14 @@ export default function KelasPage() {
         <CardHeader>
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <CardTitle>Daftar Data Kelas</CardTitle>
-              <CardDescription>Total {data?.meta.total || 0} data</CardDescription>
+              <CardTitle>Daftar Jurusan</CardTitle>
+              <CardDescription>Total {data?.meta.total || 0} jurusan</CardDescription>
             </div>
             <div className="relative flex-1 md:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
               <input
                 type="text"
-                placeholder="Cari..."
+                placeholder="Cari kode atau nama..."
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 className="w-full rounded-lg border border-white/10 bg-white/5 py-2 pl-10 pr-4 text-sm outline-none transition focus:border-primary/60 focus:bg-white/10"
@@ -149,20 +125,20 @@ export default function KelasPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-white/10 text-left text-sm text-muted-foreground">
-                      <th className="pb-3 font-medium">Nama Kelas</th>
-                      <th className="pb-3 font-medium">Tingkat</th>
-                      <th className="pb-3 font-medium">Jurusan</th>
-                      <th className="pb-3 font-medium">Kapasitas</th>
+                      <th className="pb-3 font-medium">Kode</th>
+                      <th className="pb-3 font-medium">Nama Jurusan</th>
+                      <th className="pb-3 font-medium">Deskripsi</th>
+                      <th className="pb-3 font-medium">Jumlah Kelas</th>
                       <th className="pb-3 font-medium text-right">Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
                     {data?.data.map((item: any) => (
                       <tr key={item.id} className="border-b border-white/5 transition hover:bg-white/5">
-                        <td className="py-4">{item.nama}</td>
-                        <td className="py-4">{item.tingkat}</td>
-                        <td className="py-4">{item.jurusan?.nama || '-'}</td>
-                        <td className="py-4">{item.kapasitas}</td>
+                        <td className="py-4 font-mono text-sm">{item.kode}</td>
+                        <td className="py-4 font-medium">{item.nama}</td>
+                        <td className="py-4 text-sm text-muted-foreground">{item.deskripsi || '-'}</td>
+                        <td className="py-4 text-sm">{item._count?.kelas || 0} kelas</td>
                         <td className="py-4 text-right">
                           <div className="flex justify-end gap-2">
                             <Button variant="ghost" size="sm" onClick={() => setEditingItem(item)}>
@@ -201,19 +177,19 @@ export default function KelasPage() {
 
       {isCreateModalOpen && (
         <FormModal
-          title="Tambah Kelas"
+          title="Tambah Jurusan"
           onClose={() => setIsCreateModalOpen(false)}
-          onSubmit={(data) => createMutation.mutate(data)}
+          onSubmit={(data: any) => createMutation.mutate(data)}
           isLoading={createMutation.isPending}
         />
       )}
 
       {editingItem && (
         <FormModal
-          title="Edit Kelas"
+          title="Edit Jurusan"
           item={editingItem}
           onClose={() => setEditingItem(null)}
-          onSubmit={(data) => updateMutation.mutate({ id: editingItem.id, data })}
+          onSubmit={(data: any) => updateMutation.mutate({ id: editingItem.id, data })}
           isLoading={updateMutation.isPending}
         />
       )}
@@ -231,44 +207,11 @@ export default function KelasPage() {
 }
 
 function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
-  const { token } = useRole();
   const [formData, setFormData] = useState(item || {});
-
-  // Fetch jurusan list
-  const { data: jurusanList } = useQuery({
-    queryKey: ["jurusan-list"],
-    queryFn: async () => {
-      const res = await fetch(`http://localhost:3001/jurusan?limit=100`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      return res.json();
-    },
-  });
-
-  // Fetch guru list for wali kelas
-  const { data: guruList } = useQuery({
-    queryKey: ["guru-list"],
-    queryFn: async () => {
-      const res = await fetch(`http://localhost:3001/guru?limit=100`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      return res.json();
-    },
-  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Remove system fields and _count before submitting
-    const { id, createdAt, updatedAt, deletedAt, _count, waliKelas, jurusan, siswa, tahunAjaranId, ...cleanData } = formData;
-
-    // Remove null/undefined values
-    const finalData = Object.fromEntries(
-      Object.entries(cleanData).filter(([_, value]) => value !== null && value !== undefined && value !== '')
-    );
-
-    console.log('Submitting cleaned data:', finalData);
-    console.log('Original formData:', formData);
-    onSubmit(finalData);
+    onSubmit(formData);
   };
 
   return (
@@ -285,68 +228,33 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="mb-2 block text-sm font-medium">Nama Kelas</label>
+              <label className="mb-2 block text-sm font-medium">Kode Jurusan</label>
               <input
                 type="text"
                 required
-                placeholder="X IPA 1"
+                placeholder="IPA, IPS, RPL, dll"
+                value={formData.kode || ''}
+                onChange={(e) => setFormData({ ...formData, kode: e.target.value })}
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium">Nama Jurusan</label>
+              <input
+                type="text"
+                required
+                placeholder="Ilmu Pengetahuan Alam"
                 value={formData.nama || ''}
                 onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
               />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium">Tingkat</label>
-              <select
-                required
-                value={formData.tingkat || ''}
-                onChange={(e) => setFormData({ ...formData, tingkat: e.target.value })}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
-              >
-                <option value="">Pilih Tingkat</option>
-                <option value="X">X</option>
-                <option value="XI">XI</option>
-                <option value="XII">XII</option>
-              </select>
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium">Jurusan</label>
-              <select
-                value={formData.jurusanId || ''}
-                onChange={(e) => setFormData({ ...formData, jurusanId: e.target.value })}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
-              >
-                <option value="">Pilih Jurusan (Opsional)</option>
-                {jurusanList?.data?.map((jurusan: any) => (
-                  <option key={jurusan.id} value={jurusan.id}>
-                    {jurusan.kode} - {jurusan.nama}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium">Wali Kelas</label>
-              <select
-                value={formData.waliKelasId || ''}
-                onChange={(e) => setFormData({ ...formData, waliKelasId: e.target.value })}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
-              >
-                <option value="">Pilih Wali Kelas (Opsional)</option>
-                {guruList?.data?.map((guru: any) => (
-                  <option key={guru.id} value={guru.id}>
-                    {guru.nama} - {guru.nip}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium">Kapasitas</label>
-              <input
-                type="number"
-                required
-                min="1"
-                value={formData.kapasitas || ''}
-                onChange={(e) => setFormData({ ...formData, kapasitas: parseInt(e.target.value) })}
+              <label className="mb-2 block text-sm font-medium">Deskripsi (Opsional)</label>
+              <textarea
+                value={formData.deskripsi || ''}
+                onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
+                rows={3}
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
               />
             </div>
@@ -370,9 +278,10 @@ function DeleteModal({ item, onClose, onConfirm, isLoading }: any) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Hapus Kelas</CardTitle>
+          <CardTitle>Hapus Jurusan</CardTitle>
           <CardDescription>
-            Apakah Anda yakin ingin menghapus data ini? Tindakan ini tidak dapat dibatalkan.
+            Apakah Anda yakin ingin menghapus jurusan <strong>{item.nama}</strong>?
+            Tindakan ini tidak dapat dibatalkan.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -380,7 +289,7 @@ function DeleteModal({ item, onClose, onConfirm, isLoading }: any) {
             <Button variant="outline" onClick={onClose} className="flex-1">
               Batal
             </Button>
-            <Button variant="destructive" onClick={onConfirm} disabled={isLoading} className="flex-1">
+            <Button variant="outline" onClick={onConfirm} disabled={isLoading} className="flex-1 bg-red-500/10 text-red-500 hover:bg-red-500/20">
               {isLoading ? <Loader2 className="animate-spin" size={16} /> : "Hapus"}
             </Button>
           </div>

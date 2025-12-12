@@ -6,7 +6,7 @@ import { QueryKelasDto } from './dto/query-kelas.dto';
 
 @Injectable()
 export class KelasService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async findAll(query: QueryKelasDto) {
     const { page = 1, limit = 10, search } = query;
@@ -26,6 +26,18 @@ export class KelasService {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
+        include: {
+          jurusan: {
+            select: {
+              id: true,
+              kode: true,
+              nama: true,
+            },
+          },
+          _count: {
+            select: { siswa: true },
+          },
+        },
       }),
       this.prisma.kelas.count({ where }),
     ]);
@@ -44,6 +56,15 @@ export class KelasService {
   async findOne(id: string) {
     const item = await this.prisma.kelas.findFirst({
       where: { id, deletedAt: null },
+      include: {
+        jurusan: {
+          select: {
+            id: true,
+            kode: true,
+            nama: true,
+          },
+        },
+      },
     });
 
     if (!item) {
