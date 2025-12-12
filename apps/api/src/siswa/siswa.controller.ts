@@ -88,4 +88,9 @@ export class SiswaController {
   remove(@Param('id') id: string) {
     return this.siswaService.remove(id);
   }
+
+  @Post('kenaikan-kelas')
+  async kenaikanKelas(@Body() dto: any) {
+    return this.siswaService.kenaikanKelas(dto);
+  }
 }

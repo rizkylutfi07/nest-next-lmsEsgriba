@@ -12,18 +12,66 @@ export default function SiswaPage() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const [filterKelas, setFilterKelas] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [filterTahunAjaran, setFilterTahunAjaran] = useState("");
+  const [sortBy, setSortBy] = useState("createdAt");
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [deletingItem, setDeletingItem] = useState<any>(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["siswa", page, search],
+    queryKey: ["siswa", page, search, filterKelas, filterStatus, sortBy, sortOrder, filterTahunAjaran],
     queryFn: async () => {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '10',
+        sortBy,
+        sortOrder,
+      });
+      if (search) params.append('search', search);
+      if (filterKelas) params.append('kelasId', filterKelas);
+      if (filterStatus) params.append('status', filterStatus);
+      if (filterTahunAjaran) params.append('tahunAjaranId', filterTahunAjaran);
+
       const res = await fetch(
-        `http://localhost:3001/siswa?page=${page}&limit=10&search=${search}`,
+        `http://localhost:3001/siswa?${params.toString()}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      return res.json();
+    },
+  });
+
+  const handleSort = (column: string) => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortOrder('asc');
+    }
+  };
+
+  // Fetch kelas list
+  const { data: kelasList } = useQuery({
+    queryKey: ["kelas-list"],
+    queryFn: async () => {
+      const res = await fetch(`http://localhost:3001/kelas?limit=100`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.json();
+    },
+  });
+
+  // Fetch active Tahun Ajaran for filter
+  const { data: activeTahunAjaran } = useQuery({
+    queryKey: ["active-tahun-ajaran"],
+    queryFn: async () => {
+      const res = await fetch(`http://localhost:3001/tahun-ajaran/active/current`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return null;
       return res.json();
     },
   });
@@ -110,6 +158,43 @@ export default function SiswaPage() {
               className="w-full rounded-lg border border-white/10 bg-white/5 py-2 pl-10 pr-4 text-sm outline-none transition focus:border-primary/60 focus:bg-white/10"
             />
           </div>
+          <div className="flex gap-2">
+            <select
+              value={filterKelas}
+              onChange={(e) => { setFilterKelas(e.target.value); setPage(1); }}
+              className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:bg-white/10"
+            >
+              <option value="">Semua Kelas</option>
+              {kelasList?.data?.map((kelas: any) => (
+                <option key={kelas.id} value={kelas.id}>
+                  {kelas.nama}
+                </option>
+              ))}
+            </select>
+            <select
+              value={filterStatus}
+              onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
+              className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:bg-white/10"
+            >
+              <option value="">Semua Status</option>
+              <option value="AKTIF">AKTIF</option>
+              <option value="MAGANG">MAGANG</option>
+              <option value="PINDAH">PINDAH</option>
+              <option value="ALUMNI">ALUMNI</option>
+            </select>
+            <select
+              value={filterTahunAjaran}
+              onChange={(e) => { setFilterTahunAjaran(e.target.value); setPage(1); }}
+              className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:bg-white/10"
+            >
+              <option value="">Semua Tahun Ajaran</option>
+              {activeTahunAjaran && (
+                <option value={activeTahunAjaran.id}>
+                  {activeTahunAjaran.tahun} Semester {activeTahunAjaran.semester} (Aktif)
+                </option>
+              )}
+            </select>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -124,16 +209,24 @@ export default function SiswaPage() {
                     <table className="min-w-full w-full">
                       <thead>
                         <tr className="border-b border-white/10 text-left text-sm text-muted-foreground">
-                          <th className="pb-3 font-medium">NISN</th>
-                          <th className="pb-3 font-medium">Nama</th>
+                          <th className="pb-3 font-medium cursor-pointer hover:text-foreground" onClick={() => handleSort('nisn')}>
+                            NISN {sortBy === 'nisn' && (sortOrder === 'asc' ? '↑' : '↓')}
+                          </th>
+                          <th className="pb-3 font-medium cursor-pointer hover:text-foreground" onClick={() => handleSort('nama')}>
+                            Nama {sortBy === 'nama' && (sortOrder === 'asc' ? '↑' : '↓')}
+                          </th>
                           <th className="pb-3 font-medium">Email</th>
-                          <th className="pb-3 font-medium">Kelas</th>
-                          <th className="pb-3 font-medium">Status</th>
+                          <th className="pb-3 font-medium cursor-pointer hover:text-foreground" onClick={() => handleSort('kelas')}>
+                            Kelas {sortBy === 'kelas' && (sortOrder === 'asc' ? '↑' : '↓')}
+                          </th>
+                          <th className="pb-3 font-medium cursor-pointer hover:text-foreground" onClick={() => handleSort('status')}>
+                            Status {sortBy === 'status' && (sortOrder === 'asc' ? '↑' : '↓')}
+                          </th>
                           <th className="pb-3 font-medium text-right">Aksi</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {data?.data.map((item: any) => (
+                        {data?.data?.map((item: any) => (
                           <tr key={item.id} className="border-b border-white/5 transition hover:bg-white/5">
                             <td className="py-4">{item.nisn}</td>
                             <td className="py-4">{item.nama}</td>

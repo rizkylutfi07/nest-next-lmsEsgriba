@@ -14,7 +14,7 @@ const tahunajaranApi = {
     if (params.page) searchParams.set('page', params.page.toString());
     if (params.limit) searchParams.set('limit', params.limit.toString());
     if (params.search) searchParams.set('search', params.search);
-    
+
     const res = await fetch(`http://localhost:3001/tahun-ajaran?${searchParams}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -39,6 +39,13 @@ const tahunajaranApi = {
   delete: async (id: string, token: string | null) => {
     const res = await fetch(`http://localhost:3001/tahun-ajaran/${id}`, {
       method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return res.json();
+  },
+  setActive: async (id: string, token: string | null) => {
+    const res = await fetch(`http://localhost:3001/tahun-ajaran/${id}/set-active`, {
+      method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
     });
     return res.json();
@@ -80,6 +87,14 @@ export default function TahunAjaranPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tahun-ajaran"] });
       setDeletingItem(null);
+    },
+  });
+
+  const setActiveMutation = useMutation({
+    mutationFn: (id: string) => tahunajaranApi.setActive(id, token),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tahun-ajaran"] });
+      queryClient.invalidateQueries({ queryKey: ["active-tahun-ajaran"] });
     },
   });
 
@@ -135,11 +150,30 @@ export default function TahunAjaranPage() {
                   <tbody>
                     {data?.data.map((item: any) => (
                       <tr key={item.id} className="border-b border-white/5 transition hover:bg-white/5">
-                        <td className="py-4">{item.tahun}</td>
+                        <td className="py-4">
+                          <div className="flex items-center gap-2">
+                            {item.tahun}
+                            {item.status === 'AKTIF' && (
+                              <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-xs font-medium text-green-400">
+                                Aktif
+                              </span>
+                            )}
+                          </div>
+                        </td>
                         <td className="py-4">{item.semester}</td>
                         <td className="py-4">{item.status}</td>
                         <td className="py-4 text-right">
                           <div className="flex justify-end gap-2">
+                            {item.status !== 'AKTIF' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setActiveMutation.mutate(item.id)}
+                                disabled={setActiveMutation.isPending}
+                              >
+                                Set Aktif
+                              </Button>
+                            )}
                             <Button variant="ghost" size="sm" onClick={() => setEditingItem(item)}>
                               <Pencil size={14} />
                             </Button>
@@ -210,7 +244,11 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    // Remove system fields before submitting
+    const { id, createdAt, updatedAt, deletedAt, _count, kelas, ...cleanData } = formData;
+
+    console.log('Submitting Tahun Ajaran data:', cleanData);
+    onSubmit(cleanData);
   };
 
   return (
@@ -232,8 +270,8 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
                 type="text"
                 required
                 placeholder="2024/2025"
-                
-                
+
+
                 value={formData.tahun || ''}
                 onChange={(e) => setFormData({ ...formData, tahun: e.target.value })}
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
@@ -244,7 +282,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
               <input
                 type="number"
                 required
-                
+
                 min="1"
                 max="2"
                 value={formData.semester || ''}
@@ -257,9 +295,9 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
               <input
                 type="date"
                 required
-                
-                
-                
+
+
+
                 value={formData.tanggalMulai || ''}
                 onChange={(e) => setFormData({ ...formData, tanggalMulai: e.target.value })}
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
@@ -270,9 +308,9 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
               <input
                 type="date"
                 required
-                
-                
-                
+
+
+
                 value={formData.tanggalSelesai || ''}
                 onChange={(e) => setFormData({ ...formData, tanggalSelesai: e.target.value })}
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"

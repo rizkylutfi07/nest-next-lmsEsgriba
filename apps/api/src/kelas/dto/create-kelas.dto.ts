@@ -21,4 +21,7 @@ export class CreateKelasDto {
   @IsOptional()
   waliKelasId?: string;
 
+  @IsString()
+  @IsNotEmpty()
+  tahunAjaranId: string; // REQUIRED - every class must have an academic year
 }

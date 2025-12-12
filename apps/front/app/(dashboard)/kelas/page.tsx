@@ -64,14 +64,27 @@ export default function KelasPage() {
   const { token } = useRole();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
+  const [filterTahunAjaran, setFilterTahunAjaran] = useState("");
   const [page, setPage] = useState(1);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<any>(null);
-  const [deletingItem, setDeletingItem] = useState<any>(null);
+  const [editingKelas, setEditingKelas] = useState<any>(null);
+  const [deletingKelas, setDeletingKelas] = useState<any>(null);
+
+  // Fetch active Tahun Ajaran
+  const { data: activeTahunAjaran } = useQuery({
+    queryKey: ["active-tahun-ajaran"],
+    queryFn: async () => {
+      const res = await fetch(`http://localhost:3001/tahun-ajaran/active/current`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return null;
+      return res.json();
+    },
+  });
 
   const { data, isLoading } = useQuery({
-    queryKey: ["kelas", page, search],
-    queryFn: () => kelasApi.getAll({ page, limit: 10, search: search || undefined }, token),
+    queryKey: ["kelas", page, search, filterTahunAjaran],
+    queryFn: () => kelasApi.getAll({ page, limit: 10, search, tahunAjaranId: filterTahunAjaran }, token),
   });
 
   const createMutation = useMutation({
@@ -90,7 +103,7 @@ export default function KelasPage() {
     mutationFn: ({ id, data }: { id: string; data: any }) => kelasApi.update(id, data, token),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["kelas"] });
-      setEditingItem(null);
+      setEditingKelas(null);
     },
     onError: (error: any) => {
       console.error('Update error:', error);
@@ -102,7 +115,7 @@ export default function KelasPage() {
     mutationFn: (id: string) => kelasApi.delete(id, token),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["kelas"] });
-      setDeletingItem(null);
+      setDeletingKelas(null);
     },
   });
 
@@ -136,6 +149,18 @@ export default function KelasPage() {
                 className="w-full rounded-lg border border-white/10 bg-white/5 py-2 pl-10 pr-4 text-sm outline-none transition focus:border-primary/60 focus:bg-white/10"
               />
             </div>
+            <select
+              value={filterTahunAjaran}
+              onChange={(e) => { setFilterTahunAjaran(e.target.value); setPage(1); }}
+              className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:bg-white/10"
+            >
+              <option value="">Semua Tahun Ajaran</option>
+              {data?.data?.[0]?.tahunAjaran && (
+                <option value={activeTahunAjaran?.id}>
+                  {activeTahunAjaran?.tahun} Semester {activeTahunAjaran?.semester} (Aktif)
+                </option>
+              )}
+            </select>
           </div>
         </CardHeader>
         <CardContent>
@@ -165,10 +190,10 @@ export default function KelasPage() {
                         <td className="py-4">{item.waliKelas?.nama || '-'}</td>
                         <td className="py-4 text-right">
                           <div className="flex justify-end gap-2">
-                            <Button variant="ghost" size="sm" onClick={() => setEditingItem(item)}>
+                            <Button variant="ghost" size="sm" onClick={() => setEditingKelas(item)}>
                               <Pencil size={14} />
                             </Button>
-                            <Button variant="ghost" size="sm" onClick={() => setDeletingItem(item)}>
+                            <Button variant="ghost" size="sm" onClick={() => setDeletingKelas(item)}>
                               <Trash2 size={14} />
                             </Button>
                           </div>
@@ -208,21 +233,21 @@ export default function KelasPage() {
         />
       )}
 
-      {editingItem && (
+      {editingKelas && (
         <FormModal
           title="Edit Kelas"
-          item={editingItem}
-          onClose={() => setEditingItem(null)}
-          onSubmit={(data) => updateMutation.mutate({ id: editingItem.id, data })}
+          item={editingKelas}
+          onClose={() => setEditingKelas(null)}
+          onSubmit={(data) => updateMutation.mutate({ id: editingKelas.id, data })}
           isLoading={updateMutation.isPending}
         />
       )}
 
-      {deletingItem && (
+      {deletingKelas && (
         <DeleteModal
-          item={deletingItem}
-          onClose={() => setDeletingItem(null)}
-          onConfirm={() => deleteMutation.mutate(deletingItem.id)}
+          item={deletingKelas}
+          onClose={() => setDeletingKelas(null)}
+          onConfirm={() => deleteMutation.mutate(deletingKelas.id)}
           isLoading={deleteMutation.isPending}
         />
       )}
@@ -256,10 +281,27 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
     },
   });
 
+  // Fetch active Tahun Ajaran for auto-fill
+  const { data: activeTahunAjaran } = useQuery({
+    queryKey: ["active-tahun-ajaran-form"],
+    queryFn: async () => {
+      const res = await fetch(`http://localhost:3001/tahun-ajaran/active/current`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return null;
+      return res.json();
+    },
+  });
+
+  // Auto-fill tahunAjaranId for new Kelas
+  if (!item && activeTahunAjaran && !formData.tahunAjaranId) {
+    setFormData({ ...formData, tahunAjaranId: activeTahunAjaran.id });
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Remove system fields and _count before submitting
-    const { id, createdAt, updatedAt, deletedAt, _count, waliKelas, jurusan, siswa, tahunAjaranId, ...cleanData } = formData;
+    // Remove system fields and _count before submitting, but KEEP tahunAjaranId
+    const { id, createdAt, updatedAt, deletedAt, _count, waliKelas, jurusan, siswa, tahunAjaran, ...cleanData } = formData;
 
     // Remove null/undefined values
     const finalData = Object.fromEntries(

@@ -115,8 +115,8 @@ model Kelas {
   waliKelas   Guru?   @relation("WaliKelas", fields: [waliKelasId], references: [id])
 
   siswa         Siswa[]
-  tahunAjaran   TahunAjaran? @relation(fields: [tahunAjaranId], references: [id])
-  tahunAjaranId String?
+  tahunAjaran   TahunAjaran @relation(fields: [tahunAjaranId], references: [id])
+  tahunAjaranId String
 
   @@unique([nama, jurusanId])
 }

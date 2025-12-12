@@ -125,4 +125,55 @@ export class TahunAjaranService {
 
         return { message: 'Tahun Ajaran berhasil dihapus' };
     }
+
+    async getActive() {
+        const activeTahunAjaran = await this.prisma.tahunAjaran.findFirst({
+            where: {
+                status: 'AKTIF',
+                deletedAt: null,
+            },
+            include: {
+                _count: {
+                    select: { kelas: true },
+                },
+            },
+        });
+
+        if (!activeTahunAjaran) {
+            throw new NotFoundException('Tidak ada Tahun Ajaran yang aktif');
+        }
+
+        return activeTahunAjaran;
+    }
+
+    async setActive(id: string) {
+        // Verify tahun ajaran exists
+        await this.findOne(id);
+
+        // Deactivate all other tahun ajaran (set to SELESAI if they were AKTIF)
+        await this.prisma.tahunAjaran.updateMany({
+            where: {
+                status: 'AKTIF',
+                deletedAt: null,
+                id: { not: id },
+            },
+            data: { status: 'SELESAI' },
+        });
+
+        // Set this one as active
+        const updated = await this.prisma.tahunAjaran.update({
+            where: { id },
+            data: { status: 'AKTIF' },
+            include: {
+                _count: {
+                    select: { kelas: true },
+                },
+            },
+        });
+
+        return {
+            message: `Tahun Ajaran ${updated.tahun} Semester ${updated.semester} berhasil diaktifkan`,
+            data: updated,
+        };
+    }
 }

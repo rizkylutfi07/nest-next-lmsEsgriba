@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import {
   Activity,
+  ArrowUpCircle,
   BarChart3,
   BookOpen,
   CalendarClock,
@@ -54,6 +55,7 @@ const navByRole: Record<Role, NavItem[]> = {
     { label: "Dasbor", icon: LayoutDashboard, href: "/", note: "Sorotan hari ini" },
     { label: "Kelola User", icon: Users2, href: "/users", note: "Manajemen pengguna" },
     { label: "Data Siswa", icon: Users2, href: "/siswa", note: "Profil & kehadiran" },
+    { label: "Kenaikan Kelas", icon: ArrowUpCircle, href: "/kenaikan-kelas", note: "Manajemen kenaikan kelas" },
     { label: "Data Guru", icon: Users2, href: "/guru", note: "Penugasan & KPI" },
     { label: "Data Kelas", icon: CalendarRange, href: "/kelas", note: "Struktur & jadwal" },
     { label: "Data Jurusan", icon: BookOpen, href: "/jurusan", note: "Program studi" },

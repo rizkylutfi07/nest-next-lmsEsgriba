@@ -9,7 +9,7 @@ export class KelasService {
   constructor(private readonly prisma: PrismaService) { }
 
   async findAll(query: QueryKelasDto) {
-    const { page = 1, limit = 10, search } = query;
+    const { page = 1, limit = 10, search, tahunAjaranId } = query;
     const skip = (page - 1) * limit;
 
     const where: any = { deletedAt: null };
@@ -18,6 +18,10 @@ export class KelasService {
       where.OR = [
         { nama: { contains: search, mode: 'insensitive' } },
       ];
+    }
+
+    if (tahunAjaranId) {
+      where.tahunAjaranId = tahunAjaranId;
     }
 
     const [data, total] = await Promise.all([
@@ -32,6 +36,14 @@ export class KelasService {
               id: true,
               kode: true,
               nama: true,
+            },
+          },
+          tahunAjaran: {
+            select: {
+              id: true,
+              tahun: true,
+              semester: true,
+              status: true,
             },
           },
           _count: {

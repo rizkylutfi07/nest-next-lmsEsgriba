@@ -17,4 +17,8 @@ export class QueryKelasDto {
   @IsString()
   @IsOptional()
   search?: string;
+
+  @IsString()
+  @IsOptional()
+  tahunAjaranId?: string; // Filter by academic year
 }

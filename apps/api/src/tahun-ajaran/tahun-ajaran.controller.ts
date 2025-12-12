@@ -48,4 +48,14 @@ export class TahunAjaranController {
     remove(@Param('id') id: string) {
         return this.tahunAjaranService.remove(id);
     }
+
+    @Get('active/current')
+    getActive() {
+        return this.tahunAjaranService.getActive();
+    }
+
+    @Post(':id/set-active')
+    setActive(@Param('id') id: string) {
+        return this.tahunAjaranService.setActive(id);
+    }
 }

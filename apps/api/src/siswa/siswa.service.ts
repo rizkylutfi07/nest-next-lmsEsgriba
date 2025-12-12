@@ -9,7 +9,7 @@ export class SiswaService {
   constructor(private readonly prisma: PrismaService) { }
 
   async findAll(query: QuerySiswaDto) {
-    const { page = 1, limit = 10, search } = query;
+    const { page = 1, limit = 10, search, kelasId, status, sortBy = 'createdAt', sortOrder = 'desc', tahunAjaranId } = query;
     const skip = (page - 1) * limit;
 
     const where: any = { deletedAt: null };
@@ -21,14 +21,48 @@ export class SiswaService {
       ];
     }
 
+    if (kelasId) {
+      where.kelasId = kelasId;
+    }
+
+    if (status) {
+      where.status = status;
+    }
+
+    // Filter by tahunAjaranId through Kelas relation
+    if (tahunAjaranId) {
+      where.kelas = {
+        tahunAjaranId: tahunAjaranId,
+      };
+    }
+
+    // Build orderBy
+    const orderBy: any = {};
+    if (sortBy === 'kelas') {
+      orderBy.kelas = { nama: sortOrder };
+    } else {
+      orderBy[sortBy] = sortOrder;
+    }
+
     const [data, total] = await Promise.all([
       this.prisma.siswa.findMany({
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         include: {
-          kelas: true,
+          kelas: {
+            include: {
+              tahunAjaran: {
+                select: {
+                  id: true,
+                  tahun: true,
+                  semester: true,
+                  status: true,
+                },
+              },
+            },
+          },
         },
       }),
       this.prisma.siswa.count({ where }),
@@ -234,6 +268,76 @@ export class SiswaService {
           row: i + 2, // +2 because Excel is 1-indexed and has header row
           error: error.message || 'Unknown error',
           data: row,
+        });
+      }
+    }
+
+    return results;
+  }
+
+  async kenaikanKelas(dto: any): Promise<{
+    success: number;
+    failed: number;
+    errors: Array<{ siswaId: string; error: string }>;
+  }> {
+    const { kelasAsalId, kelasTujuanId, siswaIds } = dto;
+
+    // Validate classes exist
+    const [kelasAsal, kelasTujuan] = await Promise.all([
+      this.prisma.kelas.findFirst({ where: { id: kelasAsalId, deletedAt: null } }),
+      this.prisma.kelas.findFirst({ where: { id: kelasTujuanId, deletedAt: null } }),
+    ]);
+
+    if (!kelasAsal) {
+      throw new NotFoundException(`Kelas asal dengan ID ${kelasAsalId} tidak ditemukan`);
+    }
+
+    if (!kelasTujuan) {
+      throw new NotFoundException(`Kelas tujuan dengan ID ${kelasTujuanId} tidak ditemukan`);
+    }
+
+    if (kelasAsalId === kelasTujuanId) {
+      throw new BadRequestException('Kelas asal dan tujuan tidak boleh sama');
+    }
+
+    // Get student IDs to promote
+    let studentIdsToPromote: string[];
+    if (siswaIds === 'all') {
+      const students = await this.prisma.siswa.findMany({
+        where: {
+          kelasId: kelasAsalId,
+          deletedAt: null,
+        },
+        select: { id: true },
+      });
+      studentIdsToPromote = students.map((s) => s.id);
+    } else {
+      studentIdsToPromote = siswaIds;
+    }
+
+    if (studentIdsToPromote.length === 0) {
+      throw new BadRequestException('Tidak ada siswa yang dipilih untuk kenaikan kelas');
+    }
+
+    // Bulk update students
+    const results = {
+      success: 0,
+      failed: 0,
+      errors: [] as Array<{ siswaId: string; error: string }>,
+    };
+
+    for (const siswaId of studentIdsToPromote) {
+      try {
+        await this.prisma.siswa.update({
+          where: { id: siswaId },
+          data: { kelasId: kelasTujuanId },
+        });
+        results.success++;
+      } catch (error) {
+        results.failed++;
+        results.errors.push({
+          siswaId,
+          error: error.message || 'Unknown error',
         });
       }
     }
