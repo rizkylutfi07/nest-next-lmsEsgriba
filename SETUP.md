@@ -2,7 +2,7 @@ docker compose up -d db
 
 cp .env.example .env
 
-npm intall
+npm install
 
 cd apps/api
 
