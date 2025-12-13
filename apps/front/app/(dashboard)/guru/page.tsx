@@ -101,20 +101,20 @@ export default function GuruPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Data Guru</h1>
-          <p className="text-muted-foreground">Kelola data data guru</p>
-        </div>
-        <Button onClick={() => setIsCreateModalOpen(true)}>
-          <Plus size={16} />
-          Tambah Guru
-        </Button>
-      </div>
-
       <Card>
         <CardHeader>
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="md:flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold">Data Guru</h1>
+              <p className="text-sm text-muted-foreground">Kelola data data guru</p>
+            </div>
+            <Button onClick={() => setIsCreateModalOpen(true)} className="mt-4 md:mt-0">
+              <Plus size={16} />
+              Tambah Guru
+            </Button>
+          </div>
+
+          <div className="mt-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <CardTitle>Daftar Data Guru</CardTitle>
               <CardDescription>Total {data?.meta.total || 0} data</CardDescription>
@@ -126,66 +126,84 @@ export default function GuruPage() {
                 placeholder="Cari..."
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                className="w-full rounded-lg border border-white/10 bg-white/5 py-2 pl-10 pr-4 text-sm outline-none transition focus:border-primary/60 focus:bg-white/10"
+                className="w-full rounded-lg border border-border bg-background py-2 pl-10 pr-4 text-sm outline-none transition focus:border-primary/60"
               />
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-2 md:p-4">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="animate-spin text-muted-foreground" size={32} />
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto -mx-6 px-6 md:mx-0 md:px-0">
-                <div className="inline-block min-w-full align-middle">
-                  <div className="overflow-hidden">
-                    <table className="min-w-full w-full">
-                      <thead>
-                        <tr className="border-b border-white/10 text-left text-sm text-muted-foreground">
-                          <th className="pb-3 font-medium">NIP</th>
-                          <th className="pb-3 font-medium">Nama Lengkap</th>
-                          <th className="pb-3 font-medium">Email</th>
-                          <th className="pb-3 font-medium">Mata Pelajaran</th>
-                          <th className="pb-3 font-medium">Status</th>
-                          <th className="pb-3 font-medium text-right">Aksi</th>
+              <div className="overflow-x-auto rounded-lg border border-border">
+                <table className="w-full text-sm p-4">
+                  <thead className="bg-muted/50 text-xs font-medium uppercase text-muted-foreground">
+                    <tr>
+                      <th className="px-6 py-3 text-left">NIP</th>
+                      <th className="px-6 py-3 text-left">Nama Lengkap</th>
+                      <th className="px-6 py-3 text-left">Email</th>
+                      <th className="px-6 py-3 text-left">Mata Pelajaran</th>
+                      <th className="px-6 py-3 text-left">Status</th>
+                      <th className="px-6 py-3 text-right">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {data?.data.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-8 text-center text-muted-foreground">
+                          Data tidak ditemukan
+                        </td>
+                      </tr>
+                    ) : (
+                      data?.data.map((item: any) => (
+                        <tr key={item.id} className="group transition-colors hover:bg-muted/30">
+                          <td className="px-6 py-4 font-medium">{item.nip}</td>
+                          <td className="px-6 py-4">
+                            <div className="font-medium text-foreground">{item.nama}</div>
+                          </td>
+                          <td className="px-6 py-4 text-muted-foreground">{item.email}</td>
+                          <td className="px-6 py-4">
+                            {item.mataPelajaran?.length > 0
+                              ? item.mataPelajaran.map((mp: any) => mp.nama).join(', ')
+                              : '-'}
+                          </td>
+                          <td className="px-6 py-4">{item.status}</td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex justify-end gap-1 opacity-60 transition-opacity group-hover:opacity-100">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setEditingItem(item)}
+                                className="h-8 w-8 text-muted-foreground hover:text-primary"
+                              >
+                                <Pencil size={16} />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setDeletingItem(item)}
+                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                              >
+                                <Trash2 size={16} />
+                              </Button>
+                            </div>
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {data?.data.map((item: any) => (
-                          <tr key={item.id} className="border-b border-white/5 transition hover:bg-white/5">
-                            <td className="py-4">{item.nip}</td>
-                            <td className="py-4">{item.nama}</td>
-                            <td className="py-4">{item.email}</td>
-                            <td className="py-4">
-                              {item.mataPelajaran?.length > 0
-                                ? item.mataPelajaran.map((mp: any) => mp.nama).join(', ')
-                                : '-'}
-                            </td>
-                            <td className="py-4">{item.status}</td>
-                            <td className="py-4 text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button variant="ghost" size="sm" onClick={() => setEditingItem(item)}>
-                                  <Pencil size={14} />
-                                </Button>
-                                <Button variant="ghost" size="sm" onClick={() => setDeletingItem(item)}>
-                                  <Trash2 size={14} />
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
 
               {data && data.meta.totalPages > 1 && (
-                <div className="mt-6 flex items-center justify-between">
+                <div className="mt-4 flex flex-col items-center justify-between gap-4 border-t border-border py-4 sm:flex-row">
                   <p className="text-sm text-muted-foreground">
-                    Halaman {data.meta.page} dari {data.meta.totalPages}
+                    Menampilkan <strong>{(page - 1) * 10 + 1}</strong> sampai{" "}
+                    <strong>{Math.min(page * 10, data.meta.total)}</strong> dari{" "}
+                    <strong>{data.meta.total}</strong> hasil
                   </p>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(page - 1)}>

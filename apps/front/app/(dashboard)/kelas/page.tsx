@@ -121,93 +121,115 @@ export default function KelasPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Data Kelas</h1>
-          <p className="text-muted-foreground">Kelola data data kelas</p>
-        </div>
-        <Button onClick={() => setIsCreateModalOpen(true)}>
-          <Plus size={16} />
-          Tambah Kelas
-        </Button>
-      </div>
-
       <Card>
         <CardHeader>
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="md:flex items-center justify-between">
             <div>
+              <h1 className="text-3xl font-bold">Data Kelas</h1>
+              <p className="text-sm text-muted-foreground">Kelola data data kelas</p>
+            </div>
+            <Button onClick={() => setIsCreateModalOpen(true)} className="mt-4 md:mt-0">
+              <Plus size={16} />
+              Tambah Kelas
+            </Button>
+          </div>
+
+          <div className="mt-4 flex flex-col gap-4 md:flex-row md:items-center">
+            <div className="min-w-[200px]">
               <CardTitle>Daftar Data Kelas</CardTitle>
               <CardDescription>Total {data?.meta.total || 0} data</CardDescription>
             </div>
-            <div className="relative flex-1 md:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-              <input
-                type="text"
-                placeholder="Cari..."
-                value={search}
-                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                className="w-full rounded-lg border border-white/10 bg-white/5 py-2 pl-10 pr-4 text-sm outline-none transition focus:border-primary/60 focus:bg-white/10"
-              />
+            <div className="flex flex-1 flex-col gap-2 md:flex-row">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+                <input
+                  type="text"
+                  placeholder="Cari..."
+                  value={search}
+                  onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                  className="w-full rounded-lg border border-border bg-background py-2 pl-10 pr-4 text-sm outline-none transition focus:border-primary/60"
+                />
+              </div>
+              <select
+                value={filterTahunAjaran}
+                onChange={(e) => { setFilterTahunAjaran(e.target.value); setPage(1); }}
+                className="rounded-lg border border-border bg-background px-4 py-2 text-sm outline-none transition focus:border-primary/60 md:w-64"
+              >
+                <option value="">Semua Tahun Ajaran</option>
+                {data?.data?.[0]?.tahunAjaran && (
+                  <option value={activeTahunAjaran?.id}>
+                    {activeTahunAjaran?.tahun} Semester {activeTahunAjaran?.semester} (Aktif)
+                  </option>
+                )}
+              </select>
             </div>
-            <select
-              value={filterTahunAjaran}
-              onChange={(e) => { setFilterTahunAjaran(e.target.value); setPage(1); }}
-              className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:bg-white/10"
-            >
-              <option value="">Semua Tahun Ajaran</option>
-              {data?.data?.[0]?.tahunAjaran && (
-                <option value={activeTahunAjaran?.id}>
-                  {activeTahunAjaran?.tahun} Semester {activeTahunAjaran?.semester} (Aktif)
-                </option>
-              )}
-            </select>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-2 md:p-4">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="animate-spin text-muted-foreground" size={32} />
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-white/10 text-left text-sm text-muted-foreground">
-                      <th className="pb-3 font-medium">Nama Kelas</th>
-                      <th className="pb-3 font-medium">Tingkat</th>
-                      <th className="pb-3 font-medium">Jurusan</th>
-                      <th className="pb-3 font-medium">Wali Kelas</th>
-                      <th className="pb-3 font-medium text-right">Aksi</th>
+              <div className="overflow-x-auto rounded-lg border border-border">
+                <table className="w-full text-sm p-4">
+                  <thead className="bg-muted/50 text-xs font-medium uppercase text-muted-foreground">
+                    <tr>
+                      <th className="px-6 py-3 text-left">Nama Kelas</th>
+                      <th className="px-6 py-3 text-left">Tingkat</th>
+                      <th className="px-6 py-3 text-left">Jurusan</th>
+                      <th className="px-6 py-3 text-left">Wali Kelas</th>
+                      <th className="px-6 py-3 text-right">Aksi</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {data?.data.map((item: any) => (
-                      <tr key={item.id} className="border-b border-white/5 transition hover:bg-white/5">
-                        <td className="py-4">{item.nama}</td>
-                        <td className="py-4">{item.tingkat}</td>
-                        <td className="py-4">{item.jurusan?.nama || '-'}</td>
-                        <td className="py-4">{item.waliKelas?.nama || '-'}</td>
-                        <td className="py-4 text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button variant="ghost" size="sm" onClick={() => setEditingKelas(item)}>
-                              <Pencil size={14} />
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => setDeletingKelas(item)}>
-                              <Trash2 size={14} />
-                            </Button>
-                          </div>
+                  <tbody className="divide-y divide-border">
+                    {data?.data.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">
+                          Data tidak ditemukan
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      data?.data.map((item: any) => (
+                        <tr key={item.id} className="group transition-colors hover:bg-muted/30">
+                          <td className="px-6 py-4 font-medium">{item.nama}</td>
+                          <td className="px-6 py-4">{item.tingkat}</td>
+                          <td className="px-6 py-4">{item.jurusan?.nama || '-'}</td>
+                          <td className="px-6 py-4">{item.waliKelas?.nama || '-'}</td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex justify-end gap-1 opacity-60 transition-opacity group-hover:opacity-100">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setEditingKelas(item)}
+                                className="h-8 w-8 text-muted-foreground hover:text-primary"
+                              >
+                                <Pencil size={16} />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setDeletingKelas(item)}
+                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                              >
+                                <Trash2 size={16} />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
 
               {data && data.meta.totalPages > 1 && (
-                <div className="mt-6 flex items-center justify-between">
+                <div className="mt-4 flex flex-col items-center justify-between gap-4 border-t border-border py-4 sm:flex-row">
                   <p className="text-sm text-muted-foreground">
-                    Halaman {data.meta.page} dari {data.meta.totalPages}
+                    Menampilkan <strong>{(page - 1) * 10 + 1}</strong> sampai{" "}
+                    <strong>{Math.min(page * 10, data.meta.total)}</strong> dari{" "}
+                    <strong>{data.meta.total}</strong> hasil
                   </p>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(page - 1)}>
@@ -422,7 +444,7 @@ function DeleteModal({ item, onClose, onConfirm, isLoading }: any) {
             <Button variant="outline" onClick={onClose} className="flex-1">
               Batal
             </Button>
-            <Button variant="destructive" onClick={onConfirm} disabled={isLoading} className="flex-1">
+            <Button onClick={onConfirm} disabled={isLoading} className="flex-1 bg-destructive text-destructive-foreground hover:bg-destructive/90">
               {isLoading ? <Loader2 className="animate-spin" size={16} /> : "Hapus"}
             </Button>
           </div>

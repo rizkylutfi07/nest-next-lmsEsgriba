@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Pencil, Trash2, Plus, Upload, Download, X } from "lucide-react";
+import { Loader2, Pencil, Trash2, Plus, Upload, Download, X, ArrowUp, ArrowDown, ChevronRight, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { useRole } from "../role-context";
 
 export default function SiswaPage() {
@@ -133,12 +135,13 @@ export default function SiswaPage() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="md:flex items-center justify-between">
             <div>
-              <CardTitle>Data Siswa</CardTitle>
+              <h1 className="text-3xl font-bold">Data Siswa</h1>
               <p className="text-sm text-muted-foreground">Kelola data siswa</p>
             </div>
-            <div className="flex gap-2">
+
+            <div className="flex gap-2 mt-4 md:mt-0">
               <Button onClick={() => setIsImportModalOpen(true)} variant="outline">
                 <Upload size={16} />
                 Import Excel
@@ -185,7 +188,7 @@ export default function SiswaPage() {
             <select
               value={filterTahunAjaran}
               onChange={(e) => { setFilterTahunAjaran(e.target.value); setPage(1); }}
-              className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:bg-white/10"
+              className="hidden md:block rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:bg-white/10"
             >
               <option value="">Semua Tahun Ajaran</option>
               {activeTahunAjaran && (
@@ -196,77 +199,174 @@ export default function SiswaPage() {
             </select>
           </div>
         </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="animate-spin text-muted-foreground" size={32} />
-            </div>
-          ) : (
-            <>
-              <div className="overflow-x-auto -mx-6 px-6 md:mx-0 md:px-0">
-                <div className="inline-block min-w-full align-middle">
-                  <div className="overflow-hidden">
-                    <table className="min-w-full w-full">
-                      <thead>
-                        <tr className="border-b border-white/10 text-left text-sm text-muted-foreground">
-                          <th className="pb-3 font-medium cursor-pointer hover:text-foreground" onClick={() => handleSort('nisn')}>
-                            NISN {sortBy === 'nisn' && (sortOrder === 'asc' ? '↑' : '↓')}
-                          </th>
-                          <th className="pb-3 font-medium cursor-pointer hover:text-foreground" onClick={() => handleSort('nama')}>
-                            Nama {sortBy === 'nama' && (sortOrder === 'asc' ? '↑' : '↓')}
-                          </th>
-                          <th className="pb-3 font-medium">Email</th>
-                          <th className="pb-3 font-medium cursor-pointer hover:text-foreground" onClick={() => handleSort('kelas')}>
-                            Kelas {sortBy === 'kelas' && (sortOrder === 'asc' ? '↑' : '↓')}
-                          </th>
-                          <th className="pb-3 font-medium cursor-pointer hover:text-foreground" onClick={() => handleSort('status')}>
-                            Status {sortBy === 'status' && (sortOrder === 'asc' ? '↑' : '↓')}
-                          </th>
-                          <th className="pb-3 font-medium text-right">Aksi</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {data?.data?.map((item: any) => (
-                          <tr key={item.id} className="border-b border-white/5 transition hover:bg-white/5">
-                            <td className="py-4">{item.nisn}</td>
-                            <td className="py-4">{item.nama}</td>
-                            <td className="py-4">{item.email || '-'}</td>
-                            <td className="py-4">{item.kelas?.nama || '-'}</td>
-                            <td className="py-4">{item.status}</td>
-                            <td className="py-4 text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button variant="ghost" size="sm" onClick={() => setEditingItem(item)}>
-                                  <Pencil size={14} />
-                                </Button>
-                                <Button variant="ghost" size="sm" onClick={() => setDeletingItem(item)}>
-                                  <Trash2 size={14} />
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
+        <CardContent className="p-2 md:p-4">
+          <div className="overflow-x-auto rounded-lg border border-border">
+            <table className="w-full text-sm p-4">
+              <thead className="bg-muted/50 text-xs font-medium uppercase text-muted-foreground">
+                <tr>
+                  <th className="px-6 py-3 text-left">
+                    <button
+                      className="flex items-center gap-1 hover:text-foreground"
+                      onClick={() => handleSort('nisn')}
+                    >
+                      NISN
+                      {sortBy === 'nisn' && (sortOrder === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />)}
+                    </button>
+                  </th>
+                  <th className="px-6 py-3 text-left">
+                    <button
+                      className="flex items-center gap-1 hover:text-foreground"
+                      onClick={() => handleSort('nama')}
+                    >
+                      Nama
+                      {sortBy === 'nama' && (sortOrder === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />)}
+                    </button>
+                  </th>
+                  <th className="px-6 py-3 text-left">Email</th>
+                  <th className="px-6 py-3 text-left">
+                    <button
+                      className="flex items-center gap-1 hover:text-foreground"
+                      onClick={() => handleSort('kelas')}
+                    >
+                      Kelas
+                      {sortBy === 'kelas' && (sortOrder === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />)}
+                    </button>
+                  </th>
+                  <th className="px-6 py-3 text-left">
+                    <button
+                      className="flex items-center gap-1 hover:text-foreground"
+                      onClick={() => handleSort('status')}
+                    >
+                      Status
+                      {sortBy === 'status' && (sortOrder === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />)}
+                    </button>
+                  </th>
+                  <th className="px-6 py-3 text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {isLoading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i}>
+                      <td colSpan={6} className="px-6 py-4">
+                        <div className="h-4 animate-pulse rounded bg-muted/50" />
+                      </td>
+                    </tr>
+                  ))
+                ) : data?.data?.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-8 text-center text-muted-foreground">
+                      Data tidak ditemukan
+                    </td>
+                  </tr>
+                ) : (
+                  data?.data?.map((item: any) => (
+                    <tr
+                      key={item.id}
+                      className="group transition-colors hover:bg-muted/30"
+                    >
+                      <td className="px-6 py-4 font-medium">{item.nisn}</td>
+                      <td className="px-6 py-4">
+                        <div className="font-medium text-foreground">{item.nama}</div>
+                      </td>
+                      <td className="px-6 py-4 text-muted-foreground">{item.email}</td>
+                      <td className="px-6 py-4">
+                        <Badge variant="outline" className="bg-background">
+                          {item.kelas?.nama ?? "-"}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge
+                          className={cn(
+                            "capitalize",
+                            item.status === "AKTIF" && "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25 border-emerald-500/20",
+                            item.status === "MAGANG" && "bg-blue-500/15 text-blue-600 dark:text-blue-400 hover:bg-blue-500/25 border-blue-500/20",
+                            item.status === "PINDAH" && "bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25 border-amber-500/20",
+                            item.status === "ALUMNI" && "bg-slate-500/15 text-slate-600 dark:text-slate-400 hover:bg-slate-500/25 border-slate-500/20"
+                          )}
+                        >
+                          {item.status?.toLowerCase()}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex justify-end gap-1 opacity-60 transition-opacity group-hover:opacity-100">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setEditingItem(item)}
+                            className="h-8 w-8 text-muted-foreground hover:text-primary"
+                          >
+                            <Pencil size={16} />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setDeletingItem(item)}
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          >
+                            <Trash2 size={16} />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
 
-              {data && data.meta.totalPages > 1 && (
-                <div className="mt-6 flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">
-                    Halaman {data.meta.page} dari {data.meta.totalPages}
-                  </p>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(page - 1)}>
-                      Sebelumnya
+          {/* Pagination */}
+          {!isLoading && data?.meta && (
+            <div className="flex items-center justify-between border-t border-border px-6 py-4">
+              <div className="text-sm text-muted-foreground">
+                Menampilkan <strong>{(page - 1) * 10 + 1}</strong> sampai{" "}
+                <strong>{Math.min(page * 10, data.meta.total)}</strong> dari{" "}
+                <strong>{data.meta.total}</strong> hasil
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronLeft size={16} />
+                </Button>
+                {Array.from({ length: Math.min(5, data.meta.totalPages) }, (_, i) => {
+                  let p = i + 1;
+                  if (data.meta.totalPages > 5 && page > 3) {
+                    p = page - 2 + i;
+                    if (p > data.meta.totalPages) p = data.meta.totalPages - 4 + i;
+                  }
+
+                  // Ensure p is valid
+                  if (p < 1) p = 1;
+                  if (p > data.meta.totalPages) return null;
+
+                  return (
+                    <Button
+                      key={p}
+                      variant={page === p ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setPage(p)}
+                      className="h-8 w-8 p-0"
+                    >
+                      {p}
                     </Button>
-                    <Button variant="outline" size="sm" disabled={page === data.meta.totalPages} onClick={() => setPage(page + 1)}>
-                      Selanjutnya
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </>
+                  );
+                })}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.min(data.meta.totalPages, p + 1))}
+                  disabled={page === data.meta.totalPages}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronRight size={16} />
+                </Button>
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>

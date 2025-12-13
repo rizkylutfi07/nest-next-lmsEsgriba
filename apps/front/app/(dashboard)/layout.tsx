@@ -79,8 +79,8 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
       <div className="relative z-10 flex min-h-screen">
         <aside
           className={cn(
-            "fixed inset-y-0 left-0 z-40 flex h-full flex-col border-r border-white/10 bg-card/80 shadow-2xl shadow-black/30 backdrop-blur-xl transition-all duration-300 md:static md:translate-x-0 md:flex-shrink-0",
-            sidebarCollapsed ? "md:w-[92px]" : "md:w-[292px]",
+            "fixed inset-y-0 left-0 z-40 flex h-screen flex-col border-r border-border bg-card/80 shadow-2xl shadow-black/5 dark:shadow-black/30 backdrop-blur-xl transition-all duration-300 md:translate-x-0",
+            sidebarCollapsed ? "w-[92px]" : "w-[292px]",
             mobileSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
           )}
         >
@@ -88,7 +88,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
             <div
               className={cn(
                 "flex items-center gap-3",
-                sidebarCollapsed && "md:justify-center md:gap-0",
+                sidebarCollapsed && "justify-center gap-0",
               )}
             >
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-secondary text-background shadow-lg shadow-primary/40">
@@ -125,7 +125,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          <nav className="flex-1 space-y-1 px-3 pb-4">
+          <nav className="flex-1 overflow-y-auto space-y-1 px-3 pb-4 scrollbar-thin scrollbar-thumb-white/10 hover:scrollbar-thumb-white/20">
             {navigation.map((item) => {
               const Icon = item.icon;
               const isActive =
@@ -141,8 +141,8 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                   className={cn(
                     "group flex w-full items-center gap-3 rounded-xl border border-transparent px-3 py-3 text-left text-sm font-semibold transition duration-200",
                     isActive
-                      ? "border-primary/50 bg-primary/10 text-foreground shadow-lg shadow-primary/25"
-                      : "text-muted-foreground hover:border-white/10 hover:bg-white/5 hover:text-foreground",
+                      ? "border-primary/50 bg-primary/10 text-primary shadow-lg shadow-primary/25"
+                      : "text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground",
                   )}
                 >
                   <Icon
@@ -170,8 +170,8 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
             })}
           </nav>
 
-          <div className="space-y-3 border-t border-white/5 p-4">
-            <Card className="border-white/10 bg-gradient-to-br from-white/5 via-card/60 to-background/70">
+          <div className="space-y-3 border-t border-border p-4">
+            <Card className="border-border bg-gradient-to-br from-background/50 via-card/60 to-background/70 shadow-sm">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/15 text-primary">
@@ -216,8 +216,13 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
           </div>
         </aside>
 
-        <div className="flex-1 min-w-0 md:pl-0">
-          <header className="sticky top-0 z-20 border-b border-white/5 bg-background/70 backdrop-blur-xl">
+        <div
+          className={cn(
+            "flex-1 min-w-0 transition-all duration-300 ease-in-out",
+            sidebarCollapsed ? "md:pl-[92px]" : "md:pl-[292px]"
+          )}
+        >
+          <header className="sticky top-0 z-20 border-b border-border bg-background/80 backdrop-blur-xl">
             <div className="flex items-center justify-between gap-3 px-4 py-4 md:px-8">
               <div className="flex flex-1 items-center gap-3">
                 <Button
@@ -235,7 +240,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                   </div>
                   <input
                     placeholder="Cari kelas, siswa, atau modul..."
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-10 py-3 text-sm outline-none transition focus:border-primary/60 focus:bg-white/10"
+                    className="w-full rounded-xl border border-border bg-secondary/50 px-10 py-3 text-sm outline-none transition focus:border-primary/60 focus:bg-background"
                   />
                   <div className="absolute right-3 text-xs text-muted-foreground">
                     tekan /

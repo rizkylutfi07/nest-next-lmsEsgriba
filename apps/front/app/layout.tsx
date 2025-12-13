@@ -20,6 +20,9 @@ export const metadata: Metadata = {
   title: "Egriba | Frontend",
   description:
     "LMS & school management front-end dengan tema elegan modern berbasis Next.js.",
+  other: {
+    "google": "notranslate"
+  }
 };
 
 export default function RootLayout({
@@ -28,10 +31,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id" suppressHydrationWarning>
+    <html lang="id" translate="no" className="notranslate" suppressHydrationWarning>
       <body
         className={cn(
-          "min-h-screen bg-background text-foreground antialiased",
+          "min-h-screen bg-background text-foreground antialiased font-sans",
           plusJakarta.variable,
           geistMono.variable,
         )}

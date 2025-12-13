@@ -84,20 +84,20 @@ export default function JurusanPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Data Jurusan</h1>
-          <p className="text-muted-foreground">Kelola data jurusan/program studi</p>
-        </div>
-        <Button onClick={() => setIsCreateModalOpen(true)}>
-          <Plus size={16} />
-          Tambah Jurusan
-        </Button>
-      </div>
-
       <Card>
         <CardHeader>
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="md:flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold">Data Jurusan</h1>
+              <p className="text-sm text-muted-foreground">Kelola data jurusan/program studi</p>
+            </div>
+            <Button onClick={() => setIsCreateModalOpen(true)} className="mt-4 md:mt-0">
+              <Plus size={16} />
+              Tambah Jurusan
+            </Button>
+          </div>
+
+          <div className="mt-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <CardTitle>Daftar Jurusan</CardTitle>
               <CardDescription>Total {data?.meta.total || 0} jurusan</CardDescription>
@@ -109,54 +109,72 @@ export default function JurusanPage() {
                 placeholder="Cari kode atau nama..."
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                className="w-full rounded-lg border border-white/10 bg-white/5 py-2 pl-10 pr-4 text-sm outline-none transition focus:border-primary/60 focus:bg-white/10"
+                className="w-full rounded-lg border border-border bg-background py-2 pl-10 pr-4 text-sm outline-none transition focus:border-primary/60"
               />
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-2 md:p-4">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="animate-spin text-muted-foreground" size={32} />
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-white/10 text-left text-sm text-muted-foreground">
-                      <th className="pb-3 font-medium">Kode</th>
-                      <th className="pb-3 font-medium">Nama Jurusan</th>
-                      <th className="pb-3 font-medium">Deskripsi</th>
-                      <th className="pb-3 font-medium">Jumlah Kelas</th>
-                      <th className="pb-3 font-medium text-right">Aksi</th>
+              <div className="overflow-x-auto rounded-lg border border-border">
+                <table className="w-full text-sm p-4">
+                  <thead className="bg-muted/50 text-xs font-medium uppercase text-muted-foreground">
+                    <tr>
+                      <th className="px-6 py-3 text-left">Kode</th>
+                      <th className="px-6 py-3 text-left">Nama Jurusan</th>
+                      <th className="px-6 py-3 text-left">Deskripsi</th>
+                      <th className="px-6 py-3 text-left">Jumlah Kelas</th>
+                      <th className="px-6 py-3 text-right">Aksi</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {data?.data.map((item: any) => (
-                      <tr key={item.id} className="border-b border-white/5 transition hover:bg-white/5">
-                        <td className="py-4 font-mono text-sm">{item.kode}</td>
-                        <td className="py-4 font-medium">{item.nama}</td>
-                        <td className="py-4 text-sm text-muted-foreground">{item.deskripsi || '-'}</td>
-                        <td className="py-4 text-sm">{item._count?.kelas || 0} kelas</td>
-                        <td className="py-4 text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button variant="ghost" size="sm" onClick={() => setEditingItem(item)}>
-                              <Pencil size={14} />
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => setDeletingItem(item)}>
-                              <Trash2 size={14} />
-                            </Button>
-                          </div>
+                  <tbody className="divide-y divide-border">
+                    {data?.data.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">
+                          Data tidak ditemukan
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      data?.data.map((item: any) => (
+                        <tr key={item.id} className="group transition-colors hover:bg-muted/30">
+                          <td className="px-6 py-4 font-mono text-sm">{item.kode}</td>
+                          <td className="px-6 py-4 font-medium">{item.nama}</td>
+                          <td className="px-6 py-4 text-sm text-muted-foreground">{item.deskripsi || '-'}</td>
+                          <td className="px-6 py-4 text-sm">{item._count?.kelas || 0} kelas</td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex justify-end gap-1 opacity-60 transition-opacity group-hover:opacity-100">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setEditingItem(item)}
+                                className="h-8 w-8 text-muted-foreground hover:text-primary"
+                              >
+                                <Pencil size={16} />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setDeletingItem(item)}
+                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                              >
+                                <Trash2 size={16} />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
 
               {data && data.meta.totalPages > 1 && (
-                <div className="mt-6 flex items-center justify-between">
+                <div className="mt-4 flex flex-col items-center justify-between gap-4 border-t border-border py-4 sm:flex-row">
                   <p className="text-sm text-muted-foreground">
                     Halaman {data.meta.page} dari {data.meta.totalPages}
                   </p>

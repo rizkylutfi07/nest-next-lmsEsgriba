@@ -143,6 +143,8 @@ export default function TahunAjaranPage() {
                     <tr className="border-b border-white/10 text-left text-sm text-muted-foreground">
                       <th className="pb-3 font-medium">Tahun</th>
                       <th className="pb-3 font-medium">Semester</th>
+                      <th className="pb-3 font-medium">Tanggal Mulai</th>
+                      <th className="pb-3 font-medium">Tanggal Selesai</th>
                       <th className="pb-3 font-medium">Status</th>
                       <th className="pb-3 font-medium text-right">Aksi</th>
                     </tr>
@@ -161,6 +163,8 @@ export default function TahunAjaranPage() {
                           </div>
                         </td>
                         <td className="py-4">{item.semester}</td>
+                        <td className="py-4 text-muted-foreground">{new Date(item.tanggalMulai).toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' })}</td>
+                        <td className="py-4 text-muted-foreground">{new Date(item.tanggalSelesai).toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' })}</td>
                         <td className="py-4">{item.status}</td>
                         <td className="py-4 text-right">
                           <div className="flex justify-end gap-2">
@@ -212,7 +216,7 @@ export default function TahunAjaranPage() {
         <FormModal
           title="Tambah Tahun Ajaran"
           onClose={() => setIsCreateModalOpen(false)}
-          onSubmit={(data) => createMutation.mutate(data)}
+          onSubmit={(data: any) => createMutation.mutate(data)}
           isLoading={createMutation.isPending}
         />
       )}
@@ -222,7 +226,7 @@ export default function TahunAjaranPage() {
           title="Edit Tahun Ajaran"
           item={editingItem}
           onClose={() => setEditingItem(null)}
-          onSubmit={(data) => updateMutation.mutate({ id: editingItem.id, data })}
+          onSubmit={(data: any) => updateMutation.mutate({ id: editingItem.id, data })}
           isLoading={updateMutation.isPending}
         />
       )}
@@ -240,7 +244,14 @@ export default function TahunAjaranPage() {
 }
 
 function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
-  const [formData, setFormData] = useState(item || {});
+  const [formData, setFormData] = useState(() => {
+    if (!item) return {};
+    return {
+      ...item,
+      tanggalMulai: item.tanggalMulai ? new Date(item.tanggalMulai).toISOString().split('T')[0] : '',
+      tanggalSelesai: item.tanggalSelesai ? new Date(item.tanggalSelesai).toISOString().split('T')[0] : '',
+    };
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -360,7 +371,7 @@ function DeleteModal({ item, onClose, onConfirm, isLoading }: any) {
             <Button variant="outline" onClick={onClose} className="flex-1">
               Batal
             </Button>
-            <Button variant="destructive" onClick={onConfirm} disabled={isLoading} className="flex-1">
+            <Button onClick={onConfirm} disabled={isLoading} className="flex-1 bg-destructive text-destructive-foreground hover:bg-destructive/90">
               {isLoading ? <Loader2 className="animate-spin" size={16} /> : "Hapus"}
             </Button>
           </div>
