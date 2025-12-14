@@ -146,6 +146,23 @@ export default function SiswaPage() {
                 <Upload size={16} />
                 Import Excel
               </Button>
+              <Button
+                onClick={async () => {
+                  const res = await fetch('http://localhost:3001/siswa/export', {
+                    headers: { Authorization: `Bearer ${token}` },
+                  });
+                  const blob = await res.blob();
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = 'data_siswa.xlsx';
+                  a.click();
+                }}
+                variant="outline"
+              >
+                <Download size={16} />
+                Export
+              </Button>
               <Button onClick={() => setIsCreateModalOpen(true)}>
                 <Plus size={16} />
                 Tambah Siswa
@@ -619,16 +636,15 @@ function ImportModal({ onClose, onSuccess }: any) {
     }
   };
 
-  const downloadTemplate = () => {
-    const csvContent = `NISN,Nama Lengkap,Tanggal Lahir,Email,Alamat,Nomor Telepon,Status,Kelas,Buat Akun
-1234567890,Budi Santoso,2005-01-15,budi@student.com,Jl. Merdeka No. 123,081234567890,AKTIF,X IPA 1,Ya
-1234567891,Siti Nurhaliza,2005-03-20,siti@student.com,Jl. Sudirman No. 45,081234567891,AKTIF,X IPA 1,Ya`;
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+  const downloadTemplate = async () => {
+    const res = await fetch('http://localhost:3001/siswa/template', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const blob = await res.blob();
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'template_import_siswa.csv';
+    a.download = 'template_import_siswa.xlsx';
     a.click();
   };
 

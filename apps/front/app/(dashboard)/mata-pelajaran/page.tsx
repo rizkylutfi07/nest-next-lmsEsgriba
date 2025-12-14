@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Search, Pencil, Trash2, Loader2, X } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Loader2, X, Upload, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRole } from "../role-context";
@@ -14,7 +14,7 @@ const matapelajaranApi = {
     if (params.page) searchParams.set('page', params.page.toString());
     if (params.limit) searchParams.set('limit', params.limit.toString());
     if (params.search) searchParams.set('search', params.search);
-    
+
     const res = await fetch(`http://localhost:3001/mata-pelajaran?${searchParams}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -51,6 +51,7 @@ export default function MataPelajaranPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [deletingItem, setDeletingItem] = useState<any>(null);
 
@@ -90,10 +91,33 @@ export default function MataPelajaranPage() {
           <h1 className="text-3xl font-bold">Mata Pelajaran</h1>
           <p className="text-muted-foreground">Kelola data mata pelajaran</p>
         </div>
-        <Button onClick={() => setIsCreateModalOpen(true)}>
-          <Plus size={16} />
-          Tambah Mata Pelajaran
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setIsImportModalOpen(true)} variant="outline">
+            <Upload size={16} />
+            Import Excel
+          </Button>
+          <Button
+            onClick={async () => {
+              const res = await fetch('http://localhost:3001/mata-pelajaran/export', {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              const blob = await res.blob();
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = 'data_mata_pelajaran.xlsx';
+              a.click();
+            }}
+            variant="outline"
+          >
+            <Download size={16} />
+            Export
+          </Button>
+          <Button onClick={() => setIsCreateModalOpen(true)}>
+            <Plus size={16} />
+            Tambah Mata Pelajaran
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -203,6 +227,129 @@ export default function MataPelajaranPage() {
           isLoading={deleteMutation.isPending}
         />
       )}
+
+      {isImportModalOpen && (
+        <ImportModal
+          onClose={() => setIsImportModalOpen(false)}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ["mata-pelajaran"] });
+            setIsImportModalOpen(false);
+          }}
+          token={token}
+        />
+      )}
+    </div>
+  );
+}
+
+function ImportModal({ onClose, onSuccess, token }: { onClose: () => void; onSuccess: () => void; token: string | null }) {
+  const [file, setFile] = useState<File | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [result, setResult] = useState<any>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!file) return;
+
+    setIsLoading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch('http://localhost:3001/mata-pelajaran/import', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error('Import failed');
+
+      const data = await res.json();
+      setResult(data);
+
+      if (data.success > 0) {
+        setTimeout(() => onSuccess(), 2000);
+      }
+    } catch (error: any) {
+      alert(error.message || 'Gagal import data');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Import Excel - Mata Pelajaran</CardTitle>
+            <Button variant="ghost" size="icon" onClick={onClose}>
+              <X size={18} />
+            </Button>
+          </div>
+          <CardDescription>
+            Upload file Excel dengan kolom: Kode, Nama, Jam Pelajaran, Tingkat, Deskripsi
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {!result ? (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Button
+                  type="button"
+                  onClick={async () => {
+                    const res = await fetch('http://localhost:3001/mata-pelajaran/template', {
+                      headers: { Authorization: `Bearer ${token}` },
+                    });
+                    const blob = await res.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'template_import_mata_pelajaran.xlsx';
+                    a.click();
+                  }}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <Download size={16} />
+                  Download Template
+                </Button>
+              </div>
+              <div>
+                <input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={(e) => setFile(e.target.files?.[0] || null)}
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+                  Batal
+                </Button>
+                <Button type="submit" disabled={!file || isLoading} className="flex-1">
+                  {isLoading ? <Loader2 className="animate-spin" size={16} /> : "Upload"}
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-sm"><strong>Berhasil:</strong> {result.success}</p>
+              <p className="text-sm"><strong>Gagal:</strong> {result.failed}</p>
+              <p className="text-sm"><strong>Dilewati:</strong> {result.skipped}</p>
+              {result.errors?.length > 0 && (
+                <div className="mt-4 max-h-48 overflow-y-auto">
+                  <p className="text-sm font-medium mb-2">Errors:</p>
+                  {result.errors.slice(0, 5).map((err: any, i: number) => (
+                    <p key={i} className="text-xs text-red-500">Row {err.row}: {err.error}</p>
+                  ))}
+                </div>
+              )}
+              <Button onClick={onClose} className="w-full mt-4">Tutup</Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -234,8 +381,8 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
                 type="text"
                 required
                 placeholder="MAT101"
-                
-                
+
+
                 value={formData.kode || ''}
                 onChange={(e) => setFormData({ ...formData, kode: e.target.value })}
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
@@ -246,9 +393,9 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
               <input
                 type="text"
                 required
-                
-                
-                
+
+
+
                 value={formData.nama || ''}
                 onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
@@ -259,9 +406,9 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
               <input
                 type="number"
                 required
-                
-                
-                
+
+
+
                 value={formData.jamPelajaran || ''}
                 onChange={(e) => setFormData({ ...formData, jamPelajaran: parseInt(e.target.value) })}
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
@@ -270,7 +417,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
             <div>
               <label className="mb-2 block text-sm font-medium">Deskripsi</label>
               <textarea
-                
+
                 value={formData.deskripsi || ''}
                 onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
                 rows={3}

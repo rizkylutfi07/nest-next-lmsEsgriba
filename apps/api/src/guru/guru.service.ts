@@ -203,16 +203,21 @@ export class GuruService {
           continue;
         }
 
-        // Create guru
-        await this.prisma.guru.create({
-          data: {
-            nip: row.nip,
-            nama: row.nama,
-            email: row.email,
-            nomorTelepon: row.nomorTelepon,
-            status: row.status || 'AKTIF',
-          },
-        });
+        // Create guru data
+        const guruData: CreateGuruDto = {
+          nip: row.nip,
+          nama: row.nama,
+          email: row.email,
+          nomorTelepon: row.nomorTelepon,
+          status: row.status || 'AKTIF',
+        };
+
+        // Create with or without user account
+        if (row.createUserAccount) {
+          await this.createWithUser(guruData);
+        } else {
+          await this.create(guruData);
+        }
 
         results.success++;
       } catch (error) {
@@ -226,5 +231,37 @@ export class GuruService {
     }
 
     return results;
+  }
+
+  async exportToExcel(): Promise<Buffer> {
+    const XLSX = require('xlsx');
+
+    const allGuru = await this.prisma.guru.findMany({
+      where: { deletedAt: null },
+      include: {
+        mataPelajaran: {
+          select: {
+            kode: true,
+            nama: true,
+          },
+        },
+      },
+      orderBy: { nama: 'asc' },
+    });
+
+    const exportData = allGuru.map((guru) => ({
+      'NIP': guru.nip,
+      'Nama Lengkap': guru.nama,
+      'Email': guru.email,
+      'Nomor Telepon': guru.nomorTelepon || '',
+      'Status': guru.status,
+      'Mata Pelajaran': guru.mataPelajaran?.map(mp => `${mp.kode} - ${mp.nama}`).join(', ') || '',
+    }));
+
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Data Guru');
+
+    return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
   }
 }

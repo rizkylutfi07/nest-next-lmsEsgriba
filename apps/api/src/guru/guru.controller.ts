@@ -11,7 +11,9 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import * as XLSX from 'xlsx';
 import { GuruService } from './guru.service';
@@ -32,6 +34,38 @@ export class GuruController {
   @Get()
   findAll(@Query() query: QueryGuruDto) {
     return this.guruService.findAll(query);
+  }
+
+  @Get('export')
+  async exportExcel(@Res() res: Response) {
+    const buffer = await this.guruService.exportToExcel();
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=data_guru.xlsx');
+    res.send(buffer);
+  }
+
+  @Get('template')
+  downloadTemplate(@Res() res: Response) {
+    const workbook = XLSX.utils.book_new();
+    const templateData = [
+      {
+        'NIP': '123456789',
+        'Nama Lengkap': 'Ahmad Fauzi',
+        'Email': 'ahmad@school.com',
+        'Nomor Telepon': '081234567890',
+        'Status': 'AKTIF',
+        'Buat Akun': 'Ya',
+      },
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(templateData);
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Template');
+    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=template_import_guru.xlsx');
+    res.send(buffer);
   }
 
   @Get(':id')
@@ -74,10 +108,11 @@ export class GuruController {
 
     const transformedRows = rows.map((row: any) => ({
       nip: String(row['NIP'] || row['nip'] || ''),
-      nama: String(row['Nama'] || row['nama'] || ''),
+      nama: String(row['Nama Lengkap'] || row['Nama'] || row['nama'] || ''),
       email: String(row['Email'] || row['email'] || ''),
       nomorTelepon: row['Nomor Telepon'] || row['nomorTelepon'] || '',
       status: row['Status'] || row['status'] || 'AKTIF',
+      createUserAccount: row['Buat Akun'] === 'Ya' || row['createUserAccount'] === true,
     }));
 
     return this.guruService.importFromExcel(transformedRows);

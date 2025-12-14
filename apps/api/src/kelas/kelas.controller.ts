@@ -11,7 +11,9 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import * as XLSX from 'xlsx';
 import { KelasService } from './kelas.service';
@@ -32,6 +34,37 @@ export class KelasController {
   @Get()
   findAll(@Query() query: QueryKelasDto) {
     return this.kelasService.findAll(query);
+  }
+
+  @Get('export')
+  async exportExcel(@Res() res: Response) {
+    const buffer = await this.kelasService.exportToExcel();
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=data_kelas.xlsx');
+    res.send(buffer);
+  }
+
+  @Get('template')
+  downloadTemplate(@Res() res: Response) {
+    const workbook = XLSX.utils.book_new();
+    const templateData = [
+      {
+        'Nama Kelas': 'X Akuntansi',
+        'Tingkat': 'X',
+        'Kapasitas': 32,
+        'Kode Jurusan': 'AK',
+        'NIP Kelas': '123456789',
+      },
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(templateData);
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Template');
+    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=template_import_kelas.xlsx');
+    res.send(buffer);
   }
 
   @Get(':id')

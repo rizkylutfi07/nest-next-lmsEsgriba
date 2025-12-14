@@ -11,7 +11,9 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import * as XLSX from 'xlsx';
 import { MataPelajaranService } from './mata-pelajaran.service';
@@ -32,6 +34,37 @@ export class MataPelajaranController {
   @Get()
   findAll(@Query() query: QueryMataPelajaranDto) {
     return this.matapelajaranService.findAll(query);
+  }
+
+  @Get('export')
+  async exportExcel(@Res() res: Response) {
+    const buffer = await this.matapelajaranService.exportToExcel();
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=data_mata_pelajaran.xlsx');
+    res.send(buffer);
+  }
+
+  @Get('template')
+  downloadTemplate(@Res() res: Response) {
+    const workbook = XLSX.utils.book_new();
+    const templateData = [
+      {
+        'Kode': 'MTK',
+        'Nama': 'Matematika',
+        'Jam Pelajaran': 4,
+        'Tingkat': 'SEMUA',
+        'Deskripsi': 'Mata pelajaran matematika',
+      },
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(templateData);
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Template');
+    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=template_import_mata_pelajaran.xlsx');
+    res.send(buffer);
   }
 
   @Get(':id')

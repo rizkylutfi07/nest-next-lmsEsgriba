@@ -11,7 +11,9 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { SiswaService } from './siswa.service';
 import { CreateSiswaDto } from './dto/create-siswa.dto';
@@ -32,6 +34,40 @@ export class SiswaController {
   @Get()
   findAll(@Query() query: QuerySiswaDto) {
     return this.siswaService.findAll(query);
+  }
+
+  @Get('export')
+  async exportExcel(@Res() res: Response) {
+    const buffer = await this.siswaService.exportToExcel();
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=data_siswa.xlsx');
+    res.send(buffer);
+  }
+
+  @Get('template')
+  downloadTemplate(@Res() res: Response) {
+    const workbook = XLSX.utils.book_new();
+    const templateData = [
+      {
+        'NISN': '1234567890',
+        'Nama Lengkap': 'Budi Santoso',
+        'Tanggal Lahir': '2005-01-15',
+        'Email': 'budi@student.com',
+        'Alamat': 'Jl. Merdeka No. 123',
+        'Nomor Telepon': '081234567890',
+        'Status': 'AKTIF',
+        'Kelas': 'X IPA 1',
+      },
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(templateData);
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Template');
+    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=template_import_siswa.xlsx');
+    res.send(buffer);
   }
 
   @Get(':id')

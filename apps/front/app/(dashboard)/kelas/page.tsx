@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Search, Pencil, Trash2, Loader2, X } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Loader2, X, Upload, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRole } from "../role-context";
@@ -131,8 +131,25 @@ export default function KelasPage() {
             </div>
             <div className="flex gap-2 mt-4 md:mt-0">
               <Button onClick={() => setIsImportModalOpen(true)} variant="outline">
-                <Plus size={16} />
+                <Upload size={16} />
                 Import Excel
+              </Button>
+              <Button
+                onClick={async () => {
+                  const res = await fetch('http://localhost:3001/kelas/export', {
+                    headers: { Authorization: `Bearer ${token}` },
+                  });
+                  const blob = await res.blob();
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = 'data_kelas.xlsx';
+                  a.click();
+                }}
+                variant="outline"
+              >
+                <Download size={16} />
+                Export
               </Button>
               <Button onClick={() => setIsCreateModalOpen(true)}>
                 <Plus size={16} />
@@ -347,6 +364,27 @@ function ImportModal({ onClose, onSuccess, token }: { onClose: () => void; onSuc
         <CardContent>
           {!result ? (
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Button
+                  type="button"
+                  onClick={async () => {
+                    const res = await fetch('http://localhost:3001/kelas/template', {
+                      headers: { Authorization: `Bearer ${token}` },
+                    });
+                    const blob = await res.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'template_import_kelas.xlsx';
+                    a.click();
+                  }}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <Download size={16} />
+                  Download Template
+                </Button>
+              </div>
               <div>
                 <input
                   type="file"

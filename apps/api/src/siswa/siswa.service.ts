@@ -414,4 +414,44 @@ export class SiswaService {
 
     return results;
   }
+
+  async exportToExcel(): Promise<Buffer> {
+    const XLSX = require('xlsx');
+
+    const allSiswa = await this.prisma.siswa.findMany({
+      where: { deletedAt: null },
+      include: {
+        kelas: {
+          select: {
+            nama: true,
+          },
+        },
+        tahunAjaran: {
+          select: {
+            tahun: true,
+            semester: true,
+          },
+        },
+      },
+      orderBy: { nama: 'asc' },
+    });
+
+    const exportData = allSiswa.map((siswa) => ({
+      'NISN': siswa.nisn,
+      'Nama Lengkap': siswa.nama,
+      'Tanggal Lahir': siswa.tanggalLahir ? new Date(siswa.tanggalLahir).toISOString().split('T')[0] : '',
+      'Email': siswa.email || '',
+      'Alamat': siswa.alamat || '',
+      'Nomor Telepon': siswa.nomorTelepon || '',
+      'Status': siswa.status,
+      'Kelas': siswa.kelas?.nama || '',
+      'Tahun Ajaran': siswa.tahunAjaran ? `${siswa.tahunAjaran.tahun} Semester ${siswa.tahunAjaran.semester}` : '',
+    }));
+
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Data Siswa');
+
+    return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+  }
 }

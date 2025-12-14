@@ -131,4 +131,27 @@ export class MataPelajaranService {
 
     return results;
   }
+
+  async exportToExcel(): Promise<Buffer> {
+    const XLSX = require('xlsx');
+
+    const allMataPelajaran = await this.prisma.mataPelajaran.findMany({
+      where: { deletedAt: null },
+      orderBy: { kode: 'asc' },
+    });
+
+    const exportData = allMataPelajaran.map((mapel) => ({
+      'Kode': mapel.kode,
+      'Nama': mapel.nama,
+      'Jam Pelajaran': mapel.jamPelajaran,
+      'Tingkat': mapel.tingkat,
+      'Deskripsi': mapel.deskripsi || '',
+    }));
+
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Data Mata Pelajaran');
+
+    return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+  }
 }

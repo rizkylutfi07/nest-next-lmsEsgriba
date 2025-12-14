@@ -183,4 +183,43 @@ export class KelasService {
 
     return results;
   }
+
+  async exportToExcel(): Promise<Buffer> {
+    const XLSX = require('xlsx');
+
+    const allKelas = await this.prisma.kelas.findMany({
+      where: { deletedAt: null },
+      include: {
+        jurusan: {
+          select: {
+            kode: true,
+            nama: true,
+          },
+        },
+        waliKelas: {
+          select: {
+            nip: true,
+            nama: true,
+          },
+        },
+      },
+      orderBy: { nama: 'asc' },
+    });
+
+    const exportData = allKelas.map((kelas) => ({
+      'Nama Kelas': kelas.nama,
+      'Tingkat': kelas.tingkat,
+      'Kapasitas': kelas.kapasitas,
+      'Kode Jurusan': kelas.jurusan?.kode || '',
+      'Nama Jurusan': kelas.jurusan?.nama || '',
+      'NIP Wali Kelas': kelas.waliKelas?.nip || '',
+      'Nama Wali Kelas': kelas.waliKelas?.nama || '',
+    }));
+
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Data Kelas');
+
+    return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+  }
 }
