@@ -209,6 +209,15 @@ export class SiswaService {
       errors: [] as Array<{ row: number; error: string; data: any }>,
     };
 
+    // Get active tahun ajaran
+    const activeTahunAjaran = await this.prisma.tahunAjaran.findFirst({
+      where: { status: 'AKTIF', deletedAt: null },
+    });
+
+    if (!activeTahunAjaran) {
+      throw new BadRequestException('Tidak ada tahun ajaran aktif. Silakan aktifkan tahun ajaran terlebih dahulu.');
+    }
+
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
       try {
@@ -251,6 +260,7 @@ export class SiswaService {
           email: row.email,
           status: row.status || 'AKTIF',
           kelasId,
+          tahunAjaranId: activeTahunAjaran.id,
         };
 
         // Create with or without user account

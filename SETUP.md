@@ -14,4 +14,7 @@ npm run prisma:migrate
 #npm run prisma:studio
 
 cd ../..
+
+npx create-turbo@latest
+
 turbo dev

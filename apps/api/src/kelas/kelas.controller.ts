@@ -67,11 +67,11 @@ export class KelasController {
     const rows = XLSX.utils.sheet_to_json(worksheet);
 
     const transformedRows = rows.map((row: any) => ({
-      nama: String(row['Nama Kelas'] || row['nama'] || ''),
-      tingkat: String(row['Tingkat'] || row['tingkat'] || ''),
-      kapasitas: parseInt(row['Kapasitas'] || row['kapasitas'] || '32'),
-      kodeJurusan: row['Kode Jurusan'] || row['kodeJurusan'] || '',
-      nipWaliKelas: row['NIP Wali Kelas'] || row['nipWaliKelas'] || '',
+      nama: String(row['Nama Kelas'] || '').trim(),
+      tingkat: String(row['Tingkat'] || '').trim(),
+      kapasitas: parseInt(String(row['Kapasitas'] || '32')),
+      kodeJurusan: String(row['Kode Jurusan'] || '').trim(),
+      nipWaliKelas: String(row['NIP Kelas'] || '').trim(),
     }));
 
     return this.kelasService.importFromExcel(transformedRows);
