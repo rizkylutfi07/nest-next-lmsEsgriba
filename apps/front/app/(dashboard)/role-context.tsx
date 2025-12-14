@@ -13,6 +13,7 @@ import {
   LayoutDashboard,
   ShieldCheck,
   Users2,
+  Database,
 } from "lucide-react";
 
 export type Role = "ADMIN" | "GURU" | "SISWA";
@@ -61,6 +62,7 @@ const navByRole: Record<Role, NavItem[]> = {
     { label: "Data Jurusan", icon: BookOpen, href: "/jurusan", note: "Program studi" },
     { label: "Tahun Ajaran", icon: CalendarClock, href: "/tahun-ajaran", note: "Periode aktif" },
     { label: "Mata Pelajaran", icon: BookOpen, href: "/mata-pelajaran", note: "Silabus & mapel" },
+    { label: "Database", icon: Database, href: "/database", note: "Backup & restore" },
     { label: "CBT", icon: ClipboardCheck, href: "/cbt", note: "Soal, ujian, sesi", badge: "CBT" },
     { label: "Pelaporan", icon: BarChart3, href: "/laporan", note: "Analitik & export" },
     { label: "Keamanan", icon: ShieldCheck, href: "/keamanan", note: "Role & audit" },

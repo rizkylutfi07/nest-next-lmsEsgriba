@@ -30,7 +30,7 @@ import { type Role, useRole } from "./role-context";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const accessByRole: Record<Role, string[]> = {
-  ADMIN: ["/", "/users", "/siswa", "/kenaikan-kelas", "/guru", "/kelas", "/jurusan", "/tahun-ajaran", "/mata-pelajaran", "/cbt", "/laporan", "/keuangan", "/keamanan"],
+  ADMIN: ["/", "/users", "/siswa", "/kenaikan-kelas", "/guru", "/kelas", "/jurusan", "/tahun-ajaran", "/mata-pelajaran", "/database", "/cbt", "/laporan", "/keuangan", "/keamanan"],
   GURU: ["/", "/kelas", "/mata-pelajaran", "/cbt", "/laporan"],
   SISWA: ["/", "/kelas", "/mata-pelajaran", "/cbt", "/keamanan"],
 };
@@ -251,10 +251,6 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                 <Badge tone="info" className="hidden md:inline-flex capitalize">
                   {role?.toLowerCase()}
                 </Badge>
-                <Button variant="outline" size="sm" className="hidden md:inline-flex">
-                  <CalendarRange size={16} />
-                  Atur jadwal
-                </Button>
                 <ThemeToggle />
                 <Button variant="ghost" size="icon" className="relative">
                   <Bell size={18} />

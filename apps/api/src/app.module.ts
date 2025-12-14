@@ -11,6 +11,7 @@ import { GuruModule } from './guru/guru.module';
 import { KelasModule } from './kelas/kelas.module';
 import { SiswaModule } from './siswa/siswa.module';
 import { JurusanModule } from './jurusan/jurusan.module';
+import { DatabaseModule } from './database/database.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { JurusanModule } from './jurusan/jurusan.module';
     KelasModule,
     SiswaModule,
     JurusanModule,
+    DatabaseModule,
   ],
   controllers: [AppController],
   providers: [AppService],
