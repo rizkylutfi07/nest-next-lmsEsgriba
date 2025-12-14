@@ -67,6 +67,7 @@ export default function KelasPage() {
   const [filterTahunAjaran, setFilterTahunAjaran] = useState("");
   const [page, setPage] = useState(1);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [editingKelas, setEditingKelas] = useState<any>(null);
   const [deletingKelas, setDeletingKelas] = useState<any>(null);
 
@@ -128,10 +129,16 @@ export default function KelasPage() {
               <h1 className="text-3xl font-bold">Data Kelas</h1>
               <p className="text-sm text-muted-foreground">Kelola data data kelas</p>
             </div>
-            <Button onClick={() => setIsCreateModalOpen(true)} className="mt-4 md:mt-0">
-              <Plus size={16} />
-              Tambah Kelas
-            </Button>
+            <div className="flex gap-2 mt-4 md:mt-0">
+              <Button onClick={() => setIsImportModalOpen(true)} variant="outline">
+                <Plus size={16} />
+                Import Excel
+              </Button>
+              <Button onClick={() => setIsCreateModalOpen(true)}>
+                <Plus size={16} />
+                Tambah Kelas
+              </Button>
+            </div>
           </div>
 
           <div className="mt-4 flex flex-col gap-4 md:flex-row md:items-center">
@@ -273,6 +280,108 @@ export default function KelasPage() {
           isLoading={deleteMutation.isPending}
         />
       )}
+
+      {isImportModalOpen && (
+        <ImportModal
+          onClose={() => setIsImportModalOpen(false)}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ["kelas"] });
+            setIsImportModalOpen(false);
+          }}
+          token={token}
+        />
+      )}
+    </div>
+  );
+}
+
+function ImportModal({ onClose, onSuccess, token }: { onClose: () => void; onSuccess: () => void; token: string | null }) {
+  const [file, setFile] = useState<File | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [result, setResult] = useState<any>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!file) return;
+
+    setIsLoading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch('http://localhost:3001/kelas/import', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error('Import failed');
+
+      const data = await res.json();
+      setResult(data);
+
+      if (data.success > 0) {
+        setTimeout(() => onSuccess(), 2000);
+      }
+    } catch (error: any) {
+      alert(error.message || 'Gagal import data');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Import Excel - Kelas</CardTitle>
+            <Button variant="ghost" size="icon" onClick={onClose}>
+              <X size={18} />
+            </Button>
+          </div>
+          <CardDescription>
+            Upload file Excel dengan kolom: Nama Kelas, Tingkat, Kapasitas, Kode Jurusan, NIP Wali Kelas
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {!result ? (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={(e) => setFile(e.target.files?.[0] || null)}
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+                  Batal
+                </Button>
+                <Button type="submit" disabled={!file || isLoading} className="flex-1">
+                  {isLoading ? <Loader2 className="animate-spin" size={16} /> : "Upload"}
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-sm"><strong>Berhasil:</strong> {result.success}</p>
+              <p className="text-sm"><strong>Gagal:</strong> {result.failed}</p>
+              <p className="text-sm"><strong>Dilewati:</strong> {result.skipped}</p>
+              {result.errors?.length > 0 && (
+                <div className="mt-4 max-h-48 overflow-y-auto">
+                  <p className="text-sm font-medium mb-2">Errors:</p>
+                  {result.errors.slice(0, 5).map((err: any, i: number) => (
+                    <p key={i} className="text-xs text-red-500">Row {err.row}: {err.error}</p>
+                  ))}
+                </div>
+              )}
+              <Button onClick={onClose} className="w-full mt-4">Tutup</Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -303,27 +412,10 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
     },
   });
 
-  // Fetch active Tahun Ajaran for auto-fill
-  const { data: activeTahunAjaran } = useQuery({
-    queryKey: ["active-tahun-ajaran-form"],
-    queryFn: async () => {
-      const res = await fetch(`http://localhost:3001/tahun-ajaran/active/current`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) return null;
-      return res.json();
-    },
-  });
-
-  // Auto-fill tahunAjaranId for new Kelas
-  if (!item && activeTahunAjaran && !formData.tahunAjaranId) {
-    setFormData({ ...formData, tahunAjaranId: activeTahunAjaran.id });
-  }
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Remove system fields and _count before submitting, but KEEP tahunAjaranId
-    const { id, createdAt, updatedAt, deletedAt, _count, waliKelas, jurusan, siswa, tahunAjaran, ...cleanData } = formData;
+    // Remove system fields and _count before submitting
+    const { id, createdAt, updatedAt, deletedAt, _count, waliKelas, jurusan, siswa, ...cleanData } = formData;
 
     // Remove null/undefined values
     const finalData = Object.fromEntries(

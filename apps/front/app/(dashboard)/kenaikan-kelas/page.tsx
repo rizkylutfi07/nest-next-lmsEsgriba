@@ -12,6 +12,7 @@ export default function KenaikanKelasPage() {
     const queryClient = useQueryClient();
     const [kelasAsalId, setKelasAsalId] = useState("");
     const [kelasTujuanId, setKelasTujuanId] = useState("");
+    const [tahunAjaranTujuanId, setTahunAjaranTujuanId] = useState("");
     const [siswaList, setSiswaList] = useState<any[]>([]);
     const [selectedSiswaIds, setSelectedSiswaIds] = useState<string[]>([]);
     const [showResult, setShowResult] = useState(false);
@@ -22,6 +23,17 @@ export default function KenaikanKelasPage() {
         queryKey: ["kelas-all"],
         queryFn: async () => {
             const res = await fetch(`http://localhost:3001/kelas?limit=100`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            return res.json();
+        },
+    });
+
+    // Fetch tahun ajaran list
+    const { data: tahunAjaranList } = useQuery({
+        queryKey: ["tahun-ajaran-all"],
+        queryFn: async () => {
+            const res = await fetch(`http://localhost:3001/tahun-ajaran?limit=100`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             return res.json();
@@ -88,35 +100,49 @@ export default function KenaikanKelasPage() {
     };
 
     const handleProses = () => {
-        if (!kelasAsalId || !kelasTujuanId || selectedSiswaIds.length === 0) {
+        const kelasAsal = kelasList?.data?.find((k: any) => k.id === kelasAsalId);
+        const isGraduationMode = kelasAsal?.tingkat === "XII" || kelasAsal?.tingkat === "12" || kelasAsal?.tingkat === "3";
+
+        if (!kelasAsalId || (!isGraduationMode && (!kelasTujuanId || !tahunAjaranTujuanId)) || selectedSiswaIds.length === 0) {
             alert('Mohon lengkapi semua pilihan');
             return;
         }
 
         kenaikanKelasMutation.mutate({
             kelasAsalId,
-            kelasTujuanId,
+            kelasTujuanId: isGraduationMode ? undefined : kelasTujuanId,
+            tahunAjaranTujuanId: isGraduationMode ? undefined : tahunAjaranTujuanId,
             siswaIds: selectedSiswaIds,
+            isGraduation: isGraduationMode,
         });
     };
 
-    const kelasAsalNama = kelasList?.data?.find((k: any) => k.id === kelasAsalId)?.nama;
+    const kelasAsal = kelasList?.data?.find((k: any) => k.id === kelasAsalId);
+    const kelasAsalNama = kelasAsal?.nama;
     const kelasTujuanNama = kelasList?.data?.find((k: any) => k.id === kelasTujuanId)?.nama;
+
+    // Detect if this is a final year class (Grade XII)
+    const isGraduationMode = kelasAsal?.tingkat === "XII" || kelasAsal?.tingkat === "12" || kelasAsal?.tingkat === "3";
 
     return (
         <div className="space-y-6">
             <div>
                 <h1 className="text-3xl font-bold flex items-center gap-2">
                     <ArrowUpCircle size={32} />
-                    Kenaikan Kelas Massal
+                    {isGraduationMode ? "Kelulusan Siswa" : "Kenaikan Kelas Massal"}
                 </h1>
-                <p className="text-muted-foreground">Pindahkan siswa dari satu kelas ke kelas lain secara massal</p>
+                <p className="text-muted-foreground">
+                    {isGraduationMode
+                        ? "Luluskan siswa tingkat akhir (Kelas XII) menjadi alumni"
+                        : "Pindahkan siswa dari satu kelas ke kelas lain secara massal"
+                    }
+                </p>
             </div>
 
             <Card>
                 <CardHeader>
                     <CardTitle>Pilih Kelas</CardTitle>
-                    <CardDescription>Pilih kelas asal dan kelas tujuan untuk kenaikan kelas</CardDescription>
+                    <CardDescription>Pilih kelas asal dan {isGraduationMode ? "konfirmasi kelulusan" : "kelas tujuan"}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="grid gap-4 md:grid-cols-2">
@@ -124,32 +150,51 @@ export default function KenaikanKelasPage() {
                             <label className="mb-2 block text-sm font-medium">Kelas Asal</label>
                             <select
                                 value={kelasAsalId}
-                                onChange={(e) => { setKelasAsalId(e.target.value); setSiswaList([]); setSelectedSiswaIds([]); }}
+                                onChange={(e) => { setKelasAsalId(e.target.value); setSiswaList([]); setSelectedSiswaIds([]); setKelasTujuanId(""); setTahunAjaranTujuanId(""); }}
                                 className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
                             >
                                 <option value="">Pilih Kelas Asal</option>
                                 {kelasList?.data?.map((kelas: any) => (
                                     <option key={kelas.id} value={kelas.id}>
-                                        {kelas.nama} - {kelas.tahunAjaran?.tahun} Sem {kelas.tahunAjaran?.semester}
+                                        {kelas.nama}
                                     </option>
                                 ))}
                             </select>
                         </div>
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">Kelas Tujuan</label>
-                            <select
-                                value={kelasTujuanId}
-                                onChange={(e) => setKelasTujuanId(e.target.value)}
-                                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
-                            >
-                                <option value="">Pilih Kelas Tujuan</option>
-                                {kelasList?.data?.map((kelas: any) => (
-                                    <option key={kelas.id} value={kelas.id}>
-                                        {kelas.nama} - {kelas.tahunAjaran?.tahun} Sem {kelas.tahunAjaran?.semester}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+                        {!isGraduationMode && (
+                            <>
+                                <div>
+                                    <label className="mb-2 block text-sm font-medium">Kelas Tujuan</label>
+                                    <select
+                                        value={kelasTujuanId}
+                                        onChange={(e) => setKelasTujuanId(e.target.value)}
+                                        className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                                    >
+                                        <option value="">Pilih Kelas Tujuan</option>
+                                        {kelasList?.data?.map((kelas: any) => (
+                                            <option key={kelas.id} value={kelas.id}>
+                                                {kelas.nama}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="md:col-span-2">
+                                    <label className="mb-2 block text-sm font-medium">Tahun Ajaran Tujuan</label>
+                                    <select
+                                        value={tahunAjaranTujuanId}
+                                        onChange={(e) => setTahunAjaranTujuanId(e.target.value)}
+                                        className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                                    >
+                                        <option value="">Pilih Tahun Ajaran Tujuan</option>
+                                        {tahunAjaranList?.data?.map((ta: any) => (
+                                            <option key={ta.id} value={ta.id}>
+                                                {ta.tahun} - Semester {ta.semester} ({ta.status})
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </>
+                        )}
                     </div>
                     <Button onClick={loadSiswa} disabled={!kelasAsalId}>
                         Muat Siswa dari Kelas Asal
@@ -207,19 +252,29 @@ export default function KenaikanKelasPage() {
                                 </table>
                             </div>
 
-                            {selectedSiswaIds.length > 0 && kelasAsalNama && kelasTujuanNama && (
-                                <div className="rounded-lg bg-primary/10 p-4">
+                            {selectedSiswaIds.length > 0 && (
+                                <div className={`rounded-lg p-4 ${isGraduationMode ? "bg-green-500/10 text-green-400" : "bg-primary/10"}`}>
                                     <p className="text-sm">
-                                        <strong>{selectedSiswaIds.length} siswa</strong> akan dipindahkan dari{" "}
-                                        <strong>{kelasAsalNama}</strong> ke <strong>{kelasTujuanNama}</strong>
+                                        {isGraduationMode ? (
+                                            <span>
+                                                <strong>{selectedSiswaIds.length} siswa</strong> akan dinyatakan <strong>LULUS</strong> dan menjadi Alumni.
+                                            </span>
+                                        ) : (
+                                            kelasTujuanNama && (
+                                                <span>
+                                                    <strong>{selectedSiswaIds.length} siswa</strong> akan dipindahkan dari{" "}
+                                                    <strong>{kelasAsalNama}</strong> ke <strong>{kelasTujuanNama}</strong>
+                                                </span>
+                                            )
+                                        )}
                                     </p>
                                 </div>
                             )}
 
                             <Button
                                 onClick={handleProses}
-                                disabled={selectedSiswaIds.length === 0 || !kelasTujuanId || kenaikanKelasMutation.isPending}
-                                className="w-full"
+                                disabled={selectedSiswaIds.length === 0 || (!isGraduationMode && !kelasTujuanId) || kenaikanKelasMutation.isPending}
+                                className={`w-full ${isGraduationMode ? "bg-green-600 hover:bg-green-700" : ""}`}
                             >
                                 {kenaikanKelasMutation.isPending ? (
                                     <>
@@ -227,7 +282,7 @@ export default function KenaikanKelasPage() {
                                         Memproses...
                                     </>
                                 ) : (
-                                    "Proses Kenaikan Kelas"
+                                    isGraduationMode ? "Luluskan Siswa" : "Proses Kenaikan Kelas"
                                 )}
                             </Button>
                         </div>

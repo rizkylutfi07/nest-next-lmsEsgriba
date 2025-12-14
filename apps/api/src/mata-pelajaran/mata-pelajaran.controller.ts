@@ -8,7 +8,12 @@ import {
   Param,
   Query,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import * as XLSX from 'xlsx';
 import { MataPelajaranService } from './mata-pelajaran.service';
 import { CreateMataPelajaranDto } from './dto/create-mata-pelajaran.dto';
 import { UpdateMataPelajaranDto } from './dto/update-mata-pelajaran.dto';
@@ -22,7 +27,7 @@ import { Role } from '@prisma/client';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN)
 export class MataPelajaranController {
-  constructor(private readonly matapelajaranService: MataPelajaranService) {}
+  constructor(private readonly matapelajaranService: MataPelajaranService) { }
 
   @Get()
   findAll(@Query() query: QueryMataPelajaranDto) {
@@ -47,5 +52,28 @@ export class MataPelajaranController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.matapelajaranService.remove(id);
+  }
+
+  @Post('import')
+  @UseInterceptors(FileInterceptor('file'))
+  async importExcel(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('File tidak ditemukan');
+    }
+
+    const workbook = XLSX.read(file.buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(worksheet);
+
+    const transformedRows = rows.map((row: any) => ({
+      kode: String(row['Kode'] || row['kode'] || ''),
+      nama: String(row['Nama'] || row['nama'] || ''),
+      jamPelajaran: parseInt(row['Jam Pelajaran'] || row['jamPelajaran'] || '2'),
+      tingkat: String(row['Tingkat'] || row['tingkat'] || 'SEMUA'),
+      deskripsi: row['Deskripsi'] || row['deskripsi'] || '',
+    }));
+
+    return this.matapelajaranService.importFromExcel(transformedRows);
   }
 }

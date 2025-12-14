@@ -37,5 +37,5 @@ export class QuerySiswaDto {
 
   @IsOptional()
   @IsString()
-  tahunAjaranId?: string; // Filter by academic year (through Kelas)
+  tahunAjaranId?: string; // Filter by academic year (direct relation)
 }

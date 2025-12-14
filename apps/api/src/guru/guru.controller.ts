@@ -8,7 +8,12 @@ import {
   Param,
   Query,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import * as XLSX from 'xlsx';
 import { GuruService } from './guru.service';
 import { CreateGuruDto } from './dto/create-guru.dto';
 import { UpdateGuruDto } from './dto/update-guru.dto';
@@ -53,5 +58,28 @@ export class GuruController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.guruService.remove(id);
+  }
+
+  @Post('import')
+  @UseInterceptors(FileInterceptor('file'))
+  async importExcel(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('File tidak ditemukan');
+    }
+
+    const workbook = XLSX.read(file.buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(worksheet);
+
+    const transformedRows = rows.map((row: any) => ({
+      nip: String(row['NIP'] || row['nip'] || ''),
+      nama: String(row['Nama'] || row['nama'] || ''),
+      email: String(row['Email'] || row['email'] || ''),
+      nomorTelepon: row['Nomor Telepon'] || row['nomorTelepon'] || '',
+      status: row['Status'] || row['status'] || 'AKTIF',
+    }));
+
+    return this.guruService.importFromExcel(transformedRows);
   }
 }

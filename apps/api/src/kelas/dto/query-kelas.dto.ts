@@ -20,5 +20,5 @@ export class QueryKelasDto {
 
   @IsString()
   @IsOptional()
-  tahunAjaranId?: string; // Filter by academic year
+  tahunAjaranId?: string; // Filter classes by students' academic year
 }

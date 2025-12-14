@@ -36,7 +36,7 @@ export class TahunAjaranService {
                 orderBy: { createdAt: 'desc' },
                 include: {
                     _count: {
-                        select: { kelas: true },
+                        select: { siswa: true },
                     },
                 },
             }),
@@ -59,7 +59,7 @@ export class TahunAjaranService {
             where: { id, deletedAt: null },
             include: {
                 _count: {
-                    select: { kelas: true },
+                    select: { siswa: true },
                 },
             },
         });
@@ -134,7 +134,7 @@ export class TahunAjaranService {
             },
             include: {
                 _count: {
-                    select: { kelas: true },
+                    select: { siswa: true },
                 },
             },
         });
@@ -166,7 +166,7 @@ export class TahunAjaranService {
             data: { status: 'AKTIF' },
             include: {
                 _count: {
-                    select: { kelas: true },
+                    select: { siswa: true },
                 },
             },
         });

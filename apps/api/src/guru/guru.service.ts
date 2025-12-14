@@ -165,4 +165,66 @@ export class GuruService {
       },
     });
   }
+
+  async importFromExcel(rows: any[]): Promise<{
+    success: number;
+    failed: number;
+    skipped: number;
+    errors: Array<{ row: number; error: string; data: any }>;
+  }> {
+    const results = {
+      success: 0,
+      failed: 0,
+      skipped: 0,
+      errors: [] as Array<{ row: number; error: string; data: any }>,
+    };
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      try {
+        // Check if guru already exists by NIP or email
+        const existing = await this.prisma.guru.findFirst({
+          where: {
+            OR: [
+              { nip: row.nip },
+              { email: row.email },
+            ],
+            deletedAt: null,
+          },
+        });
+
+        if (existing) {
+          results.skipped++;
+          results.errors.push({
+            row: i + 2,
+            error: `NIP ${row.nip} atau Email ${row.email} sudah ada di database`,
+            data: row,
+          });
+          continue;
+        }
+
+        // Create guru
+        await this.prisma.guru.create({
+          data: {
+            nip: row.nip,
+            nama: row.nama,
+            email: row.email,
+            nomorTelepon: row.nomorTelepon,
+            status: row.status || 'AKTIF',
+          },
+        });
+
+        results.success++;
+      } catch (error) {
+        results.failed++;
+        results.errors.push({
+          row: i + 2,
+          error: error.message || 'Unknown error',
+          data: row,
+        });
+      }
+    }
+
+    return results;
+  }
 }

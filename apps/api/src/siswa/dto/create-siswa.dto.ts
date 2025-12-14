@@ -34,4 +34,8 @@ export class CreateSiswaDto {
   @IsOptional()
   kelasId?: string;
 
+  @IsString()
+  @IsOptional()
+  tahunAjaranId?: string;
+
 }

@@ -37,7 +37,8 @@ model TahunAjaran {
   updatedAt      DateTime          @updatedAt
   deletedAt      DateTime? // soft delete
 
-  kelas Kelas[]
+  siswa             Siswa[]
+  siswaKelasHistory SiswaKelasHistory[]
 
   @@unique([tahun, semester])
 }
@@ -101,7 +102,7 @@ model Jurusan {
 
 model Kelas {
   id        String    @id @default(cuid())
-  nama      String // e.g., "XI IPA 1"
+  nama      String // e.g., "X-A", "XI-IPA-1" (reusable across years)
   tingkat   String // "X", "XI", "XII"
   kapasitas Int       @default(32)
   createdAt DateTime  @default(now())
@@ -114,11 +115,8 @@ model Kelas {
   waliKelasId String?
   waliKelas   Guru?   @relation("WaliKelas", fields: [waliKelasId], references: [id])
 
-  siswa         Siswa[]
-  tahunAjaran   TahunAjaran @relation(fields: [tahunAjaranId], references: [id])
-  tahunAjaranId String
-
-  @@unique([nama, jurusanId])
+  siswa             Siswa[]
+  siswaKelasHistory SiswaKelasHistory[]
 }
 
 model Siswa {
@@ -140,6 +138,31 @@ model Siswa {
 
   kelasId String?
   kelas   Kelas?  @relation(fields: [kelasId], references: [id])
+
+  tahunAjaranId String?
+  tahunAjaran   TahunAjaran? @relation(fields: [tahunAjaranId], references: [id])
+
+  kelasHistory SiswaKelasHistory[]
+}
+
+model SiswaKelasHistory {
+  id             String    @id @default(cuid())
+  siswaId        String
+  kelasId        String
+  tahunAjaranId  String
+  tanggalMulai   DateTime
+  tanggalSelesai DateTime?
+  status         String // "AKTIF", "SELESAI", "PINDAH"
+  catatan        String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  siswa       Siswa       @relation(fields: [siswaId], references: [id], onDelete: Cascade)
+  kelas       Kelas       @relation(fields: [kelasId], references: [id])
+  tahunAjaran TahunAjaran @relation(fields: [tahunAjaranId], references: [id])
+
+  @@index([siswaId])
+  @@index([kelasId, tahunAjaranId])
 }
 
 enum StatusSiswa {

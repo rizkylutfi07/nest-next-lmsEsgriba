@@ -20,8 +20,13 @@ export class KelasService {
       ];
     }
 
+    // Filter by tahunAjaranId through Siswa relation if provided
     if (tahunAjaranId) {
-      where.tahunAjaranId = tahunAjaranId;
+      where.siswa = {
+        some: {
+          tahunAjaranId: tahunAjaranId,
+        },
+      };
     }
 
     const [data, total] = await Promise.all([
@@ -36,14 +41,6 @@ export class KelasService {
               id: true,
               kode: true,
               nama: true,
-            },
-          },
-          tahunAjaran: {
-            select: {
-              id: true,
-              tahun: true,
-              semester: true,
-              status: true,
             },
           },
           _count: {
@@ -107,5 +104,83 @@ export class KelasService {
       data: { deletedAt: new Date() },
     });
     return { message: 'Kelas berhasil dihapus' };
+  }
+
+  async importFromExcel(rows: any[]): Promise<{
+    success: number;
+    failed: number;
+    skipped: number;
+    errors: Array<{ row: number; error: string; data: any }>;
+  }> {
+    const results = {
+      success: 0,
+      failed: 0,
+      skipped: 0,
+      errors: [] as Array<{ row: number; error: string; data: any }>,
+    };
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      try {
+        // Check if kelas already exists by name
+        const existingKelas = await this.prisma.kelas.findFirst({
+          where: { nama: row.nama, deletedAt: null },
+        });
+
+        if (existingKelas) {
+          results.skipped++;
+          results.errors.push({
+            row: i + 2,
+            error: `Kelas ${row.nama} sudah ada di database`,
+            data: row,
+          });
+          continue;
+        }
+
+        // Resolve jurusanId by kode if provided
+        let jurusanId: string | undefined;
+        if (row.kodeJurusan) {
+          const jurusan = await this.prisma.jurusan.findFirst({
+            where: { kode: row.kodeJurusan, deletedAt: null },
+          });
+          if (jurusan) {
+            jurusanId = jurusan.id;
+          }
+        }
+
+        // Resolve waliKelasId by NIP if provided
+        let waliKelasId: string | undefined;
+        if (row.nipWaliKelas) {
+          const guru = await this.prisma.guru.findFirst({
+            where: { nip: row.nipWaliKelas, deletedAt: null },
+          });
+          if (guru) {
+            waliKelasId = guru.id;
+          }
+        }
+
+        // Create kelas
+        await this.prisma.kelas.create({
+          data: {
+            nama: row.nama,
+            tingkat: row.tingkat,
+            kapasitas: row.kapasitas || 32,
+            jurusanId,
+            waliKelasId,
+          },
+        });
+
+        results.success++;
+      } catch (error) {
+        results.failed++;
+        results.errors.push({
+          row: i + 2,
+          error: error.message || 'Unknown error',
+          data: row,
+        });
+      }
+    }
+
+    return results;
   }
 }

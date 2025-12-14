@@ -29,11 +29,9 @@ export class SiswaService {
       where.status = status;
     }
 
-    // Filter by tahunAjaranId through Kelas relation
+    // Filter by tahunAjaranId directly
     if (tahunAjaranId) {
-      where.kelas = {
-        tahunAjaranId: tahunAjaranId,
-      };
+      where.tahunAjaranId = tahunAjaranId;
     }
 
     // Build orderBy
@@ -51,16 +49,13 @@ export class SiswaService {
         take: limit,
         orderBy,
         include: {
-          kelas: {
-            include: {
-              tahunAjaran: {
-                select: {
-                  id: true,
-                  tahun: true,
-                  semester: true,
-                  status: true,
-                },
-              },
+          kelas: true,
+          tahunAjaran: {
+            select: {
+              id: true,
+              tahun: true,
+              semester: true,
+              status: true,
             },
           },
         },
@@ -115,9 +110,11 @@ export class SiswaService {
         email: dto.email,
         status: dto.status,
         kelasId: dto.kelasId,
+        tahunAjaranId: dto.tahunAjaranId,
       },
       include: {
         kelas: true,
+        tahunAjaran: true,
       },
     });
   }
@@ -188,10 +185,12 @@ export class SiswaService {
         email: dto.email,
         status: dto.status,
         kelasId: dto.kelasId,
+        tahunAjaranId: dto.tahunAjaranId,
         userId: user.id,
       },
       include: {
         kelas: true,
+        tahunAjaran: true,
         user: true,
       },
     });
@@ -280,27 +279,43 @@ export class SiswaService {
     failed: number;
     errors: Array<{ siswaId: string; error: string }>;
   }> {
-    const { kelasAsalId, kelasTujuanId, siswaIds } = dto;
+    const { kelasAsalId, kelasTujuanId, siswaIds, isGraduation, tahunAjaranTujuanId } = dto;
 
-    // Validate classes exist
-    const [kelasAsal, kelasTujuan] = await Promise.all([
-      this.prisma.kelas.findFirst({ where: { id: kelasAsalId, deletedAt: null } }),
-      this.prisma.kelas.findFirst({ where: { id: kelasTujuanId, deletedAt: null } }),
-    ]);
-
+    // Validate Source Class
+    const kelasAsal = await this.prisma.kelas.findFirst({ where: { id: kelasAsalId, deletedAt: null } });
     if (!kelasAsal) {
       throw new NotFoundException(`Kelas asal dengan ID ${kelasAsalId} tidak ditemukan`);
     }
 
-    if (!kelasTujuan) {
-      throw new NotFoundException(`Kelas tujuan dengan ID ${kelasTujuanId} tidak ditemukan`);
+    // Validate Target Class and Tahun Ajaran (only if NOT graduating)
+    let kelasTujuan: any = null;
+    if (!isGraduation) {
+      if (!kelasTujuanId) {
+        throw new BadRequestException('Kelas tujuan harus dipilih untuk kenaikan kelas reguler');
+      }
+      if (!tahunAjaranTujuanId) {
+        throw new BadRequestException('Tahun ajaran tujuan harus dipilih untuk kenaikan kelas reguler');
+      }
+      kelasTujuan = await this.prisma.kelas.findFirst({ where: { id: kelasTujuanId, deletedAt: null } });
+
+      if (!kelasTujuan) {
+        throw new NotFoundException(`Kelas tujuan dengan ID ${kelasTujuanId} tidak ditemukan`);
+      }
+
+      if (kelasAsalId === kelasTujuanId) {
+        throw new BadRequestException('Kelas asal dan tujuan tidak boleh sama');
+      }
+
+      // Validate tahun ajaran exists
+      const tahunAjaranTujuan = await this.prisma.tahunAjaran.findFirst({
+        where: { id: tahunAjaranTujuanId, deletedAt: null }
+      });
+      if (!tahunAjaranTujuan) {
+        throw new NotFoundException(`Tahun ajaran tujuan dengan ID ${tahunAjaranTujuanId} tidak ditemukan`);
+      }
     }
 
-    if (kelasAsalId === kelasTujuanId) {
-      throw new BadRequestException('Kelas asal dan tujuan tidak boleh sama');
-    }
-
-    // Get student IDs to promote
+    // Get student IDs to promote/graduate
     let studentIdsToPromote: string[];
     if (siswaIds === 'all') {
       const students = await this.prisma.siswa.findMany({
@@ -308,7 +323,7 @@ export class SiswaService {
           kelasId: kelasAsalId,
           deletedAt: null,
         },
-        select: { id: true },
+        select: { id: true, tahunAjaranId: true },
       });
       studentIdsToPromote = students.map((s) => s.id);
     } else {
@@ -316,10 +331,10 @@ export class SiswaService {
     }
 
     if (studentIdsToPromote.length === 0) {
-      throw new BadRequestException('Tidak ada siswa yang dipilih untuk kenaikan kelas');
+      throw new BadRequestException('Tidak ada siswa yang dipilih');
     }
 
-    // Bulk update students
+    // Bulk update students with transaction
     const results = {
       success: 0,
       failed: 0,
@@ -328,10 +343,55 @@ export class SiswaService {
 
     for (const siswaId of studentIdsToPromote) {
       try {
-        await this.prisma.siswa.update({
-          where: { id: siswaId },
-          data: { kelasId: kelasTujuanId },
+        await this.prisma.$transaction(async (tx) => {
+          // Get current siswa data
+          const siswa = await tx.siswa.findUnique({
+            where: { id: siswaId },
+            select: { kelasId: true, tahunAjaranId: true },
+          });
+
+          if (!siswa) {
+            throw new Error('Siswa tidak ditemukan');
+          }
+
+          // Close previous history record if exists
+          if (siswa.kelasId && siswa.tahunAjaranId) {
+            await tx.siswaKelasHistory.updateMany({
+              where: {
+                siswaId: siswaId,
+                tanggalSelesai: null, // Only close active records
+              },
+              data: {
+                tanggalSelesai: new Date(),
+                status: isGraduation ? 'SELESAI' : 'PINDAH',
+              },
+            });
+          }
+
+          // Update siswa
+          const updateData: any = isGraduation
+            ? { kelasId: null, tahunAjaranId: null, status: 'ALUMNI' } // Graduate
+            : { kelasId: kelasTujuanId, tahunAjaranId: tahunAjaranTujuanId }; // Promote
+
+          await tx.siswa.update({
+            where: { id: siswaId },
+            data: updateData,
+          });
+
+          // Create new history record (only if not graduating)
+          if (!isGraduation) {
+            await tx.siswaKelasHistory.create({
+              data: {
+                siswaId: siswaId,
+                kelasId: kelasTujuanId,
+                tahunAjaranId: tahunAjaranTujuanId,
+                tanggalMulai: new Date(),
+                status: 'AKTIF',
+              },
+            });
+          }
         });
+
         results.success++;
       } catch (error) {
         results.failed++;

@@ -6,7 +6,7 @@ import { QueryMataPelajaranDto } from './dto/query-mata-pelajaran.dto';
 
 @Injectable()
 export class MataPelajaranService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async findAll(query: QueryMataPelajaranDto) {
     const { page = 1, limit = 10, search } = query;
@@ -74,5 +74,61 @@ export class MataPelajaranService {
       data: { deletedAt: new Date() },
     });
     return { message: 'MataPelajaran berhasil dihapus' };
+  }
+
+  async importFromExcel(rows: any[]): Promise<{
+    success: number;
+    failed: number;
+    skipped: number;
+    errors: Array<{ row: number; error: string; data: any }>;
+  }> {
+    const results = {
+      success: 0,
+      failed: 0,
+      skipped: 0,
+      errors: [] as Array<{ row: number; error: string; data: any }>,
+    };
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      try {
+        // Check if mapel already exists by kode
+        const existing = await this.prisma.mataPelajaran.findFirst({
+          where: { kode: row.kode, deletedAt: null },
+        });
+
+        if (existing) {
+          results.skipped++;
+          results.errors.push({
+            row: i + 2,
+            error: `Kode ${row.kode} sudah ada di database`,
+            data: row,
+          });
+          continue;
+        }
+
+        // Create mata pelajaran
+        await this.prisma.mataPelajaran.create({
+          data: {
+            kode: row.kode,
+            nama: row.nama,
+            jamPelajaran: row.jamPelajaran || 2,
+            tingkat: row.tingkat || 'SEMUA',
+            deskripsi: row.deskripsi,
+          },
+        });
+
+        results.success++;
+      } catch (error) {
+        results.failed++;
+        results.errors.push({
+          row: i + 2,
+          error: error.message || 'Unknown error',
+          data: row,
+        });
+      }
+    }
+
+    return results;
   }
 }
