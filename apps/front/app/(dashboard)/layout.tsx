@@ -30,8 +30,8 @@ import { type Role, useRole } from "./role-context";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const accessByRole: Record<Role, string[]> = {
-  ADMIN: ["/", "/users", "/siswa", "/kenaikan-kelas", "/guru", "/kelas", "/jurusan", "/tahun-ajaran", "/mata-pelajaran", "/database", "/cbt", "/laporan", "/keuangan", "/keamanan"],
-  GURU: ["/", "/kelas", "/mata-pelajaran", "/cbt", "/laporan"],
+  ADMIN: ["/", "/users", "/siswa", "/kenaikan-kelas", "/guru", "/kelas", "/jurusan", "/tahun-ajaran", "/mata-pelajaran", "/attendance", "/database", "/cbt", "/laporan", "/keuangan", "/keamanan"],
+  GURU: ["/", "/kelas", "/mata-pelajaran", "/attendance", "/cbt", "/laporan"],
   SISWA: ["/", "/kelas", "/mata-pelajaran", "/cbt", "/keamanan"],
 };
 

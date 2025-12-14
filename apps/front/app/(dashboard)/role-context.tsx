@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   Users2,
   Database,
+  ClipboardList,
 } from "lucide-react";
 
 export type Role = "ADMIN" | "GURU" | "SISWA";
@@ -62,6 +63,7 @@ const navByRole: Record<Role, NavItem[]> = {
     { label: "Data Jurusan", icon: BookOpen, href: "/jurusan", note: "Program studi" },
     { label: "Tahun Ajaran", icon: CalendarClock, href: "/tahun-ajaran", note: "Periode aktif" },
     { label: "Mata Pelajaran", icon: BookOpen, href: "/mata-pelajaran", note: "Silabus & mapel" },
+    { label: "Absensi", icon: ClipboardList, href: "/attendance", note: "Scan & laporan" },
     { label: "Database", icon: Database, href: "/database", note: "Backup & restore" },
     { label: "CBT", icon: ClipboardCheck, href: "/cbt", note: "Soal, ujian, sesi", badge: "CBT" },
     { label: "Pelaporan", icon: BarChart3, href: "/laporan", note: "Analitik & export" },
@@ -72,6 +74,7 @@ const navByRole: Record<Role, NavItem[]> = {
     { label: "Dasbor Guru", icon: LayoutDashboard, href: "/", note: "Agenda mengajar" },
     { label: "Kelas Saya", icon: CalendarRange, href: "/kelas", note: "Jadwal & materi" },
     { label: "Mata Pelajaran", icon: BookOpen, href: "/mata-pelajaran", note: "Silabus & rubrik" },
+    { label: "Absensi", icon: ClipboardList, href: "/attendance", note: "Scan & laporan" },
     { label: "CBT", icon: ClipboardCheck, href: "/cbt", note: "Soal & monitoring", badge: "CBT" },
     { label: "Laporan Nilai", icon: BarChart3, href: "/laporan", note: "Rekap nilai" },
   ],

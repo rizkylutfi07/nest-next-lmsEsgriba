@@ -12,6 +12,7 @@ import { KelasModule } from './kelas/kelas.module';
 import { SiswaModule } from './siswa/siswa.module';
 import { JurusanModule } from './jurusan/jurusan.module';
 import { DatabaseModule } from './database/database.module';
+import { AttendanceModule } from './attendance/attendance.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { DatabaseModule } from './database/database.module';
     SiswaModule,
     JurusanModule,
     DatabaseModule,
+    AttendanceModule,
   ],
   controllers: [AppController],
   providers: [AppService],

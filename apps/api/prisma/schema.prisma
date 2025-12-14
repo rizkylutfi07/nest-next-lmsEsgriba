@@ -143,6 +143,7 @@ model Siswa {
   tahunAjaran   TahunAjaran? @relation(fields: [tahunAjaranId], references: [id])
 
   kelasHistory SiswaKelasHistory[]
+  attendance   Attendance[]
 }
 
 model SiswaKelasHistory {
@@ -167,7 +168,34 @@ model SiswaKelasHistory {
 
 enum StatusSiswa {
   AKTIF
-  MAGANG
+  LULUS
   PINDAH
-  ALUMNI
+  KELUAR
+}
+
+model Attendance {
+  id         String           @id @default(cuid())
+  siswaId    String
+  siswa      Siswa            @relation(fields: [siswaId], references: [id])
+  tanggal    DateTime         @default(now()) @db.Date
+  jamMasuk   DateTime         @default(now())
+  jamKeluar  DateTime?
+  status     AttendanceStatus @default(HADIR)
+  keterangan String?
+  scanBy     String? // User ID yang melakukan scan
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  deletedAt  DateTime? // soft delete
+
+  @@index([siswaId, tanggal])
+  @@index([tanggal])
+  @@unique([siswaId, tanggal]) // Prevent duplicate attendance per day
+}
+
+enum AttendanceStatus {
+  HADIR
+  IZIN
+  SAKIT
+  ALPHA
+  TERLAMBAT
 }
