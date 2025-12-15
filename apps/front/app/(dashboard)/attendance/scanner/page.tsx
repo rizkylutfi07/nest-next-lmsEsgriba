@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRole } from "../../role-context";
 import { useMutation } from "@tanstack/react-query";
+import { apiBaseUrl } from "@/lib/api-client";
 
 export default function ScannerPage() {
     const { token } = useRole();
@@ -15,10 +16,11 @@ export default function ScannerPage() {
     const [manualNisn, setManualNisn] = useState("");
     const scannerRef = useRef<Html5Qrcode | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [isDuplicate, setIsDuplicate] = useState(false);
 
     const scanMutation = useMutation({
         mutationFn: async (nisn: string) => {
-            const res = await fetch("http://localhost:3001/attendance/scan", {
+            const res = await fetch(`${apiBaseUrl}/attendance/scan`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -36,25 +38,84 @@ export default function ScannerPage() {
         },
         onSuccess: (data) => {
             setLastScan(data);
-            // Play success sound
-            const audio = new Audio("/success.mp3");
-            audio.play().catch(() => { });
+            setIsDuplicate(false);
 
-            // Clear after 5 seconds
-            setTimeout(() => setLastScan(null), 5000);
+            // Stop scanner on success
+            stopScanner();
+
+            // Play success sound with error handling
+            try {
+                const audio = new Audio("/success.mp3");
+                audio.volume = 0.5;
+                const playPromise = audio.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch((err) => {
+                        console.log("Audio play skipped:", err.name);
+                    });
+                }
+            } catch (err) {
+                // Ignore audio errors
+            }
+
+            // Clear after 10 seconds
+            setTimeout(() => setLastScan(null), 10000);
         },
         onError: (error: any) => {
-            setError(error.message);
-            // Play error sound
-            const audio = new Audio("/error.mp3");
-            audio.play().catch(() => { });
+            // Check if this is a duplicate scan error
+            const isDuplicateError = error.message.includes("sudah melakukan absensi");
 
-            setTimeout(() => setError(null), 5000);
+            if (isDuplicateError) {
+                setIsDuplicate(true);
+                setError(error.message);
+                // Stop scanner for duplicate
+                stopScanner();
+            } else {
+                setIsDuplicate(false);
+                setError(error.message);
+            }
+
+            // Play error/warning sound
+            try {
+                const audio = new Audio("/error.mp3");
+                audio.volume = 0.5;
+                const playPromise = audio.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch((err) => {
+                        console.log("Audio play skipped:", err.name);
+                    });
+                }
+            } catch (err) {
+                // Ignore audio errors
+            }
+
+            // Clear after 10 seconds
+            setTimeout(() => {
+                setError(null);
+                setIsDuplicate(false);
+            }, 10000);
         },
     });
 
     const startScanner = async () => {
         try {
+            setError(null);
+
+            // Check if camera is available
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                throw new Error("Camera API not supported in this browser");
+            }
+
+            // Request camera permission first
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: "environment" }
+                });
+                // Stop the test stream
+                stream.getTracks().forEach(track => track.stop());
+            } catch (permErr: any) {
+                throw new Error(`Camera permission denied: ${permErr.message}`);
+            }
+
             const scanner = new Html5Qrcode("reader");
             scannerRef.current = scanner;
 
@@ -63,13 +124,11 @@ export default function ScannerPage() {
                 {
                     fps: 10,
                     qrbox: { width: 250, height: 250 },
+                    aspectRatio: 1.0,
                 },
                 (decodedText) => {
-                    // Successfully scanned
+                    // Successfully scanned - send to API
                     scanMutation.mutate(decodedText);
-                    // Stop scanner briefly to prevent multiple scans
-                    stopScanner();
-                    setTimeout(() => startScanner(), 2000);
                 },
                 (errorMessage) => {
                     // Ignore scan errors (happens continuously when no barcode detected)
@@ -78,6 +137,7 @@ export default function ScannerPage() {
 
             setIsScanning(true);
         } catch (err: any) {
+            console.error("Camera error:", err);
             setError("Failed to start camera: " + err.message);
             setIsScanning(false);
         }
@@ -86,11 +146,17 @@ export default function ScannerPage() {
     const stopScanner = async () => {
         if (scannerRef.current) {
             try {
-                await scannerRef.current.stop();
+                const state = await scannerRef.current.getState();
+                // Only stop if scanner is actually running
+                if (state === 2) { // 2 = SCANNING state
+                    await scannerRef.current.stop();
+                }
+            } catch (err) {
+                // Ignore errors when stopping - scanner might already be stopped
+                console.log("Scanner stop skipped:", err);
+            } finally {
                 scannerRef.current = null;
                 setIsScanning(false);
-            } catch (err) {
-                console.error("Error stopping scanner:", err);
             }
         }
     };
@@ -130,10 +196,10 @@ export default function ScannerPage() {
                 <CardContent>
                     <div className="space-y-4">
                         {/* Camera View */}
-                        <div className="relative rounded-lg overflow-hidden bg-black/5 border border-border">
-                            <div id="reader" className={isScanning ? "" : "hidden"}></div>
+                        <div className="relative rounded-lg overflow-hidden bg-black border border-border min-h-[400px]">
+                            <div id="reader" style={{ width: '100%' }}></div>
                             {!isScanning && (
-                                <div className="flex items-center justify-center h-64">
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/5">
                                     <div className="text-center">
                                         <Camera size={48} className="mx-auto mb-4 text-muted-foreground" />
                                         <p className="text-muted-foreground">Camera tidak aktif</p>
@@ -141,6 +207,13 @@ export default function ScannerPage() {
                                 </div>
                             )}
                         </div>
+
+                        {/* Debug Info */}
+                        {isScanning && (
+                            <div className="text-xs text-muted-foreground bg-blue-500/10 p-2 rounded border border-blue-500/20">
+                                ✓ Scanner aktif - Arahkan kamera ke QR Code
+                            </div>
+                        )}
 
                         {/* Scanner Controls */}
                         <div className="flex gap-2">
@@ -208,15 +281,22 @@ export default function ScannerPage() {
                 </Card>
             )}
 
-            {/* Error Feedback */}
+            {/* Error/Warning Feedback */}
             {error && (
-                <Card className="border-red-500/50 bg-red-500/10">
+                <Card className={isDuplicate ? "border-yellow-500/50 bg-yellow-500/10" : "border-red-500/50 bg-red-500/10"}>
                     <CardContent className="pt-6">
                         <div className="flex items-start gap-4">
-                            <AlertCircle className="text-red-500" size={32} />
+                            <AlertCircle className={isDuplicate ? "text-yellow-500" : "text-red-500"} size={32} />
                             <div className="flex-1">
-                                <h3 className="text-lg font-semibold text-red-500">Error</h3>
+                                <h3 className={`text-lg font-semibold ${isDuplicate ? "text-yellow-500" : "text-red-500"}`}>
+                                    {isDuplicate ? "Sudah Absen" : "Error"}
+                                </h3>
                                 <p className="mt-2 text-sm">{error}</p>
+                                {isDuplicate && (
+                                    <p className="mt-2 text-xs text-muted-foreground">
+                                        Siswa ini sudah melakukan absensi hari ini. Klik "Mulai Scan" untuk scan siswa lain.
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </CardContent>

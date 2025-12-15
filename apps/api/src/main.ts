@@ -8,11 +8,26 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
 
   const port = configService.get<number>('PORT') ?? 3001;
-  const origin =
+  const frontendOrigin =
     configService.get<string>('FRONTEND_ORIGIN') ?? 'http://localhost:3000';
 
+  // Allow both localhost and local network access
+  const allowedOrigins = [
+    frontendOrigin,
+    'http://localhost:3000',
+    'http://192.168.1.8:3000',
+    'https://localhost:3000',
+    'https://192.168.1.8:3000',
+  ];
+
   app.enableCors({
-    origin,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
   });
 
@@ -24,8 +39,9 @@ async function bootstrap() {
     }),
   );
 
-  await app.listen(port);
-  const appUrl = await app.getUrl();
-  console.log(`dYs? API ready on ${appUrl}`);
+  await app.listen(port, '0.0.0.0');
+  console.log(`dYs? API ready on:`);
+  console.log(`  - Local:   http://localhost:${port}`);
+  console.log(`  - Network: http://192.168.1.8:${port}`);
 }
 void bootstrap();
