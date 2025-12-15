@@ -27,6 +27,12 @@ export type NavItem = {
   badge?: string;
 };
 
+export type NavGroup = {
+  label: string;
+  items: NavItem[];
+  collapsible?: boolean;
+};
+
 export type AuthUser = {
   id: string;
   email: string;
@@ -44,7 +50,7 @@ type RoleContextValue = {
   user: AuthUser | null;
   token: string | null;
   role: Role | null;
-  navigation: NavItem[];
+  navigation: NavGroup[];
   ready: boolean;
   setAuth: (auth: AuthResponse) => void;
   logout: () => void;
@@ -52,38 +58,116 @@ type RoleContextValue = {
 
 const RoleContext = createContext<RoleContextValue | undefined>(undefined);
 
-const navByRole: Record<Role, NavItem[]> = {
+const navByRole: Record<Role, NavGroup[]> = {
   ADMIN: [
-    { label: "Dasbor", icon: LayoutDashboard, href: "/", note: "Sorotan hari ini" },
-    { label: "Kelola User", icon: Users2, href: "/users", note: "Manajemen pengguna" },
-    { label: "Data Siswa", icon: Users2, href: "/siswa", note: "Profil & kehadiran" },
-    { label: "Kenaikan Kelas", icon: ArrowUpCircle, href: "/kenaikan-kelas", note: "Manajemen kenaikan kelas" },
-    { label: "Data Guru", icon: Users2, href: "/guru", note: "Penugasan & KPI" },
-    { label: "Data Kelas", icon: CalendarRange, href: "/kelas", note: "Struktur & jadwal" },
-    { label: "Data Jurusan", icon: BookOpen, href: "/jurusan", note: "Program studi" },
-    { label: "Tahun Ajaran", icon: CalendarClock, href: "/tahun-ajaran", note: "Periode aktif" },
-    { label: "Mata Pelajaran", icon: BookOpen, href: "/mata-pelajaran", note: "Silabus & mapel" },
-    { label: "Absensi", icon: ClipboardList, href: "/attendance", note: "Scan & laporan" },
-    { label: "Database", icon: Database, href: "/database", note: "Backup & restore" },
-    { label: "CBT", icon: ClipboardCheck, href: "/cbt", note: "Soal, ujian, sesi", badge: "CBT" },
-    { label: "Pelaporan", icon: BarChart3, href: "/laporan", note: "Analitik & export" },
-    { label: "Keamanan", icon: ShieldCheck, href: "/keamanan", note: "Role & audit" },
-    { label: "Keuangan", icon: CreditCard, href: "/keuangan", note: "Tagihan, SPP" },
+    {
+      label: "",
+      items: [
+        { label: "Dasbor", icon: LayoutDashboard, href: "/", note: "Sorotan hari ini" },
+      ],
+      collapsible: false,
+    },
+    {
+      label: "Data Akademik",
+      collapsible: true,
+      items: [
+        { label: "Data Siswa", icon: Users2, href: "/siswa", note: "Profil & kehadiran" },
+        { label: "Kenaikan Kelas", icon: ArrowUpCircle, href: "/kenaikan-kelas", note: "Manajemen kenaikan kelas" },
+        { label: "Data Guru", icon: Users2, href: "/guru", note: "Penugasan & KPI" },
+        { label: "Data Kelas", icon: CalendarRange, href: "/kelas", note: "Struktur & jadwal" },
+        { label: "Data Jurusan", icon: BookOpen, href: "/jurusan", note: "Program studi" },
+        { label: "Tahun Ajaran", icon: CalendarClock, href: "/tahun-ajaran", note: "Periode aktif" },
+        { label: "Mata Pelajaran", icon: BookOpen, href: "/mata-pelajaran", note: "Silabus & mapel" },
+      ],
+    },
+    {
+      label: "LMS",
+      collapsible: true,
+      items: [
+        { label: "Absensi", icon: ClipboardList, href: "/attendance", note: "Scan & laporan" },
+        { label: "Pelaporan", icon: BarChart3, href: "/laporan", note: "Analitik & export" },
+      ],
+    },
+    {
+      label: "CBT",
+      collapsible: true,
+      items: [
+        { label: "CBT", icon: ClipboardCheck, href: "/cbt", note: "Soal, ujian, sesi", badge: "CBT" },
+      ],
+    },
+    {
+      label: "Sistem",
+      collapsible: true,
+      items: [
+        { label: "Kelola User", icon: Users2, href: "/users", note: "Manajemen pengguna" },
+        { label: "Database", icon: Database, href: "/database", note: "Backup & restore" },
+        { label: "Keamanan", icon: ShieldCheck, href: "/keamanan", note: "Role & audit" },
+        { label: "Keuangan", icon: CreditCard, href: "/keuangan", note: "Tagihan, SPP" },
+      ],
+    },
   ],
   GURU: [
-    { label: "Dasbor Guru", icon: LayoutDashboard, href: "/", note: "Agenda mengajar" },
-    { label: "Kelas Saya", icon: CalendarRange, href: "/kelas", note: "Jadwal & materi" },
-    { label: "Mata Pelajaran", icon: BookOpen, href: "/mata-pelajaran", note: "Silabus & rubrik" },
-    { label: "Absensi", icon: ClipboardList, href: "/attendance", note: "Scan & laporan" },
-    { label: "CBT", icon: ClipboardCheck, href: "/cbt", note: "Soal & monitoring", badge: "CBT" },
-    { label: "Laporan Nilai", icon: BarChart3, href: "/laporan", note: "Rekap nilai" },
+    {
+      label: "",
+      items: [
+        { label: "Dasbor Guru", icon: LayoutDashboard, href: "/", note: "Agenda mengajar" },
+      ],
+      collapsible: false,
+    },
+    {
+      label: "Pembelajaran",
+      collapsible: true,
+      items: [
+        { label: "Kelas Saya", icon: CalendarRange, href: "/kelas", note: "Jadwal & materi" },
+        { label: "Mata Pelajaran", icon: BookOpen, href: "/mata-pelajaran", note: "Silabus & rubrik" },
+      ],
+    },
+    {
+      label: "LMS",
+      collapsible: true,
+      items: [
+        { label: "Absensi", icon: ClipboardList, href: "/attendance", note: "Scan & laporan" },
+        { label: "Laporan Nilai", icon: BarChart3, href: "/laporan", note: "Rekap nilai" },
+      ],
+    },
+    {
+      label: "CBT",
+      collapsible: true,
+      items: [
+        { label: "CBT", icon: ClipboardCheck, href: "/cbt", note: "Soal & monitoring", badge: "CBT" },
+      ],
+    },
   ],
   SISWA: [
-    { label: "Dasbor Siswa", icon: LayoutDashboard, href: "/", note: "Progress belajar" },
-    { label: "Jadwal & Kelas", icon: CalendarRange, href: "/kelas", note: "Kelas aktif" },
-    { label: "Mata Pelajaran", icon: BookOpen, href: "/mata-pelajaran", note: "Materi & modul" },
-    { label: "CBT", icon: ClipboardCheck, href: "/cbt", note: "Ujian & sesi", badge: "CBT" },
-    { label: "Keamanan", icon: ShieldCheck, href: "/keamanan", note: "Akun & perangkat" },
+    {
+      label: "",
+      items: [
+        { label: "Dasbor Siswa", icon: LayoutDashboard, href: "/", note: "Progress belajar" },
+      ],
+      collapsible: false,
+    },
+    {
+      label: "Pembelajaran",
+      collapsible: true,
+      items: [
+        { label: "Jadwal & Kelas", icon: CalendarRange, href: "/kelas", note: "Kelas aktif" },
+        { label: "Mata Pelajaran", icon: BookOpen, href: "/mata-pelajaran", note: "Materi & modul" },
+      ],
+    },
+    {
+      label: "CBT",
+      collapsible: true,
+      items: [
+        { label: "CBT", icon: ClipboardCheck, href: "/cbt", note: "Ujian & sesi", badge: "CBT" },
+      ],
+    },
+    {
+      label: "Akun",
+      collapsible: true,
+      items: [
+        { label: "Keamanan", icon: ShieldCheck, href: "/keamanan", note: "Akun & perangkat" },
+      ],
+    },
   ],
 };
 

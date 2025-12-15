@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Bell,
   CalendarRange,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Globe2,
@@ -41,12 +42,24 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   const { role, user, token, navigation, ready, logout } = useRole();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
   const allowed = useMemo(() => {
     if (!role) return false;
     const list = accessByRole[role];
     return list.some((p) => (p === "/" ? pathname === "/" : pathname.startsWith(p)));
   }, [role, pathname]);
+
+  // Initialize all groups as expanded by default
+  useEffect(() => {
+    const initialExpanded: Record<string, boolean> = {};
+    navigation.forEach((group) => {
+      if (group.label && group.collapsible) {
+        initialExpanded[group.label] = true;
+      }
+    });
+    setExpandedGroups(initialExpanded);
+  }, [navigation]);
 
   useEffect(() => {
     if (ready && !token) {
@@ -126,46 +139,92 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
           </div>
 
           <nav className="flex-1 overflow-y-auto space-y-1 px-3 pb-4 scrollbar-thin scrollbar-thumb-white/10 hover:scrollbar-thumb-white/20">
-            {navigation.map((item) => {
-              const Icon = item.icon;
-              const isActive =
-                item.href !== "/" && pathname.startsWith(item.href) && item.href !== "/cbt"
-                  ? true
-                  : pathname === item.href;
+            {navigation.map((group, groupIndex) => {
+              const isExpanded = expandedGroups[group.label] !== false;
+              const hasLabel = group.label !== "";
 
               return (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  onClick={() => setMobileSidebarOpen(false)}
-                  className={cn(
-                    "group flex w-full items-center gap-3 rounded-xl border border-transparent px-3 py-3 text-left text-sm font-semibold transition duration-200",
-                    isActive
-                      ? "border-primary/50 bg-primary/10 text-primary shadow-lg shadow-primary/25"
-                      : "text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground",
-                  )}
-                >
-                  <Icon
-                    size={18}
-                    className={cn(
-                      "text-primary transition duration-200 group-hover:scale-105",
-                      isActive && "drop-shadow",
-                    )}
-                  />
-                  {!sidebarCollapsed && (
-                    <div className="flex flex-1 items-center justify-between gap-2">
-                      <div>
-                        <p>{item.label}</p>
-                        <p className="text-xs font-normal text-muted-foreground">{item.note}</p>
-                      </div>
-                      {item.badge && (
-                        <Badge tone="warning" className="px-2 py-1 text-[10px] uppercase">
-                          {item.badge}
-                        </Badge>
+                <div key={groupIndex} className="space-y-1">
+                  {hasLabel && group.collapsible && (
+                    <button
+                      onClick={() =>
+                        setExpandedGroups((prev) => ({
+                          ...prev,
+                          [group.label]: !isExpanded,
+                        }))
+                      }
+                      className={cn(
+                        "group flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-bold uppercase tracking-wider transition duration-200",
+                        sidebarCollapsed ? "justify-center" : "",
+                        "text-muted-foreground hover:text-foreground"
                       )}
+                    >
+                      {!sidebarCollapsed && <span>{group.label}</span>}
+                      <ChevronDown
+                        size={14}
+                        className={cn(
+                          "transition-transform duration-200",
+                          isExpanded ? "rotate-0" : "-rotate-90"
+                        )}
+                      />
+                    </button>
+                  )}
+                  {hasLabel && !group.collapsible && !sidebarCollapsed && (
+                    <div className="px-3 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      {group.label}
                     </div>
                   )}
-                </Link>
+                  <div
+                    className={cn(
+                      "space-y-1 overflow-hidden transition-all duration-300",
+                      !isExpanded && group.collapsible ? "max-h-0 opacity-0" : "max-h-[2000px] opacity-100"
+                    )}
+                  >
+                    {group.items.map((item) => {
+                      const Icon = item.icon;
+                      const isActive =
+                        item.href !== "/" && pathname.startsWith(item.href) && item.href !== "/cbt"
+                          ? true
+                          : pathname === item.href;
+
+                      return (
+                        <Link
+                          key={item.label}
+                          href={item.href}
+                          onClick={() => setMobileSidebarOpen(false)}
+                          className={cn(
+                            "group flex w-full items-center gap-3 rounded-xl border border-transparent px-3 py-3 text-left text-sm font-semibold transition duration-200",
+                            hasLabel && !sidebarCollapsed ? "ml-2" : "",
+                            isActive
+                              ? "border-primary/50 bg-primary/10 text-primary shadow-lg shadow-primary/25"
+                              : "text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground"
+                          )}
+                        >
+                          <Icon
+                            size={18}
+                            className={cn(
+                              "text-primary transition duration-200 group-hover:scale-105",
+                              isActive && "drop-shadow"
+                            )}
+                          />
+                          {!sidebarCollapsed && (
+                            <div className="flex flex-1 items-center justify-between gap-2">
+                              <div>
+                                <p>{item.label}</p>
+                                <p className="text-xs font-normal text-muted-foreground">{item.note}</p>
+                              </div>
+                              {item.badge && (
+                                <Badge tone="warning" className="px-2 py-1 text-[10px] uppercase">
+                                  {item.badge}
+                                </Badge>
+                              )}
+                            </div>
+                          )}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
               );
             })}
           </nav>
