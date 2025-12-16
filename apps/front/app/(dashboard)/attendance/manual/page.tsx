@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Calendar as CalendarIcon, Filter } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -65,11 +65,40 @@ const statusLabels: Record<AttendanceStatus, string> = {
 };
 
 export default function ManualAttendancePage() {
+    const { role, ready } = useRole();
+    const queryClient = useQueryClient();
+    if (!ready) {
+        return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+    }
+
+    if (role !== "ADMIN" && role !== "GURU" && role !== "PETUGAS_ABSENSI") {
+        return <div className="p-8 text-center text-red-500">Akses ditolak</div>;
+    }
+
+    return <ManualAttendanceContent />;
+}
+
+function ManualAttendanceContent() {
     const { token } = useRole();
     const queryClient = useQueryClient();
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
     const [selectedKelas, setSelectedKelas] = useState("");
     const [searchQuery, setSearchQuery] = useState("");
+    // Helper function to format time
+    const formatTime = (time: any) => {
+        if (!time) return '-';
+        if (typeof time === 'string' && time.includes(':')) {
+            return time;
+        }
+        try {
+            return new Date(time).toLocaleTimeString("id-ID", {
+                hour: "2-digit",
+                minute: "2-digit",
+            });
+        } catch (e) {
+            return '-';
+        }
+    };
     const [statusFilter, setStatusFilter] = useState("all"); // all, attended, not-attended
     const [updatingStudentId, setUpdatingStudentId] = useState<string | null>(null);
 
@@ -98,27 +127,31 @@ export default function ManualAttendancePage() {
     });
 
     // Filter students based on search query and status
-    const filteredStudents = data?.students.filter(student => {
-        // Search filter
-        if (searchQuery) {
-            const query = searchQuery.toLowerCase();
-            const matchesSearch = (
-                student.nisn.toLowerCase().includes(query) ||
-                student.nama.toLowerCase().includes(query) ||
-                student.kelas?.nama.toLowerCase().includes(query)
-            );
-            if (!matchesSearch) return false;
-        }
+    const filteredStudents = useMemo(() => {
+        if (!data?.students) return [];
 
-        // Status filter
-        if (statusFilter === "attended") {
-            return student.attendance !== null;
-        } else if (statusFilter === "not-attended") {
-            return student.attendance === null;
-        }
+        return data.students.filter((student: Student) => {
+            // Search filter
+            if (searchQuery) {
+                const query = searchQuery.toLowerCase();
+                const matchesSearch = (
+                    student.nisn.toLowerCase().includes(query) ||
+                    student.nama.toLowerCase().includes(query) ||
+                    student.kelas?.nama.toLowerCase().includes(query)
+                );
+                if (!matchesSearch) return false;
+            }
 
-        return true; // all
-    });
+            // Status filter
+            if (statusFilter === "attended") {
+                return student.attendance !== null;
+            } else if (statusFilter === "not-attended") {
+                return student.attendance === null;
+            }
+
+            return true; // all
+        });
+    }, [data, searchQuery, statusFilter]);
 
     // Update attendance mutation
     const updateMutation = useMutation({
@@ -151,14 +184,59 @@ export default function ManualAttendancePage() {
                 );
             }
         },
-        onSuccess: () => {
+
+
+        onMutate: async ({ studentId, status }: { studentId: string; status: AttendanceStatus }) => {
+            // Cancel any outgoing refetches
+            await queryClient.cancelQueries({ queryKey: ["manual-attendance", selectedDate, selectedKelas] });
+
+            // Snapshot the previous value
+            const previousData = queryClient.getQueryData<ManualAttendanceResponse>(["manual-attendance", selectedDate, selectedKelas]);
+
+            // Optimistically update to the new value
+            queryClient.setQueryData<ManualAttendanceResponse>(["manual-attendance", selectedDate, selectedKelas], (old) => {
+                if (!old) {
+                    return old;
+                }
+
+                const newData = {
+                    ...old,
+                    students: old.students.map((student) => {
+                        if (student.id === studentId) {
+                            // Create a temporary/optimistic attendance object
+                            const existingAtt = student.attendance;
+                            return {
+                                ...student,
+                                attendance: {
+                                    id: existingAtt?.id || "optimistic-" + Math.random(),
+                                    status: status,
+                                    jamMasuk: existingAtt?.jamMasuk || new Date().toISOString(),
+                                    jamKeluar: existingAtt?.jamKeluar,
+                                    keterangan: existingAtt?.keterangan
+                                }
+                            };
+                        }
+                        return student;
+                    })
+                };
+                return newData;
+            });
+
+            // Return a context object with the snapshotted value
+            return { previousData };
+        },
+        onError: (err, newTodo, context) => {
+            // If the mutation fails, use the context returned from onMutate to roll back
+            if (context?.previousData) {
+                queryClient.setQueryData(["manual-attendance", selectedDate, selectedKelas], context.previousData);
+            }
+            setUpdatingStudentId(null);
+        },
+        onSettled: () => {
+            // Always refetch after error or success to ensure server sync
             queryClient.invalidateQueries({ queryKey: ["manual-attendance"] });
             queryClient.invalidateQueries({ queryKey: ["attendance-report"] });
             queryClient.invalidateQueries({ queryKey: ["attendance-today"] });
-            setUpdatingStudentId(null);
-        },
-        onError: (error: Error) => {
-            console.error("Failed to update attendance:", error);
             setUpdatingStudentId(null);
         },
     });
@@ -413,20 +491,10 @@ export default function ManualAttendancePage() {
                                                     )}
                                                 </td>
                                                 <td className="py-4 text-sm text-muted-foreground">
-                                                    {student.attendance?.jamMasuk
-                                                        ? new Date(student.attendance.jamMasuk).toLocaleTimeString("id-ID", {
-                                                            hour: "2-digit",
-                                                            minute: "2-digit",
-                                                        })
-                                                        : "-"}
+                                                    {formatTime(student.attendance?.jamMasuk)}
                                                 </td>
                                                 <td className="py-4 text-sm text-muted-foreground">
-                                                    {student.attendance?.jamKeluar
-                                                        ? new Date(student.attendance.jamKeluar).toLocaleTimeString("id-ID", {
-                                                            hour: "2-digit",
-                                                            minute: "2-digit",
-                                                        })
-                                                        : "-"}
+                                                    {formatTime(student.attendance?.jamKeluar)}
                                                 </td>
                                                 <td className="py-4">
                                                     <div className="flex justify-end gap-1">

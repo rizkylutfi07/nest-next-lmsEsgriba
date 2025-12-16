@@ -17,20 +17,27 @@ export class AttendanceService {
     // Helper method to get current time adjusted to Jakarta timezone
     private getJakartaTime(): Date {
         const now = new Date();
-        // Add 7 hours to UTC to get Jakarta time
-        return new Date(now.getTime() + this.JAKARTA_OFFSET_MS);
+        const jakartaTime = new Date(now.getTime() + this.JAKARTA_OFFSET_MS);
+        return jakartaTime;
     }
 
-    // Helper method to get today's date in Jakarta timezone (stored as UTC midnight)
+    // Helper method to get today's date in Jakarta timezone (stored as UTC)
+    // We set time to NOON (12:00) Jakarta time to be safe from offsets
+    // When DB subtracts 7h, it becomes 05:00 UTC, which is still the same day
     private getTodayJakarta(): Date {
         const jakartaTime = this.getJakartaTime();
-        // Get Jakarta date components
         const year = jakartaTime.getUTCFullYear();
         const month = jakartaTime.getUTCMonth();
         const day = jakartaTime.getUTCDate();
-        // Store Jakarta date as UTC midnight
-        // PostgreSQL DATE type will truncate time anyway
-        return new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
+
+        // Return Dec 16 18:00:00 (Fake UTC) -> Becomes Dec 16 11:00:00 Real UTC in DB (if -7h)
+        // Even if offset is -12h, it becomes Dec 16 06:00:00.
+        // This extreme buffer ensures we stay on the same day.
+        // Return Dec 16 18:00:00 (Fake UTC) -> Becomes Dec 16 11:00:00 Real UTC in DB (if -7h)
+        // Even if offset is -12h, it becomes Dec 16 06:00:00.
+        // This extreme buffer ensures we stay on the same day.
+        const today = new Date(Date.UTC(year, month, day, 18, 0, 0, 0));
+        return today;
     }
 
     async scanBarcode(dto: ScanBarcodeDto, userId: string) {
@@ -44,9 +51,9 @@ export class AttendanceService {
             throw new NotFoundException(`Siswa dengan NISN ${dto.nisn} tidak ditemukan`);
         }
 
-        // Check if already checked in today (using Indonesia timezone)
-        const jakartaTime = this.getJakartaTime();
-        const today = this.getTodayJakarta();
+        // Check if already checked in today
+        const jakartaTime = this.getJakartaTime(); // Use this for checks
+        const today = this.getTodayJakarta();     // use this for DB 'tanggal'
 
         const existing = await this.prisma.attendance.findFirst({
             where: {
@@ -57,7 +64,13 @@ export class AttendanceService {
         });
 
         if (existing) {
-            throw new BadRequestException(`${siswa.nama} sudah melakukan absensi hari ini pada ${existing.jamMasuk.toLocaleTimeString('id-ID')}`);
+            // Need to reconstruct the time for display
+            // stored jamMasuk is Real UTC. We need Jakarta Time.
+            // Since we know the offset is constant +7h
+            const storedTime = new Date(existing.jamMasuk);
+            const displayTime = new Date(storedTime.getTime() + this.JAKARTA_OFFSET_MS);
+
+            throw new BadRequestException(`${siswa.nama} sudah melakukan absensi hari ini pada ${displayTime.toLocaleTimeString('id-ID')}`);
         }
 
         // Get late time threshold from settings
@@ -71,11 +84,13 @@ export class AttendanceService {
         const status = jakartaTime > lateTime ? AttendanceStatus.TERLAMBAT : AttendanceStatus.HADIR;
 
         // Create attendance record
+        // Revert to Real UTC (new Date) to fix double-shifting
         const attendance = await this.prisma.attendance.create({
             data: {
                 siswaId: siswa.id,
                 tanggal: today,
-                jamMasuk: new Date(), // Use UTC time directly
+                // Revert to Real UTC
+                jamMasuk: new Date(),
                 status,
                 keterangan: dto.keterangan,
                 scanBy: userId,
@@ -87,6 +102,16 @@ export class AttendanceService {
             },
         });
 
+        // Format jamMasuk to WIB string for consistent frontend display
+        // Stored is UTC. WIB is UTC+7.
+        // We use the same formatting logic as the report page.
+        // attendance.jamMasuk is Real UTC.
+        const wibTime = new Date(attendance.jamMasuk.getTime() + (7 * 60 * 60 * 1000));
+        const h = String(wibTime.getUTCHours()).padStart(2, '0');
+        const m = String(wibTime.getUTCMinutes()).padStart(2, '0');
+        const s = String(wibTime.getUTCSeconds()).padStart(2, '0');
+        const jamMasukStr = `${h}:${m}:${s}`;
+
         return {
             message: `Absensi berhasil untuk ${siswa.nama}`,
             attendance,
@@ -96,7 +121,7 @@ export class AttendanceService {
                 kelas: siswa.kelas?.nama,
             },
             status,
-            jamMasuk: jakartaTime,
+            jamMasuk: jamMasukStr, // Return string instead of Date object
         };
     }
 
@@ -128,7 +153,9 @@ export class AttendanceService {
             data: {
                 siswaId: dto.siswaId,
                 tanggal: today,
-                jamMasuk: new Date(), // Use UTC time directly
+                // Reverting to new Date() (Real UTC) because DB seems to correct timestamps properly
+                // The previous issue of '04:40' (next day) implies we were double-adding.
+                jamMasuk: new Date(),
                 status: dto.status || AttendanceStatus.HADIR,
                 keterangan: dto.keterangan,
                 scanBy: userId,
@@ -139,6 +166,14 @@ export class AttendanceService {
                 },
             },
         });
+
+        console.log('DEBUG CHECKIN:', {
+            todayJakarta: today.toISOString(),
+            jamMasukJakarta: attendance.jamMasuk.toISOString(),
+            savedTanggal: attendance.tanggal.toISOString()
+        });
+
+        return attendance;
 
         return attendance;
     }
@@ -174,7 +209,9 @@ export class AttendanceService {
 
         return this.prisma.attendance.update({
             where: { id: attendance.id },
-            data: { jamKeluar: new Date() },
+            data: {
+                jamKeluar: new Date(), // Revert to Real UTC
+            },
             include: {
                 siswa: {
                     include: { kelas: true },
@@ -268,7 +305,8 @@ export class AttendanceService {
     async getAttendanceByDate(date: string) {
         // Parse date string without timezone conversion
         const [year, month, day] = date.split('-').map(Number);
-        const targetDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+        // Use 18:00 UTC to match storage format
+        const targetDate = new Date(Date.UTC(year, month - 1, day, 18, 0, 0, 0));
 
         const attendance = await this.prisma.attendance.findMany({
             where: {
@@ -409,10 +447,16 @@ export class AttendanceService {
         if (query.date) {
             // Parse date string without timezone conversion
             const [year, month, day] = query.date.split('-').map(Number);
-            targetDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+            // Must use 18:00 UTC to match storage format
+            targetDate = new Date(Date.UTC(year, month - 1, day, 18, 0, 0, 0));
         } else {
             targetDate = this.getTodayJakarta();
         }
+
+        console.log("DEBUG MANUAL QUERY:", {
+            queryDate: query.date,
+            targetDate: targetDate.toISOString()
+        });
 
         const where: any = {
             deletedAt: null,
@@ -442,13 +486,43 @@ export class AttendanceService {
         });
 
         // Map students with their attendance status
-        const result = students.map(student => ({
-            id: student.id,
-            nisn: student.nisn,
-            nama: student.nama,
-            kelas: student.kelas,
-            attendance: student.attendance[0] || null,
-        }));
+        const result = students.map(student => {
+            let att = student.attendance[0] || null;
+            if (att) {
+                // Format times to WIB strings manually
+                let jamMasukStr: string | null = null;
+                if (att.jamMasuk) {
+                    const wibTime = new Date(att.jamMasuk.getTime() + (7 * 60 * 60 * 1000));
+                    const h = String(wibTime.getUTCHours()).padStart(2, '0');
+                    const m = String(wibTime.getUTCMinutes()).padStart(2, '0');
+                    const s = String(wibTime.getUTCSeconds()).padStart(2, '0');
+                    jamMasukStr = `${h}:${m}:${s}`;
+                }
+
+                let jamKeluarStr: string | null = null;
+                if (att.jamKeluar) {
+                    const wibTime = new Date(att.jamKeluar.getTime() + (7 * 60 * 60 * 1000));
+                    const h = String(wibTime.getUTCHours()).padStart(2, '0');
+                    const m = String(wibTime.getUTCMinutes()).padStart(2, '0');
+                    const s = String(wibTime.getUTCSeconds()).padStart(2, '0');
+                    jamKeluarStr = `${h}:${m}:${s}`;
+                }
+
+                att = {
+                    ...att,
+                    jamMasuk: jamMasukStr as any, // Cast to any to bypass type check temporarily
+                    jamKeluar: jamKeluarStr as any,
+                };
+            }
+
+            return {
+                id: student.id,
+                nisn: student.nisn,
+                nama: student.nama,
+                kelas: student.kelas,
+                attendance: att, // This now has string timestamps
+            };
+        });
 
         // Calculate stats
         const stats = {
@@ -512,8 +586,12 @@ export class AttendanceService {
         }
 
         // Parse date string without timezone conversion
+        // Parse date string without timezone conversion
         const [year, month, day] = dto.tanggal.split('-').map(Number);
-        const targetDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+
+        // Use 18:00 offset logic for Manual Attendance dates as well
+        // calculated as UTC to survive negative shifts
+        const targetDate = new Date(Date.UTC(year, month - 1, day, 18, 0, 0, 0));
 
         // Check if attendance already exists
         const existing = await this.prisma.attendance.findFirst({
@@ -530,7 +608,7 @@ export class AttendanceService {
                 where: { id: existing.id },
                 data: {
                     status: dto.status,
-                    jamKeluar: new Date(), // Use UTC time directly
+                    jamKeluar: new Date(), // Revert to Real UTC
                     keterangan: dto.keterangan,
                     scanBy: userId,
                 },
@@ -546,8 +624,8 @@ export class AttendanceService {
         return this.prisma.attendance.create({
             data: {
                 siswaId: dto.siswaId,
-                tanggal: targetDate,
-                jamMasuk: new Date(), // Use UTC time directly
+                tanggal: targetDate, // Uses 18:00 offset
+                jamMasuk: new Date(), // Revert to Real UTC
                 status: dto.status,
                 keterangan: dto.keterangan,
                 scanBy: userId,

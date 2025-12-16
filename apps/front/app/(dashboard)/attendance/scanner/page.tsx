@@ -311,10 +311,10 @@ export default function ScannerPage() {
                                     {lastScan.mode === "check-in" ? (
                                         <>
                                             <p><strong>Status:</strong> <span className={lastScan.status === "TERLAMBAT" ? "text-yellow-500" : "text-green-500"}>{lastScan.status}</span></p>
-                                            <p><strong>Jam Masuk:</strong> {new Date(lastScan.jamMasuk).toLocaleTimeString("id-ID")}</p>
+                                            <p><strong>Jam Masuk:</strong> {String(lastScan.jamMasuk).length < 10 ? lastScan.jamMasuk : new Date(lastScan.jamMasuk).toLocaleTimeString("id-ID")}</p>
                                         </>
                                     ) : (
-                                        <p><strong>Jam Keluar:</strong> {new Date(lastScan.jamKeluar).toLocaleTimeString("id-ID")}</p>
+                                        <p><strong>Jam Keluar:</strong> {lastScan.jamKeluar ? (String(lastScan.jamKeluar).length < 10 ? lastScan.jamKeluar : new Date(lastScan.jamKeluar).toLocaleTimeString("id-ID")) : "-"}</p>
                                     )}
                                 </div>
                             </div>

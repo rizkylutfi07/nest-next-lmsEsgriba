@@ -1,7 +1,6 @@
-import { createServer } from 'https';
+import { createServer } from 'http';
 import { parse } from 'url';
 import next from 'next';
-import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -15,13 +14,8 @@ const port = 3000;
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
 
-const httpsOptions = {
-    key: fs.readFileSync(path.join(__dirname, 'localhost-key.pem')),
-    cert: fs.readFileSync(path.join(__dirname, 'localhost.pem')),
-};
-
 app.prepare().then(() => {
-    createServer(httpsOptions, async (req, res) => {
+    createServer(async (req, res) => {
         try {
             const parsedUrl = parse(req.url, true);
             await handle(req, res, parsedUrl);
@@ -36,8 +30,8 @@ app.prepare().then(() => {
             process.exit(1);
         })
         .listen(port, () => {
-            console.log(`> Ready on https://${hostname}:${port}`);
-            console.log(`> Local: https://localhost:${port}`);
-            console.log(`> Network: https://192.168.1.8:${port}`);
+            console.log(`> Ready on http://${hostname}:${port}`);
+            console.log(`> Local: http://localhost:${port}`);
+            console.log(`> Network: http://192.168.1.8:${port}`);
         });
 });
