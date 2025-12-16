@@ -11,6 +11,20 @@ export class AttendanceService {
         private settingsService: SettingsService,
     ) { }
 
+    // Helper method to get current time in Indonesia timezone
+    private getJakartaTime(): Date {
+        const now = new Date();
+        return new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
+    }
+
+    // Helper method to get today's date (00:00:00) in Indonesia timezone
+    private getTodayJakarta(): Date {
+        const jakartaTime = this.getJakartaTime();
+        const today = new Date(jakartaTime);
+        today.setHours(0, 0, 0, 0);
+        return today;
+    }
+
     async scanBarcode(dto: ScanBarcodeDto, userId: string) {
         // Find student by NISN
         const siswa = await this.prisma.siswa.findUnique({
@@ -22,9 +36,9 @@ export class AttendanceService {
             throw new NotFoundException(`Siswa dengan NISN ${dto.nisn} tidak ditemukan`);
         }
 
-        // Check if already checked in today
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        // Check if already checked in today (using Indonesia timezone)
+        const jakartaTime = this.getJakartaTime();
+        const today = this.getTodayJakarta();
 
         const existing = await this.prisma.attendance.findFirst({
             where: {
@@ -43,18 +57,17 @@ export class AttendanceService {
         const [hours, minutes] = lateTimeThreshold.split(':').map(Number);
 
         // Determine status based on time
-        const now = new Date();
-        const lateTime = new Date();
+        const lateTime = new Date(jakartaTime);
         lateTime.setHours(hours, minutes, 0, 0);
 
-        const status = now > lateTime ? AttendanceStatus.TERLAMBAT : AttendanceStatus.HADIR;
+        const status = jakartaTime > lateTime ? AttendanceStatus.TERLAMBAT : AttendanceStatus.HADIR;
 
         // Create attendance record
         const attendance = await this.prisma.attendance.create({
             data: {
                 siswaId: siswa.id,
                 tanggal: today,
-                jamMasuk: now,
+                jamMasuk: jakartaTime,
                 status,
                 keterangan: dto.keterangan,
                 scanBy: userId,
@@ -75,7 +88,7 @@ export class AttendanceService {
                 kelas: siswa.kelas?.nama,
             },
             status,
-            jamMasuk: now,
+            jamMasuk: jakartaTime,
         };
     }
 
@@ -89,8 +102,7 @@ export class AttendanceService {
             throw new NotFoundException('Siswa tidak ditemukan');
         }
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const today = this.getTodayJakarta();
 
         const existing = await this.prisma.attendance.findFirst({
             where: {
@@ -108,7 +120,7 @@ export class AttendanceService {
             data: {
                 siswaId: dto.siswaId,
                 tanggal: today,
-                jamMasuk: new Date(),
+                jamMasuk: this.getJakartaTime(),
                 status: dto.status || AttendanceStatus.HADIR,
                 keterangan: dto.keterangan,
                 scanBy: userId,
@@ -134,8 +146,7 @@ export class AttendanceService {
             throw new NotFoundException('Siswa tidak ditemukan');
         }
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const today = this.getTodayJakarta();
 
         const attendance = await this.prisma.attendance.findFirst({
             where: {
@@ -165,8 +176,7 @@ export class AttendanceService {
     }
 
     async getTodayAttendance() {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const today = this.getTodayJakarta();
 
         const attendance = await this.prisma.attendance.findMany({
             where: {
@@ -205,8 +215,7 @@ export class AttendanceService {
     }
 
     async getAbsentStudents() {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const today = this.getTodayJakarta();
 
         // Get all active students
         const allStudents = await this.prisma.siswa.findMany({
@@ -482,7 +491,7 @@ export class AttendanceService {
             data: {
                 siswaId: dto.siswaId,
                 tanggal: targetDate,
-                jamMasuk: new Date(),
+                jamMasuk: this.getJakartaTime(),
                 status: dto.status,
                 keterangan: dto.keterangan,
                 scanBy: userId,
