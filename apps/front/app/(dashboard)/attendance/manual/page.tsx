@@ -153,6 +153,8 @@ export default function ManualAttendancePage() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["manual-attendance"] });
+            queryClient.invalidateQueries({ queryKey: ["attendance-report"] });
+            queryClient.invalidateQueries({ queryKey: ["attendance-today"] });
             setUpdatingStudentId(null);
         },
         onError: (error: Error) => {
@@ -180,6 +182,8 @@ export default function ManualAttendancePage() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["manual-attendance"] });
+            queryClient.invalidateQueries({ queryKey: ["attendance-report"] });
+            queryClient.invalidateQueries({ queryKey: ["attendance-today"] });
             setUpdatingStudentId(null);
         },
         onError: (error: Error) => {

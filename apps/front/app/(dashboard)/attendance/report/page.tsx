@@ -43,11 +43,11 @@ export default function AttendanceReportPage() {
 
     // Helper function to format date without timezone shift
     const formatDate = (dateString: string) => {
-        const date = new Date(dateString);
-        // Add timezone offset to get correct local date
-        const offset = date.getTimezoneOffset();
-        const localDate = new Date(date.getTime() - (offset * 60 * 1000));
-        return localDate.toLocaleDateString("id-ID");
+        // Extract date part from ISO string (YYYY-MM-DD)
+        const datePart = dateString.split('T')[0];
+        if (!datePart) return dateString;
+        const [year, month, day] = datePart.split('-');
+        return `${day}/${month}/${year}`;
     };
 
     const handleExportExcel = () => {
