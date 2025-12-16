@@ -258,8 +258,9 @@ export class AttendanceService {
     }
 
     async getAttendanceByDate(date: string) {
-        const targetDate = new Date(date);
-        targetDate.setHours(0, 0, 0, 0);
+        // Parse date string without timezone conversion
+        const [year, month, day] = date.split('-').map(Number);
+        const targetDate = new Date(year, month - 1, day, 0, 0, 0, 0);
 
         const attendance = await this.prisma.attendance.findMany({
             where: {
@@ -357,8 +358,15 @@ export class AttendanceService {
 
     // Manual Attendance Methods
     async getStudentsForManualAttendance(query: ManualAttendanceQueryDto) {
-        const targetDate = query.date ? new Date(query.date) : new Date();
-        targetDate.setHours(0, 0, 0, 0);
+        let targetDate: Date;
+
+        if (query.date) {
+            // Parse date string without timezone conversion
+            const [year, month, day] = query.date.split('-').map(Number);
+            targetDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+        } else {
+            targetDate = this.getTodayJakarta();
+        }
 
         const where: any = {
             deletedAt: null,
@@ -457,8 +465,9 @@ export class AttendanceService {
             throw new NotFoundException('Siswa tidak ditemukan');
         }
 
-        const targetDate = new Date(dto.tanggal);
-        targetDate.setHours(0, 0, 0, 0);
+        // Parse date string without timezone conversion
+        const [year, month, day] = dto.tanggal.split('-').map(Number);
+        const targetDate = new Date(year, month - 1, day, 0, 0, 0, 0);
 
         // Check if attendance already exists
         const existing = await this.prisma.attendance.findFirst({
