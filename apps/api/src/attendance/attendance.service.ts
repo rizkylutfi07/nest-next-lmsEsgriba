@@ -75,7 +75,7 @@ export class AttendanceService {
             data: {
                 siswaId: siswa.id,
                 tanggal: today,
-                jamMasuk: jakartaTime,
+                jamMasuk: new Date(), // Use UTC time directly
                 status,
                 keterangan: dto.keterangan,
                 scanBy: userId,
@@ -128,7 +128,7 @@ export class AttendanceService {
             data: {
                 siswaId: dto.siswaId,
                 tanggal: today,
-                jamMasuk: this.getJakartaTime(),
+                jamMasuk: new Date(), // Use UTC time directly
                 status: dto.status || AttendanceStatus.HADIR,
                 keterangan: dto.keterangan,
                 scanBy: userId,
@@ -505,6 +505,7 @@ export class AttendanceService {
                 where: { id: existing.id },
                 data: {
                     status: dto.status,
+                    jamKeluar: new Date(), // Use UTC time directly
                     keterangan: dto.keterangan,
                     scanBy: userId,
                 },
@@ -521,7 +522,7 @@ export class AttendanceService {
             data: {
                 siswaId: dto.siswaId,
                 tanggal: targetDate,
-                jamMasuk: this.getJakartaTime(),
+                jamMasuk: new Date(), // Use UTC time directly
                 status: dto.status,
                 keterangan: dto.keterangan,
                 scanBy: userId,
