@@ -14,19 +14,21 @@ export default function ScannerPage() {
     const [isScanning, setIsScanning] = useState(false);
     const [lastScan, setLastScan] = useState<any>(null);
     const [manualNisn, setManualNisn] = useState("");
+    const [scanMode, setScanMode] = useState<"check-in" | "check-out">("check-in");
     const scannerRef = useRef<Html5Qrcode | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isDuplicate, setIsDuplicate] = useState(false);
 
     const scanMutation = useMutation({
         mutationFn: async (nisn: string) => {
-            const res = await fetch(`${apiBaseUrl}/attendance/scan`, {
+            const endpoint = scanMode === "check-in" ? "/attendance/scan" : "/attendance/check-out";
+            const res = await fetch(`${apiBaseUrl}${endpoint}`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify({ nisn }),
+                body: JSON.stringify({ [scanMode === "check-in" ? "nisn" : "siswaId"]: nisn }),
             });
 
             if (!res.ok) {
@@ -37,7 +39,7 @@ export default function ScannerPage() {
             return res.json();
         },
         onSuccess: (data) => {
-            setLastScan(data);
+            setLastScan({ ...data, mode: scanMode });
             setIsDuplicate(false);
 
             // Stop scanner on success
@@ -62,7 +64,7 @@ export default function ScannerPage() {
         },
         onError: (error: any) => {
             // Check if this is a duplicate scan error
-            const isDuplicateError = error.message.includes("sudah melakukan absensi");
+            const isDuplicateError = error.message.includes("sudah melakukan") || error.message.includes("Sudah melakukan");
 
             if (isDuplicateError) {
                 setIsDuplicate(true);
@@ -182,15 +184,47 @@ export default function ScannerPage() {
                 <p className="text-muted-foreground">Scan QR Code kartu pelajar siswa untuk absensi</p>
             </div>
 
+            {/* Mode Toggle */}
+            <Card>
+                <CardContent className="pt-6">
+                    <div className="flex gap-2">
+                        <Button
+                            onClick={() => {
+                                setScanMode("check-in");
+                                setLastScan(null);
+                                setError(null);
+                            }}
+                            variant={scanMode === "check-in" ? "default" : "outline"}
+                            className="flex-1"
+                        >
+                            Datang (Check-In)
+                        </Button>
+                        <Button
+                            onClick={() => {
+                                setScanMode("check-out");
+                                setLastScan(null);
+                                setError(null);
+                            }}
+                            variant={scanMode === "check-out" ? "default" : "outline"}
+                            className="flex-1"
+                        >
+                            Pulang (Check-Out)
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
+
             {/* Scanner Card */}
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Camera size={20} />
-                        Camera Scanner
+                        Camera Scanner - {scanMode === "check-in" ? "Datang" : "Pulang"}
                     </CardTitle>
                     <CardDescription>
-                        Arahkan kamera ke QR Code pada kartu pelajar siswa
+                        {scanMode === "check-in"
+                            ? "Arahkan kamera ke QR Code untuk mencatat kedatangan siswa"
+                            : "Arahkan kamera ke QR Code untuk mencatat kepulangan siswa"}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -267,13 +301,21 @@ export default function ScannerPage() {
                         <div className="flex items-start gap-4">
                             <CheckCircle2 className="text-green-500" size={32} />
                             <div className="flex-1">
-                                <h3 className="text-lg font-semibold text-green-500">Absensi Berhasil!</h3>
+                                <h3 className="text-lg font-semibold text-green-500">
+                                    {lastScan.mode === "check-in" ? "Check-In Berhasil!" : "Check-Out Berhasil!"}
+                                </h3>
                                 <div className="mt-2 space-y-1 text-sm">
                                     <p><strong>Nama:</strong> {lastScan.siswa?.nama}</p>
                                     <p><strong>NISN:</strong> {lastScan.siswa?.nisn}</p>
-                                    <p><strong>Kelas:</strong> {lastScan.siswa?.kelas || "-"}</p>
-                                    <p><strong>Status:</strong> <span className={lastScan.status === "TERLAMBAT" ? "text-yellow-500" : "text-green-500"}>{lastScan.status}</span></p>
-                                    <p><strong>Jam Masuk:</strong> {new Date(lastScan.jamMasuk).toLocaleTimeString("id-ID")}</p>
+                                    <p><strong>Kelas:</strong> {lastScan.siswa?.kelas?.nama || "-"}</p>
+                                    {lastScan.mode === "check-in" ? (
+                                        <>
+                                            <p><strong>Status:</strong> <span className={lastScan.status === "TERLAMBAT" ? "text-yellow-500" : "text-green-500"}>{lastScan.status}</span></p>
+                                            <p><strong>Jam Masuk:</strong> {new Date(lastScan.jamMasuk).toLocaleTimeString("id-ID")}</p>
+                                        </>
+                                    ) : (
+                                        <p><strong>Jam Keluar:</strong> {new Date(lastScan.jamKeluar).toLocaleTimeString("id-ID")}</p>
+                                    )}
                                 </div>
                             </div>
                         </div>

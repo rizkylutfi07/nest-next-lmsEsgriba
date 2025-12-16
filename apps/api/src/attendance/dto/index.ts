@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsEnum } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsEnum, IsDateString } from 'class-validator';
 import { AttendanceStatus } from '@prisma/client';
 
 export class ScanBarcodeDto {
@@ -47,4 +47,39 @@ export class AttendanceQueryDto {
     @IsOptional()
     @IsEnum(AttendanceStatus)
     status?: AttendanceStatus;
+}
+
+export class UpdateAttendanceDto {
+    @IsEnum(AttendanceStatus)
+    status: AttendanceStatus;
+
+    @IsOptional()
+    @IsString()
+    keterangan?: string;
+}
+
+export class ManualAttendanceDto {
+    @IsString()
+    @IsNotEmpty()
+    siswaId: string;
+
+    @IsDateString()
+    tanggal: string;
+
+    @IsEnum(AttendanceStatus)
+    status: AttendanceStatus;
+
+    @IsOptional()
+    @IsString()
+    keterangan?: string;
+}
+
+export class ManualAttendanceQueryDto {
+    @IsOptional()
+    @IsDateString()
+    date?: string;
+
+    @IsOptional()
+    @IsString()
+    kelasId?: string;
 }

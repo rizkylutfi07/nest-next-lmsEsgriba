@@ -31,9 +31,10 @@ import { type Role, useRole } from "./role-context";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const accessByRole: Record<Role, string[]> = {
-  ADMIN: ["/", "/users", "/siswa", "/kenaikan-kelas", "/guru", "/kelas", "/jurusan", "/tahun-ajaran", "/mata-pelajaran", "/attendance", "/database", "/cbt", "/laporan", "/keuangan", "/keamanan"],
+  ADMIN: ["/", "/users", "/siswa", "/kenaikan-kelas", "/guru", "/kelas", "/jurusan", "/tahun-ajaran", "/mata-pelajaran", "/attendance", "/database", "/cbt", "/laporan", "/keuangan", "/keamanan", "/settings"],
   GURU: ["/", "/kelas", "/mata-pelajaran", "/attendance", "/cbt", "/laporan"],
   SISWA: ["/", "/kelas", "/mata-pelajaran", "/cbt", "/keamanan"],
+  PETUGAS_ABSENSI: ["/", "/attendance"],
 };
 
 function DashboardShell({ children }: { children: React.ReactNode }) {

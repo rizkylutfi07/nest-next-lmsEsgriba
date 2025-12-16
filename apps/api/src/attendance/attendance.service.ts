@@ -1,11 +1,15 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { SettingsService } from '../settings/settings.service';
 import { AttendanceStatus } from '@prisma/client';
-import { ScanBarcodeDto, CheckInDto, CheckOutDto, AttendanceQueryDto } from './dto';
+import { ScanBarcodeDto, CheckInDto, CheckOutDto, AttendanceQueryDto, UpdateAttendanceDto, ManualAttendanceDto, ManualAttendanceQueryDto } from './dto';
 
 @Injectable()
 export class AttendanceService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private settingsService: SettingsService,
+    ) { }
 
     async scanBarcode(dto: ScanBarcodeDto, userId: string) {
         // Find student by NISN
@@ -34,10 +38,14 @@ export class AttendanceService {
             throw new BadRequestException(`${siswa.nama} sudah melakukan absensi hari ini pada ${existing.jamMasuk.toLocaleTimeString('id-ID')}`);
         }
 
+        // Get late time threshold from settings
+        const lateTimeThreshold = await this.settingsService.getLateTimeThreshold();
+        const [hours, minutes] = lateTimeThreshold.split(':').map(Number);
+
         // Determine status based on time
         const now = new Date();
         const lateTime = new Date();
-        lateTime.setHours(7, 30, 0, 0); // 07:30 AM
+        lateTime.setHours(hours, minutes, 0, 0);
 
         const status = now > lateTime ? AttendanceStatus.TERLAMBAT : AttendanceStatus.HADIR;
 
@@ -116,23 +124,33 @@ export class AttendanceService {
     }
 
     async checkOut(dto: CheckOutDto) {
+        // Find student by NISN
+        const siswa = await this.prisma.siswa.findUnique({
+            where: { nisn: dto.siswaId, deletedAt: null },
+            include: { kelas: true },
+        });
+
+        if (!siswa) {
+            throw new NotFoundException('Siswa tidak ditemukan');
+        }
+
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
         const attendance = await this.prisma.attendance.findFirst({
             where: {
-                siswaId: dto.siswaId,
+                siswaId: siswa.id,
                 tanggal: today,
                 deletedAt: null,
             },
         });
 
         if (!attendance) {
-            throw new NotFoundException('Absensi hari ini tidak ditemukan');
+            throw new NotFoundException('Absensi hari ini tidak ditemukan. Siswa belum check-in.');
         }
 
         if (attendance.jamKeluar) {
-            throw new BadRequestException('Sudah melakukan check-out');
+            throw new BadRequestException(`Sudah melakukan check-out pada ${attendance.jamKeluar.toLocaleTimeString('id-ID')}`);
         }
 
         return this.prisma.attendance.update({
@@ -167,12 +185,66 @@ export class AttendanceService {
             where: { deletedAt: null, status: 'AKTIF' },
         });
 
+        // Calculate statistics by status
+        const stats = {
+            hadir: attendance.filter(a => a.status === AttendanceStatus.HADIR).length,
+            sakit: attendance.filter(a => a.status === AttendanceStatus.SAKIT).length,
+            izin: attendance.filter(a => a.status === AttendanceStatus.IZIN).length,
+            alpha: attendance.filter(a => a.status === AttendanceStatus.ALPHA).length,
+            terlambat: attendance.filter(a => a.status === AttendanceStatus.TERLAMBAT).length,
+        };
+
         return {
             tanggal: today,
             totalSiswa,
             totalHadir: attendance.length,
             totalAlpha: totalSiswa - attendance.length,
+            stats,
             attendance,
+        };
+    }
+
+    async getAbsentStudents() {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Get all active students
+        const allStudents = await this.prisma.siswa.findMany({
+            where: {
+                deletedAt: null,
+                status: 'AKTIF',
+            },
+            include: {
+                kelas: true,
+            },
+            orderBy: [
+                { kelas: { nama: 'asc' } },
+                { nama: 'asc' },
+            ],
+        });
+
+        // Get students who have attended today
+        const attendedStudents = await this.prisma.attendance.findMany({
+            where: {
+                tanggal: today,
+                deletedAt: null,
+            },
+            select: {
+                siswaId: true,
+            },
+        });
+
+        const attendedStudentIds = new Set(attendedStudents.map(a => a.siswaId));
+
+        // Filter out students who have attended
+        const absentStudents = allStudents.filter(
+            student => !attendedStudentIds.has(student.id)
+        );
+
+        return {
+            tanggal: today,
+            total: absentStudents.length,
+            students: absentStudents,
         };
     }
 
@@ -272,5 +344,154 @@ export class AttendanceService {
             stats,
             attendance,
         };
+    }
+
+    // Manual Attendance Methods
+    async getStudentsForManualAttendance(query: ManualAttendanceQueryDto) {
+        const targetDate = query.date ? new Date(query.date) : new Date();
+        targetDate.setHours(0, 0, 0, 0);
+
+        const where: any = {
+            deletedAt: null,
+            status: 'AKTIF',
+        };
+
+        if (query.kelasId) {
+            where.kelasId = query.kelasId;
+        }
+
+        // Get all active students
+        const students = await this.prisma.siswa.findMany({
+            where,
+            include: {
+                kelas: true,
+                attendance: {
+                    where: {
+                        tanggal: targetDate,
+                        deletedAt: null,
+                    },
+                },
+            },
+            orderBy: [
+                { kelas: { nama: 'asc' } },
+                { nama: 'asc' },
+            ],
+        });
+
+        // Map students with their attendance status
+        const result = students.map(student => ({
+            id: student.id,
+            nisn: student.nisn,
+            nama: student.nama,
+            kelas: student.kelas,
+            attendance: student.attendance[0] || null,
+        }));
+
+        // Calculate stats
+        const stats = {
+            total: result.length,
+            hadir: result.filter(s => s.attendance?.status === AttendanceStatus.HADIR).length,
+            sakit: result.filter(s => s.attendance?.status === AttendanceStatus.SAKIT).length,
+            izin: result.filter(s => s.attendance?.status === AttendanceStatus.IZIN).length,
+            alpha: result.filter(s => s.attendance?.status === AttendanceStatus.ALPHA).length,
+            terlambat: result.filter(s => s.attendance?.status === AttendanceStatus.TERLAMBAT).length,
+            belum: result.filter(s => !s.attendance).length,
+        };
+
+        return {
+            tanggal: targetDate,
+            stats,
+            students: result,
+        };
+    }
+
+    async updateAttendanceStatus(id: string, dto: UpdateAttendanceDto, userId: string) {
+        const attendance = await this.prisma.attendance.findUnique({
+            where: { id },
+            include: {
+                siswa: {
+                    include: { kelas: true },
+                },
+            },
+        });
+
+        if (!attendance) {
+            throw new NotFoundException('Attendance record not found');
+        }
+
+        if (attendance.deletedAt) {
+            throw new BadRequestException('Attendance record has been deleted');
+        }
+
+        return this.prisma.attendance.update({
+            where: { id },
+            data: {
+                status: dto.status,
+                keterangan: dto.keterangan,
+                scanBy: userId,
+            },
+            include: {
+                siswa: {
+                    include: { kelas: true },
+                },
+            },
+        });
+    }
+
+    async createManualAttendance(dto: ManualAttendanceDto, userId: string) {
+        const siswa = await this.prisma.siswa.findUnique({
+            where: { id: dto.siswaId, deletedAt: null },
+            include: { kelas: true },
+        });
+
+        if (!siswa) {
+            throw new NotFoundException('Siswa tidak ditemukan');
+        }
+
+        const targetDate = new Date(dto.tanggal);
+        targetDate.setHours(0, 0, 0, 0);
+
+        // Check if attendance already exists
+        const existing = await this.prisma.attendance.findFirst({
+            where: {
+                siswaId: dto.siswaId,
+                tanggal: targetDate,
+                deletedAt: null,
+            },
+        });
+
+        if (existing) {
+            // Update existing record
+            return this.prisma.attendance.update({
+                where: { id: existing.id },
+                data: {
+                    status: dto.status,
+                    keterangan: dto.keterangan,
+                    scanBy: userId,
+                },
+                include: {
+                    siswa: {
+                        include: { kelas: true },
+                    },
+                },
+            });
+        }
+
+        // Create new record
+        return this.prisma.attendance.create({
+            data: {
+                siswaId: dto.siswaId,
+                tanggal: targetDate,
+                jamMasuk: new Date(),
+                status: dto.status,
+                keterangan: dto.keterangan,
+                scanBy: userId,
+            },
+            include: {
+                siswa: {
+                    include: { kelas: true },
+                },
+            },
+        });
     }
 }

@@ -24,6 +24,7 @@ enum Role {
   ADMIN
   GURU
   SISWA
+  PETUGAS_ABSENSI
 }
 
 model TahunAjaran {
@@ -168,6 +169,7 @@ model SiswaKelasHistory {
 
 enum StatusSiswa {
   AKTIF
+  PKL
   LULUS
   PINDAH
   KELUAR
@@ -198,4 +200,12 @@ enum AttendanceStatus {
   SAKIT
   ALPHA
   TERLAMBAT
+}
+
+model Settings {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

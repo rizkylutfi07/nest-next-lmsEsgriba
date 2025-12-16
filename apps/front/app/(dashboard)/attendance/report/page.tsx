@@ -29,7 +29,6 @@ export default function AttendanceReportPage() {
             });
             return res.json();
         },
-        enabled: !!startDate || !!endDate,
     });
 
     const { data: kelasList } = useQuery({
@@ -206,12 +205,8 @@ export default function AttendanceReportPage() {
                 <CardContent>
                     {isLoading ? (
                         <p className="text-center text-muted-foreground py-8">Loading...</p>
-                    ) : !startDate && !endDate ? (
-                        <p className="text-center text-muted-foreground py-8">
-                            Pilih tanggal mulai atau tanggal akhir untuk melihat laporan
-                        </p>
                     ) : reportData?.attendance?.length === 0 ? (
-                        <p className="text-center text-muted-foreground py-8">Tidak ada data</p>
+                        <p className="text-center text-muted-foreground py-8">Tidak ada data dengan filter yang dipilih</p>
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full">
@@ -246,14 +241,14 @@ export default function AttendanceReportPage() {
                                             <td className="px-4 py-3 text-sm">
                                                 <span
                                                     className={`px-2 py-1 rounded text-xs ${att.status === "HADIR"
-                                                            ? "bg-green-500/20 text-green-500"
-                                                            : att.status === "TERLAMBAT"
-                                                                ? "bg-yellow-500/20 text-yellow-500"
-                                                                : att.status === "IZIN"
-                                                                    ? "bg-blue-500/20 text-blue-500"
-                                                                    : att.status === "SAKIT"
-                                                                        ? "bg-orange-500/20 text-orange-500"
-                                                                        : "bg-red-500/20 text-red-500"
+                                                        ? "bg-green-500/20 text-green-500"
+                                                        : att.status === "TERLAMBAT"
+                                                            ? "bg-yellow-500/20 text-yellow-500"
+                                                            : att.status === "IZIN"
+                                                                ? "bg-blue-500/20 text-blue-500"
+                                                                : att.status === "SAKIT"
+                                                                    ? "bg-orange-500/20 text-orange-500"
+                                                                    : "bg-red-500/20 text-red-500"
                                                         }`}
                                                 >
                                                     {att.status}

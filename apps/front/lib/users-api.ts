@@ -4,7 +4,7 @@ export interface User {
     id: string;
     email: string;
     name: string;
-    role: 'ADMIN' | 'GURU' | 'SISWA';
+    role: 'ADMIN' | 'GURU' | 'SISWA' | 'PETUGAS_ABSENSI';
     createdAt: string;
     updatedAt: string;
 }
@@ -23,21 +23,21 @@ export interface CreateUserData {
     email: string;
     name: string;
     password: string;
-    role?: 'ADMIN' | 'GURU' | 'SISWA';
+    role?: 'ADMIN' | 'GURU' | 'SISWA' | 'PETUGAS_ABSENSI';
 }
 
 export interface UpdateUserData {
     email?: string;
     name?: string;
     password?: string;
-    role?: 'ADMIN' | 'GURU' | 'SISWA';
+    role?: 'ADMIN' | 'GURU' | 'SISWA' | 'PETUGAS_ABSENSI';
 }
 
 export interface QueryUsersParams {
     page?: number;
     limit?: number;
     search?: string;
-    role?: 'ADMIN' | 'GURU' | 'SISWA';
+    role?: 'ADMIN' | 'GURU' | 'SISWA' | 'PETUGAS_ABSENSI';
 }
 
 export const usersApi = {

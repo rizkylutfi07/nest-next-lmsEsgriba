@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Users, UserCheck, UserX, Clock, Calendar, QrCode } from "lucide-react";
+import { Users, UserCheck, UserX, Clock, Calendar, QrCode, Filter } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useRole } from "../role-context";
@@ -9,6 +10,7 @@ import Link from "next/link";
 
 export default function AttendancePage() {
     const { token } = useRole();
+    const [statusFilter, setStatusFilter] = useState("all"); // all, attended, not-attended
 
     const { data: todayData, isLoading } = useQuery({
         queryKey: ["attendance-today"],
@@ -20,34 +22,26 @@ export default function AttendancePage() {
         },
     });
 
-    const stats = [
-        {
-            title: "Total Siswa",
-            value: todayData?.totalSiswa || 0,
-            icon: Users,
-            color: "text-blue-500",
+    const { data: absentData, isLoading: isLoadingAbsent } = useQuery({
+        queryKey: ["absent-students"],
+        queryFn: async () => {
+            const res = await fetch("http://localhost:3001/attendance/absent-students", {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            return res.json();
         },
-        {
-            title: "Hadir Hari Ini",
-            value: todayData?.totalHadir || 0,
-            icon: UserCheck,
-            color: "text-green-500",
-        },
-        {
-            title: "Alpha",
-            value: todayData?.totalAlpha || 0,
-            icon: UserX,
-            color: "text-red-500",
-        },
-        {
-            title: "Persentase Kehadiran",
-            value: todayData?.totalSiswa
-                ? `${((todayData.totalHadir / todayData.totalSiswa) * 100).toFixed(1)}%`
-                : "0%",
-            icon: Clock,
-            color: "text-yellow-500",
-        },
-    ];
+        enabled: statusFilter === "not-attended",
+    });
+
+    // Filter attendance based on status
+    const filteredAttendance = todayData?.attendance?.filter((att: any) => {
+        if (statusFilter === "attended") return true; // All in attendance list are attended
+        if (statusFilter === "not-attended") return false; // This will be handled separately
+        return true; // all
+    }) || [];
+
+    // Get list of students who haven't attended (if we need it)
+    const totalNotAttended = (todayData?.totalSiswa || 0) - (todayData?.totalHadir || 0);
 
     return (
         <div className="space-y-6">
@@ -64,26 +58,71 @@ export default function AttendancePage() {
                 </Link>
             </div>
 
-            {/* Statistics */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                {stats.map((stat) => {
-                    const Icon = stat.icon;
-                    return (
-                        <Card key={stat.title}>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-                                <Icon className={stat.color} size={20} />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{stat.value}</div>
-                            </CardContent>
-                        </Card>
-                    );
-                })}
-            </div>
+            {/* Statistics - Single Card */}
+            <Card>
+                <CardHeader>
+                    <CardTitle>Statistik Kehadiran Hari Ini</CardTitle>
+                    <CardDescription>
+                        {new Date().toLocaleDateString("id-ID", {
+                            weekday: "long",
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                        })}
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+                        <div className="text-center p-4 rounded-lg bg-muted/30">
+                            <Users className="mx-auto mb-2 text-blue-500" size={24} />
+                            <p className="text-2xl font-bold">{todayData?.totalSiswa || 0}</p>
+                            <p className="text-sm text-muted-foreground">Total Siswa</p>
+                        </div>
+                        <div className="text-center p-4 rounded-lg bg-muted/30">
+                            <UserCheck className="mx-auto mb-2 text-green-500" size={24} />
+                            <p className="text-2xl font-bold">{todayData?.stats?.hadir || 0}</p>
+                            <p className="text-sm text-muted-foreground">Hadir</p>
+                        </div>
+                        <div className="text-center p-4 rounded-lg bg-muted/30">
+                            <Clock className="mx-auto mb-2 text-orange-500" size={24} />
+                            <p className="text-2xl font-bold">{todayData?.stats?.terlambat || 0}</p>
+                            <p className="text-sm text-muted-foreground">Terlambat</p>
+                        </div>
+                        <div className="text-center p-4 rounded-lg bg-muted/30">
+                            <UserX className="mx-auto mb-2 text-blue-400" size={24} />
+                            <p className="text-2xl font-bold">{todayData?.stats?.sakit || 0}</p>
+                            <p className="text-sm text-muted-foreground">Sakit</p>
+                        </div>
+                        <div className="text-center p-4 rounded-lg bg-muted/30">
+                            <UserX className="mx-auto mb-2 text-yellow-500" size={24} />
+                            <p className="text-2xl font-bold">{todayData?.stats?.izin || 0}</p>
+                            <p className="text-sm text-muted-foreground">Izin</p>
+                        </div>
+                        <div className="text-center p-4 rounded-lg bg-muted/30">
+                            <UserX className="mx-auto mb-2 text-red-500" size={24} />
+                            <p className="text-2xl font-bold">{todayData?.stats?.alpha || 0}</p>
+                            <p className="text-sm text-muted-foreground">Alpha</p>
+                        </div>
+                        <div className="text-center p-4 rounded-lg bg-muted/30">
+                            <UserX className="mx-auto mb-2 text-gray-500" size={24} />
+                            <p className="text-2xl font-bold">{totalNotAttended}</p>
+                            <p className="text-sm text-muted-foreground">Belum Datang</p>
+                        </div>
+                        <div className="text-center p-4 rounded-lg bg-muted/30">
+                            <UserCheck className="mx-auto mb-2 text-purple-500" size={24} />
+                            <p className="text-2xl font-bold">
+                                {todayData?.totalSiswa
+                                    ? `${((todayData.totalHadir / todayData.totalSiswa) * 100).toFixed(1)}%`
+                                    : "0%"}
+                            </p>
+                            <p className="text-sm text-muted-foreground">Persentase</p>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
 
             {/* Quick Actions */}
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Link href="/attendance/scanner">
                     <Card className="cursor-pointer hover:bg-muted/30 transition">
                         <CardHeader>
@@ -92,6 +131,18 @@ export default function AttendancePage() {
                                 Scanner
                             </CardTitle>
                             <CardDescription>Scan barcode kartu pelajar</CardDescription>
+                        </CardHeader>
+                    </Card>
+                </Link>
+
+                <Link href="/attendance/manual">
+                    <Card className="cursor-pointer hover:bg-muted/30 transition">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Users size={20} />
+                                Absensi Manual
+                            </CardTitle>
+                            <CardDescription>Tandai kehadiran manual</CardDescription>
                         </CardHeader>
                     </Card>
                 </Link>
@@ -121,27 +172,67 @@ export default function AttendancePage() {
                 </Link>
             </div>
 
-            {/* Recent Attendance */}
+            {/* Recent Attendance with Filter */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Absensi Hari Ini</CardTitle>
-                    <CardDescription>
-                        {new Date().toLocaleDateString("id-ID", {
-                            weekday: "long",
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                        })}
-                    </CardDescription>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <CardTitle>Daftar Kehadiran Hari Ini</CardTitle>
+                            <CardDescription>
+                                {statusFilter === "all" && "Semua siswa"}
+                                {statusFilter === "attended" && "Siswa yang sudah datang"}
+                                {statusFilter === "not-attended" && "Siswa yang belum datang"}
+                            </CardDescription>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Filter size={16} className="text-muted-foreground" />
+                            <select
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                                className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm outline-none transition focus:border-primary/60"
+                            >
+                                <option value="all">Semua</option>
+                                <option value="attended">Sudah Datang</option>
+                                <option value="not-attended">Belum Datang</option>
+                            </select>
+                        </div>
+                    </div>
                 </CardHeader>
                 <CardContent>
-                    {isLoading ? (
+                    {isLoading || (statusFilter === "not-attended" && isLoadingAbsent) ? (
                         <p className="text-center text-muted-foreground py-8">Loading...</p>
-                    ) : todayData?.attendance?.length === 0 ? (
+                    ) : statusFilter === "not-attended" ? (
+                        absentData?.students?.length === 0 ? (
+                            <p className="text-center text-muted-foreground py-8">
+                                Semua siswa sudah hadir hari ini! 🎉
+                            </p>
+                        ) : (
+                            <div className="space-y-2">
+                                {absentData?.students?.map((student: any) => (
+                                    <div
+                                        key={student.id}
+                                        className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/30 transition"
+                                    >
+                                        <div>
+                                            <p className="font-medium">{student.nama}</p>
+                                            <p className="text-sm text-muted-foreground">
+                                                {student.kelas?.nama || "-"} • {student.nisn}
+                                            </p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-xs text-red-500 font-medium">
+                                                Belum Hadir
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )
+                    ) : filteredAttendance.length === 0 ? (
                         <p className="text-center text-muted-foreground py-8">Belum ada absensi hari ini</p>
                     ) : (
                         <div className="space-y-2">
-                            {todayData?.attendance?.slice(0, 10).map((att: any) => (
+                            {filteredAttendance.slice(0, 10).map((att: any) => (
                                 <div
                                     key={att.id}
                                     className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/30 transition"
@@ -158,10 +249,10 @@ export default function AttendancePage() {
                                         </p>
                                         <p
                                             className={`text-xs ${att.status === "HADIR"
-                                                    ? "text-green-500"
-                                                    : att.status === "TERLAMBAT"
-                                                        ? "text-yellow-500"
-                                                        : "text-red-500"
+                                                ? "text-green-500"
+                                                : att.status === "TERLAMBAT"
+                                                    ? "text-yellow-500"
+                                                    : "text-red-500"
                                                 }`}
                                         >
                                             {att.status}

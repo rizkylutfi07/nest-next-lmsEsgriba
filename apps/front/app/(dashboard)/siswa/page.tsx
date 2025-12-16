@@ -104,7 +104,10 @@ export default function SiswaPage() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(data),
       });
-      if (!res.ok) throw new Error("Failed to update");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: 'Failed to update' }));
+        throw new Error(errorData.message || `HTTP ${res.status}: Failed to update`);
+      }
       return res.json();
     },
     onSuccess: () => {
@@ -198,7 +201,7 @@ export default function SiswaPage() {
             >
               <option value="">Semua Status</option>
               <option value="AKTIF">AKTIF</option>
-              <option value="MAGANG">MAGANG</option>
+              <option value="PKL">PKL</option>
               <option value="PINDAH">PINDAH</option>
               <option value="ALUMNI">ALUMNI</option>
             </select>
@@ -297,7 +300,7 @@ export default function SiswaPage() {
                           className={cn(
                             "capitalize",
                             item.status === "AKTIF" && "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25 border-emerald-500/20",
-                            item.status === "MAGANG" && "bg-blue-500/15 text-blue-600 dark:text-blue-400 hover:bg-blue-500/25 border-blue-500/20",
+                            item.status === "PKL" && "bg-blue-500/15 text-blue-600 dark:text-blue-400 hover:bg-blue-500/25 border-blue-500/20",
                             item.status === "PINDAH" && "bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25 border-amber-500/20",
                             item.status === "ALUMNI" && "bg-slate-500/15 text-slate-600 dark:text-slate-400 hover:bg-slate-500/25 border-slate-500/20"
                           )}
@@ -447,7 +450,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const { id, createdAt, updatedAt, deletedAt, kelas, user, userId, ...cleanData } = formData;
+    const { id, createdAt, updatedAt, deletedAt, kelas, tahunAjaran, user, userId, ...cleanData } = formData;
 
     // Remove null/empty values but keep createUserAccount if it's true
     Object.keys(cleanData).forEach(key => {
@@ -555,7 +558,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
               >
                 <option value="AKTIF">AKTIF</option>
-                <option value="MAGANG">MAGANG</option>
+                <option value="PKL">PKL</option>
                 <option value="PINDAH">PINDAH</option>
                 <option value="ALUMNI">ALUMNI</option>
               </select>

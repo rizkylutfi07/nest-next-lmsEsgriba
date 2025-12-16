@@ -15,9 +15,10 @@ import {
   Users2,
   Database,
   ClipboardList,
+  Settings,
 } from "lucide-react";
 
-export type Role = "ADMIN" | "GURU" | "SISWA";
+export type Role = "ADMIN" | "GURU" | "SISWA" | "PETUGAS_ABSENSI";
 
 export type NavItem = {
   label: string;
@@ -85,6 +86,7 @@ const navByRole: Record<Role, NavGroup[]> = {
       collapsible: true,
       items: [
         { label: "Absensi", icon: ClipboardList, href: "/attendance", note: "Scan & laporan" },
+        { label: "Absensi Manual", icon: Users2, href: "/attendance/manual", note: "Tandai kehadiran" },
         { label: "Pelaporan", icon: BarChart3, href: "/laporan", note: "Analitik & export" },
       ],
     },
@@ -99,6 +101,7 @@ const navByRole: Record<Role, NavGroup[]> = {
       label: "Sistem",
       collapsible: true,
       items: [
+        { label: "Pengaturan", icon: Settings, href: "/settings", note: "Konfigurasi sistem" },
         { label: "Kelola User", icon: Users2, href: "/users", note: "Manajemen pengguna" },
         { label: "Database", icon: Database, href: "/database", note: "Backup & restore" },
         { label: "Keamanan", icon: ShieldCheck, href: "/keamanan", note: "Role & audit" },
@@ -127,6 +130,7 @@ const navByRole: Record<Role, NavGroup[]> = {
       collapsible: true,
       items: [
         { label: "Absensi", icon: ClipboardList, href: "/attendance", note: "Scan & laporan" },
+        { label: "Absensi Manual", icon: Users2, href: "/attendance/manual", note: "Tandai kehadiran" },
         { label: "Laporan Nilai", icon: BarChart3, href: "/laporan", note: "Rekap nilai" },
       ],
     },
@@ -166,6 +170,25 @@ const navByRole: Record<Role, NavGroup[]> = {
       collapsible: true,
       items: [
         { label: "Keamanan", icon: ShieldCheck, href: "/keamanan", note: "Akun & perangkat" },
+      ],
+    },
+  ],
+  PETUGAS_ABSENSI: [
+    {
+      label: "",
+      items: [
+        { label: "Dasbor Absensi", icon: LayoutDashboard, href: "/", note: "Ringkasan kehadiran" },
+      ],
+      collapsible: false,
+    },
+    {
+      label: "Absensi",
+      collapsible: true,
+      items: [
+        { label: "Scanner", icon: ClipboardList, href: "/attendance/scanner", note: "Scan barcode siswa" },
+        { label: "Absensi Manual", icon: Users2, href: "/attendance/manual", note: "Tandai kehadiran" },
+        { label: "Laporan Kehadiran", icon: BarChart3, href: "/attendance/report", note: "Rekap absensi" },
+        { label: "Kartu Pelajar", icon: CreditCard, href: "/attendance/student-card", note: "Cetak kartu" },
       ],
     },
   ],

@@ -13,6 +13,7 @@ import { SiswaModule } from './siswa/siswa.module';
 import { JurusanModule } from './jurusan/jurusan.module';
 import { DatabaseModule } from './database/database.module';
 import { AttendanceModule } from './attendance/attendance.module';
+import { SettingsModule } from './settings/settings.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { AttendanceModule } from './attendance/attendance.module';
     JurusanModule,
     DatabaseModule,
     AttendanceModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

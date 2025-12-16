@@ -25,12 +25,14 @@ const roleColors = {
     ADMIN: "bg-red-500/10 text-red-500 border-red-500/20",
     GURU: "bg-blue-500/10 text-blue-500 border-blue-500/20",
     SISWA: "bg-green-500/10 text-green-500 border-green-500/20",
+    PETUGAS_ABSENSI: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
 };
 
 const roleLabels = {
     ADMIN: "Admin",
     GURU: "Guru",
     SISWA: "Siswa",
+    PETUGAS_ABSENSI: "Petugas Absensi",
 };
 
 export default function UsersPage() {
@@ -130,6 +132,7 @@ export default function UsersPage() {
                                 <option value="ADMIN">Admin</option>
                                 <option value="GURU">Guru</option>
                                 <option value="SISWA">Siswa</option>
+                                <option value="PETUGAS_ABSENSI">Petugas Absensi</option>
                             </select>
                         </div>
                     </div>
@@ -361,6 +364,7 @@ function UserFormModal({
                                 <option value="SISWA">Siswa</option>
                                 <option value="GURU">Guru</option>
                                 <option value="ADMIN">Admin</option>
+                                <option value="PETUGAS_ABSENSI">Petugas Absensi</option>
                             </select>
                         </div>
                         <div className="flex gap-2 pt-4">
