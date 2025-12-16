@@ -21,16 +21,16 @@ export class AttendanceService {
         return new Date(now.getTime() + this.JAKARTA_OFFSET_MS);
     }
 
-    // Helper method to get today's date in Jakarta timezone (stored as UTC)
+    // Helper method to get today's date in Jakarta timezone (stored as UTC midnight)
     private getTodayJakarta(): Date {
         const jakartaTime = this.getJakartaTime();
         // Get Jakarta date components
         const year = jakartaTime.getUTCFullYear();
         const month = jakartaTime.getUTCMonth();
         const day = jakartaTime.getUTCDate();
-        // Store Jakarta midnight as UTC (subtract 7 hours)
-        // So Dec 16 00:00 Jakarta = Dec 15 17:00 UTC
-        return new Date(Date.UTC(year, month, day, 0, 0, 0, 0) - this.JAKARTA_OFFSET_MS);
+        // Store Jakarta date as UTC midnight
+        // PostgreSQL DATE type will truncate time anyway
+        return new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
     }
 
     async scanBarcode(dto: ScanBarcodeDto, userId: string) {
@@ -359,13 +359,12 @@ export class AttendanceService {
         };
 
         // Transform attendance data to format tanggal as string (YYYY-MM-DD)
-        // Add 7 hours (Jakarta timezone offset) to get correct date
+        // Date is stored as Jakarta date at UTC midnight, so just extract UTC components
         const formattedAttendance = attendance.map(att => {
-            // Add 7 hours to UTC time to get Jakarta date
-            const jakartaDate = new Date(att.tanggal.getTime() + (7 * 60 * 60 * 1000));
-            const year = jakartaDate.getUTCFullYear();
-            const month = String(jakartaDate.getUTCMonth() + 1).padStart(2, '0');
-            const day = String(jakartaDate.getUTCDate()).padStart(2, '0');
+            const d = att.tanggal;
+            const year = d.getUTCFullYear();
+            const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(d.getUTCDate()).padStart(2, '0');
             return {
                 ...att,
                 tanggal: `${year}-${month}-${day}`,
