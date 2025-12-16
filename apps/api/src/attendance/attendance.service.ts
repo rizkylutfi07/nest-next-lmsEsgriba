@@ -11,23 +11,26 @@ export class AttendanceService {
         private settingsService: SettingsService,
     ) { }
 
-    // Helper method to get current time in Indonesia timezone
+    // Jakarta timezone offset in milliseconds (UTC+7)
+    private readonly JAKARTA_OFFSET_MS = 7 * 60 * 60 * 1000;
+
+    // Helper method to get current time adjusted to Jakarta timezone
     private getJakartaTime(): Date {
         const now = new Date();
-        const jakartaTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
-        return jakartaTime;
+        // Add 7 hours to UTC to get Jakarta time
+        return new Date(now.getTime() + this.JAKARTA_OFFSET_MS);
     }
 
-    // Helper method to get today's date (00:00:00 UTC) representing Jakarta midnight
+    // Helper method to get today's date in Jakarta timezone (stored as UTC)
     private getTodayJakarta(): Date {
         const jakartaTime = this.getJakartaTime();
-        const year = jakartaTime.getFullYear();
-        const month = jakartaTime.getMonth();
-        const day = jakartaTime.getDate();
-        // Create UTC date representing Jakarta midnight
-        // Jakarta is UTC+7, so midnight Jakarta = 17:00 previous day UTC
-        // But we want to store the DATE, so we use the Jakarta date at UTC midnight
-        return new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
+        // Get Jakarta date components
+        const year = jakartaTime.getUTCFullYear();
+        const month = jakartaTime.getUTCMonth();
+        const day = jakartaTime.getUTCDate();
+        // Store Jakarta midnight as UTC (subtract 7 hours)
+        // So Dec 16 00:00 Jakarta = Dec 15 17:00 UTC
+        return new Date(Date.UTC(year, month, day, 0, 0, 0, 0) - this.JAKARTA_OFFSET_MS);
     }
 
     async scanBarcode(dto: ScanBarcodeDto, userId: string) {
