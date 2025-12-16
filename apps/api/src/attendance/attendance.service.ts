@@ -356,12 +356,13 @@ export class AttendanceService {
         };
 
         // Transform attendance data to format tanggal as string (YYYY-MM-DD)
-        // Use UTC components since we store the date at UTC midnight
+        // Add 7 hours (Jakarta timezone offset) to get correct date
         const formattedAttendance = attendance.map(att => {
-            const d = att.tanggal;
-            const year = d.getUTCFullYear();
-            const month = String(d.getUTCMonth() + 1).padStart(2, '0');
-            const day = String(d.getUTCDate()).padStart(2, '0');
+            // Add 7 hours to UTC time to get Jakarta date
+            const jakartaDate = new Date(att.tanggal.getTime() + (7 * 60 * 60 * 1000));
+            const year = jakartaDate.getUTCFullYear();
+            const month = String(jakartaDate.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(jakartaDate.getUTCDate()).padStart(2, '0');
             return {
                 ...att,
                 tanggal: `${year}-${month}-${day}`,
