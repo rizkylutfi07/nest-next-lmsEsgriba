@@ -356,10 +356,17 @@ export class AttendanceService {
         };
 
         // Transform attendance data to format tanggal as string (YYYY-MM-DD)
-        const formattedAttendance = attendance.map(att => ({
-            ...att,
-            tanggal: att.tanggal.toISOString().split('T')[0], // Convert to YYYY-MM-DD string
-        }));
+        // Use UTC components since we store the date at UTC midnight
+        const formattedAttendance = attendance.map(att => {
+            const d = att.tanggal;
+            const year = d.getUTCFullYear();
+            const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(d.getUTCDate()).padStart(2, '0');
+            return {
+                ...att,
+                tanggal: `${year}-${month}-${day}`,
+            };
+        });
 
         return {
             stats,
