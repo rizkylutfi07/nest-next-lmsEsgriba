@@ -14,15 +14,20 @@ export class AttendanceService {
     // Helper method to get current time in Indonesia timezone
     private getJakartaTime(): Date {
         const now = new Date();
-        return new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
+        const jakartaTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
+        return jakartaTime;
     }
 
-    // Helper method to get today's date (00:00:00) in Indonesia timezone
+    // Helper method to get today's date (00:00:00 UTC) representing Jakarta midnight
     private getTodayJakarta(): Date {
         const jakartaTime = this.getJakartaTime();
-        const today = new Date(jakartaTime);
-        today.setHours(0, 0, 0, 0);
-        return today;
+        const year = jakartaTime.getFullYear();
+        const month = jakartaTime.getMonth();
+        const day = jakartaTime.getDate();
+        // Create UTC date representing Jakarta midnight
+        // Jakarta is UTC+7, so midnight Jakarta = 17:00 previous day UTC
+        // But we want to store the DATE, so we use the Jakarta date at UTC midnight
+        return new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
     }
 
     async scanBarcode(dto: ScanBarcodeDto, userId: string) {
