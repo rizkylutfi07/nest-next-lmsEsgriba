@@ -359,15 +359,40 @@ export class AttendanceService {
         };
 
         // Transform attendance data to format tanggal as string (YYYY-MM-DD)
-        // Date is stored as Jakarta date at UTC midnight, so just extract UTC components
+        // AND format times to HH:mm:ss (WIB) to prevent browser timezone issues
         const formattedAttendance = attendance.map(att => {
             const d = att.tanggal;
             const year = d.getUTCFullYear();
             const month = String(d.getUTCMonth() + 1).padStart(2, '0');
             const day = String(d.getUTCDate()).padStart(2, '0');
+
+            // Format jamMasuk to WIB (UTC+7)
+            let jamMasukStr = '-';
+            if (att.jamMasuk) {
+                // Add 7 hours to get WIB
+                const wibTime = new Date(att.jamMasuk.getTime() + (7 * 60 * 60 * 1000));
+                const h = String(wibTime.getUTCHours()).padStart(2, '0');
+                const m = String(wibTime.getUTCMinutes()).padStart(2, '0');
+                const s = String(wibTime.getUTCSeconds()).padStart(2, '0');
+                jamMasukStr = `${h}:${m}:${s}`;
+            }
+
+            // Format jamKeluar to WIB (UTC+7)
+            let jamKeluarStr = '-';
+            if (att.jamKeluar) {
+                // Add 7 hours to get WIB
+                const wibTime = new Date(att.jamKeluar.getTime() + (7 * 60 * 60 * 1000));
+                const h = String(wibTime.getUTCHours()).padStart(2, '0');
+                const m = String(wibTime.getUTCMinutes()).padStart(2, '0');
+                const s = String(wibTime.getUTCSeconds()).padStart(2, '0');
+                jamKeluarStr = `${h}:${m}:${s}`;
+            }
+
             return {
                 ...att,
                 tanggal: `${year}-${month}-${day}`,
+                jamMasuk: jamMasukStr,
+                jamKeluar: jamKeluarStr,
             };
         });
 

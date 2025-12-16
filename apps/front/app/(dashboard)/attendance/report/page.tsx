@@ -55,6 +55,21 @@ export default function AttendanceReportPage() {
         return `${day}/${month}/${year}`;
     };
 
+    // Helper function to format time (handles backend formatted string or legacy Date)
+    const formatTime = (time: any) => {
+        if (!time) return '-';
+        // If it's already HH:mm:ss (includes :)
+        if (typeof time === 'string' && time.includes(':')) {
+            return time;
+        }
+        // Fallback for Date objects or ISO strings
+        try {
+            return new Date(time).toLocaleTimeString("id-ID");
+        } catch (e) {
+            return '-';
+        }
+    };
+
     const handleExportExcel = () => {
         if (!reportData?.attendance) return;
 
@@ -245,12 +260,10 @@ export default function AttendanceReportPage() {
                                             <td className="px-4 py-3 text-sm">{att.siswa.nama}</td>
                                             <td className="px-4 py-3 text-sm">{att.siswa.kelas?.nama || "-"}</td>
                                             <td className="px-4 py-3 text-sm">
-                                                {new Date(att.jamMasuk).toLocaleTimeString("id-ID")}
+                                                {formatTime(att.jamMasuk)}
                                             </td>
                                             <td className="px-4 py-3 text-sm">
-                                                {att.jamKeluar
-                                                    ? new Date(att.jamKeluar).toLocaleTimeString("id-ID")
-                                                    : "-"}
+                                                {formatTime(att.jamKeluar)}
                                             </td>
                                             <td className="px-4 py-3 text-sm">
                                                 <span
