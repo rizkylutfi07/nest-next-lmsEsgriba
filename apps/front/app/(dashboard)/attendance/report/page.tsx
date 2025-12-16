@@ -41,9 +41,14 @@ export default function AttendanceReportPage() {
         },
     });
 
-    // Helper function to format date without timezone shift
+    // Helper function to format date (backend sends YYYY-MM-DD string)
     const formatDate = (dateString: string) => {
-        // Extract date part from ISO string (YYYY-MM-DD)
+        // If already in YYYY-MM-DD format (no 'T'), just reformat
+        if (!dateString.includes('T')) {
+            const [year, month, day] = dateString.split('-');
+            return `${day}/${month}/${year}`;
+        }
+        // Fallback for ISO datetime strings
         const datePart = dateString.split('T')[0];
         if (!datePart) return dateString;
         const [year, month, day] = datePart.split('-');

@@ -355,9 +355,15 @@ export class AttendanceService {
             alpha: attendance.filter(a => a.status === AttendanceStatus.ALPHA).length,
         };
 
+        // Transform attendance data to format tanggal as string (YYYY-MM-DD)
+        const formattedAttendance = attendance.map(att => ({
+            ...att,
+            tanggal: att.tanggal.toISOString().split('T')[0], // Convert to YYYY-MM-DD string
+        }));
+
         return {
             stats,
-            attendance,
+            attendance: formattedAttendance,
         };
     }
 
