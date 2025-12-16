@@ -41,11 +41,20 @@ export default function AttendanceReportPage() {
         },
     });
 
+    // Helper function to format date without timezone shift
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        // Add timezone offset to get correct local date
+        const offset = date.getTimezoneOffset();
+        const localDate = new Date(date.getTime() - (offset * 60 * 1000));
+        return localDate.toLocaleDateString("id-ID");
+    };
+
     const handleExportExcel = () => {
         if (!reportData?.attendance) return;
 
         const data = reportData.attendance.map((att: any) => ({
-            Tanggal: new Date(att.tanggal).toLocaleDateString("id-ID"),
+            Tanggal: formatDate(att.tanggal),
             NISN: att.siswa.nisn,
             Nama: att.siswa.nama,
             Kelas: att.siswa.kelas?.nama || "-",
@@ -225,7 +234,7 @@ export default function AttendanceReportPage() {
                                     {reportData?.attendance?.map((att: any) => (
                                         <tr key={att.id} className="border-b border-border hover:bg-muted/30">
                                             <td className="px-4 py-3 text-sm">
-                                                {new Date(att.tanggal).toLocaleDateString("id-ID")}
+                                                {formatDate(att.tanggal)}
                                             </td>
                                             <td className="px-4 py-3 text-sm">{att.siswa.nisn}</td>
                                             <td className="px-4 py-3 text-sm">{att.siswa.nama}</td>
