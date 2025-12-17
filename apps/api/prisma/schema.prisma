@@ -59,6 +59,9 @@ model MataPelajaran {
   deletedAt    DateTime? // soft delete
 
   guru Guru[] @relation("GuruMataPelajaran")
+  bankSoal BankSoal[]
+  paketSoal PaketSoal[]
+  ujian Ujian[]
 }
 
 model Guru {
@@ -77,6 +80,7 @@ model Guru {
   user   User?   @relation(fields: [userId], references: [id])
 
   mataPelajaran MataPelajaran[] @relation("GuruMataPelajaran")
+  paketSoal     PaketSoal[]
   kelasWali     Kelas[]         @relation("WaliKelas")
 }
 
@@ -115,6 +119,8 @@ model Kelas {
 
   siswa             Siswa[]
   siswaKelasHistory SiswaKelasHistory[]
+  ujian             Ujian[]
+  ujianKelas        UjianKelas[] // Many-to-many relationship with Ujian
 }
 
 model Siswa {
@@ -125,6 +131,7 @@ model Siswa {
   alamat       String?
   nomorTelepon String?
   email        String?
+  agama        String? // Religion field for filtering (e.g., Islam, Kristen, Katolik, Hindu, Buddha, Konghucu)
   status       StatusSiswa @default(AKTIF)
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
@@ -142,6 +149,7 @@ model Siswa {
 
   kelasHistory SiswaKelasHistory[]
   attendance   Attendance[]
+  ujianSiswa   UjianSiswa[]
 }
 
 model SiswaKelasHistory {
@@ -205,4 +213,164 @@ model Settings {
   value     String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// ========== CBT (Computer-Based Test) Models ==========
+
+model BankSoal {
+  id             String        @id @default(cuid())
+  kode           String        @unique
+  pertanyaan     String        @db.Text
+  tipe           TipeSoal      @default(PILIHAN_GANDA)
+  mataPelajaranId String?
+  mataPelajaran  MataPelajaran? @relation(fields: [mataPelajaranId], references: [id])
+  pilihanJawaban Json?         // Array of objects: [{id, text, isCorrect}]
+  jawabanBenar   String?       // For essay/short answer
+  bobot          Int           @default(1)
+  penjelasan     String?       @db.Text
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  deletedAt      DateTime?
+
+  ujianSoal      UjianSoal[]
+  paketSoalItems PaketSoalItem[]
+  
+  @@index([mataPelajaranId])
+}
+
+enum TipeSoal {
+  PILIHAN_GANDA
+  ESSAY
+  BENAR_SALAH
+  ISIAN_SINGKAT
+}
+
+model PaketSoal {
+  id               String         @id @default(cuid())
+  kode             String         @unique
+  nama             String
+  deskripsi        String?        @db.Text
+  mataPelajaranId  String?
+  mataPelajaran    MataPelajaran? @relation(fields: [mataPelajaranId], references: [id])
+  guruId           String?
+  guru             Guru?          @relation(fields: [guruId], references: [id])
+  totalSoal        Int            @default(0)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  deletedAt        DateTime?
+
+  soalItems        PaketSoalItem[]
+  ujian            Ujian[]
+
+  @@index([mataPelajaranId])
+  @@index([guruId])
+}
+
+model PaketSoalItem {
+  id          String     @id @default(cuid())
+  paketSoalId String
+  paketSoal   PaketSoal  @relation(fields: [paketSoalId], references: [id], onDelete: Cascade)
+  bankSoalId  String
+  bankSoal    BankSoal   @relation(fields: [bankSoalId], references: [id], onDelete: Cascade)
+  urutan      Int        // Order of questions in package
+  createdAt   DateTime   @default(now())
+
+  @@unique([paketSoalId, bankSoalId])
+  @@index([paketSoalId])
+}
+
+model Ujian {
+  id              String        @id @default(cuid())
+  kode            String        @unique
+  judul           String
+  deskripsi       String?       @db.Text
+  mataPelajaranId String?
+  mataPelajaran   MataPelajaran? @relation(fields: [mataPelajaranId], references: [id])
+  paketSoalId     String?
+  paketSoal       PaketSoal?     @relation(fields: [paketSoalId], references: [id])
+  kelasId         String?
+  kelas           Kelas?        @relation(fields: [kelasId], references: [id])
+  durasi          Int           // in minutes
+  tanggalMulai    DateTime
+  tanggalSelesai  DateTime
+  nilaiMinimal    Int?          // passing grade
+  acakSoal        Boolean       @default(true)
+  tampilkanNilai  Boolean       @default(false)
+  status          StatusUjian   @default(DRAFT)
+  createdBy       String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  deletedAt       DateTime?
+
+  ujianSoal       UjianSoal[]
+  ujianSiswa      UjianSiswa[]
+  ujianKelas      UjianKelas[] // Many-to-many relationship with Kelas
+  
+  @@index([mataPelajaranId])
+  @@index([kelasId])
+  @@index([tanggalMulai])
+}
+
+enum StatusUjian {
+  DRAFT
+  PUBLISHED
+  ONGOING
+  SELESAI
+  DIBATALKAN
+}
+
+model UjianKelas {
+  id        String   @id @default(cuid())
+  ujianId   String
+  ujian     Ujian    @relation(fields: [ujianId], references: [id], onDelete: Cascade)
+  kelasId   String
+  kelas     Kelas    @relation(fields: [kelasId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([ujianId, kelasId])
+  @@index([ujianId])
+  @@index([kelasId])
+}
+
+model UjianSoal {
+  id          String    @id @default(cuid())
+  ujianId     String
+  ujian       Ujian     @relation(fields: [ujianId], references: [id], onDelete: Cascade)
+  bankSoalId  String
+  bankSoal    BankSoal  @relation(fields: [bankSoalId], references: [id])
+  nomorUrut   Int
+  bobot       Int       @default(1)
+  createdAt   DateTime  @default(now())
+
+  @@unique([ujianId, bankSoalId])
+  @@index([ujianId])
+}
+
+model UjianSiswa {
+  id              String          @id @default(cuid())
+  ujianId         String
+  ujian           Ujian           @relation(fields: [ujianId], references: [id], onDelete: Cascade)
+  siswaId         String
+  siswa           Siswa           @relation(fields: [siswaId], references: [id])
+  tokenAkses      String?         @unique
+  waktuMulai      DateTime?
+  waktuSelesai    DateTime?
+  durasi          Int?            // actual time spent in minutes
+  status          StatusPengerjaan @default(BELUM_MULAI)
+  nilaiTotal      Float?
+  isPassed        Boolean?
+  jawaban         Json?           // Array of answers: [{soalId, jawaban}]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@unique([ujianId, siswaId])
+  @@index([ujianId])
+  @@index([siswaId])
+}
+
+enum StatusPengerjaan {
+  BELUM_MULAI
+  SEDANG_MENGERJAKAN
+  SELESAI
+  TIDAK_HADIR
 }

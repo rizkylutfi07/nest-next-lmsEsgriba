@@ -15,6 +15,7 @@ import {
   Users2,
   Database,
   ClipboardList,
+  Package,
   Settings,
 } from "lucide-react";
 
@@ -94,7 +95,10 @@ const navByRole: Record<Role, NavGroup[]> = {
       label: "CBT",
       collapsible: true,
       items: [
-        { label: "CBT", icon: ClipboardCheck, href: "/cbt", note: "Soal, ujian, sesi", badge: "CBT" },
+        { label: "Overview CBT", icon: ClipboardCheck, href: "/cbt", note: "Dashboard CBT" },
+        { label: "Bank Soal", icon: BookOpen, href: "/bank-soal", note: "Kelola soal" },
+        { label: "Paket Soal", icon: Package, href: "/paket-soal", note: "Kelola paket" },
+        { label: "Kelola Ujian", icon: ClipboardList, href: "/ujian", note: "Buat & publish" },
       ],
     },
     {
@@ -138,7 +142,10 @@ const navByRole: Record<Role, NavGroup[]> = {
       label: "CBT",
       collapsible: true,
       items: [
-        { label: "CBT", icon: ClipboardCheck, href: "/cbt", note: "Soal & monitoring", badge: "CBT" },
+        { label: "Overview CBT", icon: ClipboardCheck, href: "/cbt", note: "Dashboard CBT" },
+        { label: "Bank Soal", icon: BookOpen, href: "/bank-soal", note: "Kelola soal" },
+        { label: "Paket Soal", icon: Package, href: "/paket-soal", note: "Kelola paket" },
+        { label: "Kelola Ujian", icon: ClipboardList, href: "/ujian", note: "Buat & publish" },
       ],
     },
   ],
@@ -162,7 +169,8 @@ const navByRole: Record<Role, NavGroup[]> = {
       label: "CBT",
       collapsible: true,
       items: [
-        { label: "CBT", icon: ClipboardCheck, href: "/cbt", note: "Ujian & sesi", badge: "CBT" },
+        { label: "Overview CBT", icon: ClipboardCheck, href: "/cbt", note: "Dashboard CBT" },
+        { label: "Ujian Saya", icon: ClipboardList, href: "/ujian-saya", note: "Kerjakan ujian" },
       ],
     },
     {
