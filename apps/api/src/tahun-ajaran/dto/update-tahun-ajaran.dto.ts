@@ -6,12 +6,6 @@ export class UpdateTahunAjaranDto {
     @IsOptional()
     tahun?: string;
 
-    @IsInt()
-    @Min(1)
-    @Max(2)
-    @IsOptional()
-    semester?: number;
-
     @IsDateString()
     @IsOptional()
     tanggalMulai?: string;

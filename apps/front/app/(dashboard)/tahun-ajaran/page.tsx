@@ -142,7 +142,6 @@ export default function TahunAjaranPage() {
                   <thead>
                     <tr className="border-b border-white/10 text-left text-sm text-muted-foreground">
                       <th className="pb-3 font-medium">Tahun</th>
-                      <th className="pb-3 font-medium">Semester</th>
                       <th className="pb-3 font-medium">Tanggal Mulai</th>
                       <th className="pb-3 font-medium">Tanggal Selesai</th>
                       <th className="pb-3 font-medium">Status</th>
@@ -162,7 +161,6 @@ export default function TahunAjaranPage() {
                             )}
                           </div>
                         </td>
-                        <td className="py-4">{item.semester}</td>
                         <td className="py-4 text-muted-foreground">{new Date(item.tanggalMulai).toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' })}</td>
                         <td className="py-4 text-muted-foreground">{new Date(item.tanggalSelesai).toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' })}</td>
                         <td className="py-4">{item.status}</td>
@@ -285,19 +283,6 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
 
                 value={formData.tahun || ''}
                 onChange={(e) => setFormData({ ...formData, tahun: e.target.value })}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium">Semester</label>
-              <input
-                type="number"
-                required
-
-                min="1"
-                max="2"
-                value={formData.semester || ''}
-                onChange={(e) => setFormData({ ...formData, semester: parseInt(e.target.value) })}
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
               />
             </div>

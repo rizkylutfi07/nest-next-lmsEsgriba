@@ -54,7 +54,6 @@ export class SiswaService {
             select: {
               id: true,
               tahun: true,
-              semester: true,
               status: true,
             },
           },
@@ -429,7 +428,6 @@ export class SiswaService {
         tahunAjaran: {
           select: {
             tahun: true,
-            semester: true,
           },
         },
       },
@@ -445,7 +443,7 @@ export class SiswaService {
       'Nomor Telepon': siswa.nomorTelepon || '',
       'Status': siswa.status,
       'Kelas': siswa.kelas?.nama || '',
-      'Tahun Ajaran': siswa.tahunAjaran ? `${siswa.tahunAjaran.tahun} Semester ${siswa.tahunAjaran.semester}` : '',
+      'Tahun Ajaran': siswa.tahunAjaran ? siswa.tahunAjaran.tahun : '',
     }));
 
     const workbook = XLSX.utils.book_new();

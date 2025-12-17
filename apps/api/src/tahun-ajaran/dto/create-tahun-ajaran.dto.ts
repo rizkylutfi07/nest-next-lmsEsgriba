@@ -11,11 +11,6 @@ export class CreateTahunAjaranDto {
     @IsNotEmpty()
     tahun: string; // e.g., "2024/2025"
 
-    @IsInt()
-    @Min(1)
-    @Max(2)
-    semester: number;
-
     @IsDateString()
     tanggalMulai: string;
 

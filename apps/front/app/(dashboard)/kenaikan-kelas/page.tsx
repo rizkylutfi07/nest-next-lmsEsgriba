@@ -188,7 +188,7 @@ export default function KenaikanKelasPage() {
                                         <option value="">Pilih Tahun Ajaran Tujuan</option>
                                         {tahunAjaranList?.data?.map((ta: any) => (
                                             <option key={ta.id} value={ta.id}>
-                                                {ta.tahun} - Semester {ta.semester} ({ta.status})
+                                                {ta.tahun} ({ta.status})
                                             </option>
                                         ))}
                                     </select>

@@ -72,25 +72,23 @@ export class TahunAjaranService {
     }
 
     async create(dto: CreateTahunAjaranDto) {
-        // Check if tahun+semester combination already exists
+        // Check if tahun already exists
         const exists = await this.prisma.tahunAjaran.findFirst({
             where: {
                 tahun: dto.tahun,
-                semester: dto.semester,
                 deletedAt: null,
             },
         });
 
         if (exists) {
             throw new BadRequestException(
-                `Tahun Ajaran ${dto.tahun} Semester ${dto.semester} sudah ada`,
+                `Tahun Ajaran ${dto.tahun} sudah ada`,
             );
         }
 
         return this.prisma.tahunAjaran.create({
             data: {
                 tahun: dto.tahun,
-                semester: dto.semester,
                 tanggalMulai: new Date(dto.tanggalMulai),
                 tanggalSelesai: new Date(dto.tanggalSelesai),
                 status: dto.status,
@@ -103,7 +101,6 @@ export class TahunAjaranService {
 
         const updateData: any = {};
         if (dto.tahun) updateData.tahun = dto.tahun;
-        if (dto.semester) updateData.semester = dto.semester;
         if (dto.tanggalMulai) updateData.tanggalMulai = new Date(dto.tanggalMulai);
         if (dto.tanggalSelesai) updateData.tanggalSelesai = new Date(dto.tanggalSelesai);
         if (dto.status) updateData.status = dto.status;
@@ -172,7 +169,7 @@ export class TahunAjaranService {
         });
 
         return {
-            message: `Tahun Ajaran ${updated.tahun} Semester ${updated.semester} berhasil diaktifkan`,
+            message: `Tahun Ajaran ${updated.tahun} berhasil diaktifkan`,
             data: updated,
         };
     }

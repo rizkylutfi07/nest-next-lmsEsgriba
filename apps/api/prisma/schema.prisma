@@ -29,8 +29,7 @@ enum Role {
 
 model TahunAjaran {
   id             String            @id @default(cuid())
-  tahun          String // e.g., "2024/2025"
-  semester       Int // 1 or 2
+  tahun          String            @unique // e.g., "2024/2025"
   tanggalMulai   DateTime
   tanggalSelesai DateTime
   status         StatusTahunAjaran @default(AKAN_DATANG)
@@ -40,8 +39,6 @@ model TahunAjaran {
 
   siswa             Siswa[]
   siswaKelasHistory SiswaKelasHistory[]
-
-  @@unique([tahun, semester])
 }
 
 enum StatusTahunAjaran {

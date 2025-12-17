@@ -213,7 +213,7 @@ export default function SiswaPage() {
               <option value="">Semua Tahun Ajaran</option>
               {activeTahunAjaran && (
                 <option value={activeTahunAjaran.id}>
-                  {activeTahunAjaran.tahun} Semester {activeTahunAjaran.semester} (Aktif)
+                  {activeTahunAjaran.tahun} (Aktif)
                 </option>
               )}
             </select>
@@ -252,6 +252,7 @@ export default function SiswaPage() {
                       {sortBy === 'kelas' && (sortOrder === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />)}
                     </button>
                   </th>
+                  <th className="px-6 py-3 text-left">Tahun Pelajaran</th>
                   <th className="px-6 py-3 text-left">
                     <button
                       className="flex items-center gap-1 hover:text-foreground"
@@ -268,14 +269,14 @@ export default function SiswaPage() {
                 {isLoading ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <tr key={i}>
-                      <td colSpan={6} className="px-6 py-4">
+                      <td colSpan={7} className="px-6 py-4">
                         <div className="h-4 animate-pulse rounded bg-muted/50" />
                       </td>
                     </tr>
                   ))
                 ) : data?.data?.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center text-muted-foreground">
+                    <td colSpan={7} className="px-6 py-8 text-center text-muted-foreground">
                       Data tidak ditemukan
                     </td>
                   </tr>
@@ -294,6 +295,15 @@ export default function SiswaPage() {
                         <Badge variant="outline" className="bg-background">
                           {item.kelas?.nama ?? "-"}
                         </Badge>
+                      </td>
+                      <td className="px-6 py-4">
+                        {item.tahunAjaran ? (
+                          <div className="text-sm">
+                            <div className="font-medium">{item.tahunAjaran.tahun}</div>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         <Badge

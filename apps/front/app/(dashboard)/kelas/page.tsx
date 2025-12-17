@@ -182,7 +182,7 @@ export default function KelasPage() {
                 <option value="">Semua Tahun Ajaran</option>
                 {data?.data?.[0]?.tahunAjaran && (
                   <option value={activeTahunAjaran?.id}>
-                    {activeTahunAjaran?.tahun} Semester {activeTahunAjaran?.semester} (Aktif)
+                    {activeTahunAjaran?.tahun} (Aktif)
                   </option>
                 )}
               </select>
