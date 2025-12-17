@@ -248,7 +248,7 @@ export default function GuruPage() {
         <FormModal
           title="Tambah Guru"
           onClose={() => setIsCreateModalOpen(false)}
-          onSubmit={(data) => createMutation.mutate(data)}
+          onSubmit={(data: any) => createMutation.mutate(data)}
           isLoading={createMutation.isPending}
         />
       )}
@@ -258,7 +258,7 @@ export default function GuruPage() {
           title="Edit Guru"
           item={editingItem}
           onClose={() => setEditingItem(null)}
-          onSubmit={(data) => updateMutation.mutate({ id: editingItem.id, data })}
+          onSubmit={(data: any) => updateMutation.mutate({ id: editingItem.id, data })}
           isLoading={updateMutation.isPending}
         />
       )}
@@ -400,6 +400,7 @@ function ImportModal({ onClose, onSuccess, token }: { onClose: () => void; onSuc
 
 function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
   const { token } = useRole();
+  const [searchMataPelajaran, setSearchMataPelajaran] = useState("");
   const [formData, setFormData] = useState(() => {
     // Initialize mataPelajaranIds from item.mataPelajaran array
     const initialData = item || {};
@@ -422,8 +423,17 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Remove system fields and relation objects before submitting
-    const { id, createdAt, updatedAt, deletedAt, mataPelajaran, ...cleanData } = formData;
+
+    // Hanya kirim field yang diizinkan oleh DTO backend (Create/UpdateGuruDto)
+    const cleanData = {
+      nip: formData.nip,
+      nama: formData.nama,
+      email: formData.email,
+      nomorTelepon: formData.nomorTelepon,
+      status: formData.status,
+      mataPelajaranIds: formData.mataPelajaranIds,
+    };
+
     console.log('Submitting guru data:', cleanData);
     onSubmit(cleanData);
   };
@@ -435,6 +445,23 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
       : [...current, mpId];
     setFormData({ ...formData, mataPelajaranIds: newIds });
   };
+
+  // Filter and sort mata pelajaran
+  const filteredAndSortedMataPelajaran = mataPelajaranList?.data
+    ? [...mataPelajaranList.data]
+        .filter((mp: any) => {
+          if (!searchMataPelajaran) return true;
+          const searchLower = searchMataPelajaran.toLowerCase();
+          return (
+            mp.nama.toLowerCase().includes(searchLower) ||
+            mp.kode.toLowerCase().includes(searchLower)
+          );
+        })
+        .sort((a: any, b: any) => {
+          // Sort by nama A-Z
+          return a.nama.localeCompare(b.nama, 'id', { sensitivity: 'base' });
+        })
+    : [];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md">
@@ -517,21 +544,40 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium">Mata Pelajaran</label>
+              
+              {/* Search Input */}
+              <div className="mb-2 relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Cari mata pelajaran..."
+                  value={searchMataPelajaran}
+                  onChange={(e) => setSearchMataPelajaran(e.target.value)}
+                  className="w-full h-9 rounded-md border border-white/10 bg-white/5 pl-9 pr-4 text-sm outline-none focus:border-primary/50"
+                />
+              </div>
+
               <div className="max-h-48 overflow-y-auto rounded-lg border border-white/10 bg-white/5 p-3">
                 {mataPelajaranList?.data?.length > 0 ? (
-                  <div className="space-y-2">
-                    {mataPelajaranList.data.map((mp: any) => (
-                      <label key={mp.id} className="flex items-center gap-2 cursor-pointer hover:bg-white/5 p-2 rounded">
-                        <input
-                          type="checkbox"
-                          checked={(formData.mataPelajaranIds || []).includes(mp.id)}
-                          onChange={() => toggleMataPelajaran(mp.id)}
-                          className="rounded border-white/20"
-                        />
-                        <span className="text-sm">{mp.nama} ({mp.kode})</span>
-                      </label>
-                    ))}
-                  </div>
+                  filteredAndSortedMataPelajaran.length > 0 ? (
+                    <div className="space-y-2">
+                      {filteredAndSortedMataPelajaran.map((mp: any) => (
+                        <label key={mp.id} className="flex items-center gap-2 cursor-pointer hover:bg-white/5 p-2 rounded">
+                          <input
+                            type="checkbox"
+                            checked={(formData.mataPelajaranIds || []).includes(mp.id)}
+                            onChange={() => toggleMataPelajaran(mp.id)}
+                            className="rounded border-white/20"
+                          />
+                          <span className="text-sm">{mp.nama} ({mp.kode})</span>
+                        </label>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center py-2">
+                      Tidak ada mata pelajaran ditemukan
+                    </p>
+                  )
                 ) : (
                   <p className="text-sm text-muted-foreground">Loading mata pelajaran...</p>
                 )}

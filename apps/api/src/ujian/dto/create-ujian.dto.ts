@@ -22,6 +22,10 @@ export class CreateUjianDto {
     @IsOptional()
     mataPelajaranId?: string;
 
+    @IsString()
+    @IsOptional()
+    guruId?: string;
+
     @IsArray()
     @IsString({ each: true })
     @IsOptional()
@@ -55,7 +59,7 @@ export class CreateUjianDto {
     @IsOptional()
     tampilkanNilai?: boolean = false;
 
-    @IsArray()
-    @IsString({ each: true })
-    soalIds: string[]; // Array of BankSoal IDs
+    @IsString()
+    @IsNotEmpty()
+    paketSoalId: string; // Paket Soal ID
 }

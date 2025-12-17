@@ -212,12 +212,9 @@ export class GuruService {
           status: row.status || 'AKTIF',
         };
 
-        // Create with or without user account
-        if (row.createUserAccount) {
-          await this.createWithUser(guruData);
-        } else {
-          await this.create(guruData);
-        }
+        // Always create user account automatically when importing
+        // Use NIP as default password
+        await this.createWithUser(guruData, row.nip);
 
         results.success++;
       } catch (error) {

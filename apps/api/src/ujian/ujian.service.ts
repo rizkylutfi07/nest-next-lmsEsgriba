@@ -10,23 +10,37 @@ export class UjianService {
     constructor(private prisma: PrismaService) { }
 
     async create(createUjianDto: CreateUjianDto, createdBy: string) {
-        const { soalIds, kelasIds, siswaIds, ...ujianData } = createUjianDto;
+        const { paketSoalId, kelasIds, siswaIds, ...ujianData } = createUjianDto;
 
-        // Validate soalIds
-        if (!soalIds || soalIds.length === 0) {
-            throw new BadRequestException('Ujian harus memiliki minimal 1 soal');
+        // Validate paketSoalId
+        if (!paketSoalId) {
+            throw new BadRequestException('Paket soal harus dipilih');
         }
 
-        // Check if all soal exist
-        const soalCount = await this.prisma.bankSoal.count({
+        // Validate and get paket soal with soal items
+        const paketSoal = await this.prisma.paketSoal.findFirst({
             where: {
-                id: { in: soalIds },
+                id: paketSoalId,
                 deletedAt: null,
+            },
+            include: {
+                soalItems: {
+                    include: {
+                        bankSoal: true,
+                    },
+                    orderBy: {
+                        urutan: 'asc',
+                    },
+                },
             },
         });
 
-        if (soalCount !== soalIds.length) {
-            throw new NotFoundException('Beberapa soal tidak ditemukan');
+        if (!paketSoal) {
+            throw new NotFoundException('Paket soal tidak ditemukan');
+        }
+
+        if (!paketSoal.soalItems || paketSoal.soalItems.length === 0) {
+            throw new BadRequestException('Paket soal tidak memiliki soal');
         }
 
         // Validate mataPelajaranId if provided
@@ -36,6 +50,19 @@ export class UjianService {
             });
             if (!mataPelajaran) {
                 throw new NotFoundException('Mata pelajaran tidak ditemukan');
+            }
+        }
+
+        // Validate guruId if provided
+        if (createUjianDto.guruId) {
+            const guru = await this.prisma.guru.findFirst({
+                where: {
+                    id: createUjianDto.guruId,
+                    deletedAt: null,
+                },
+            });
+            if (!guru) {
+                throw new NotFoundException('Guru tidak ditemukan');
             }
         }
 
@@ -85,17 +112,18 @@ export class UjianService {
         // Generate unique kode
         const kode = await this.generateKode();
 
-        // Create ujian with soal relations and UjianKelas relations
+        // Create ujian with soal relations from paket soal and UjianKelas relations
         const ujian = await this.prisma.ujian.create({
             data: {
                 ...ujianData,
+                paketSoalId,
                 kode,
                 createdBy,
                 status: StatusUjian.DRAFT,
                 ujianSoal: {
-                    create: soalIds.map((soalId, index) => ({
-                        bankSoalId: soalId,
-                        nomorUrut: index + 1,
+                    create: paketSoal.soalItems.map((item, index) => ({
+                        bankSoalId: item.bankSoalId,
+                        nomorUrut: item.urutan || index + 1,
                         bobot: 1, // Default bobot, can be customized later
                     })),
                 },
@@ -108,6 +136,8 @@ export class UjianService {
             },
             include: {
                 mataPelajaran: true,
+                guru: true,
+                paketSoal: true,
                 kelas: true,
                 ujianKelas: {
                     include: {
@@ -170,6 +200,8 @@ export class UjianService {
                 take: limit,
                 include: {
                     mataPelajaran: true,
+                    guru: true,
+                    paketSoal: true,
                     kelas: true,
                     _count: {
                         select: {
@@ -204,6 +236,8 @@ export class UjianService {
             },
             include: {
                 mataPelajaran: true,
+                guru: true,
+                paketSoal: true,
                 kelas: true,
                 ujianSoal: {
                     include: {
@@ -236,36 +270,46 @@ export class UjianService {
             throw new BadRequestException('Ujian yang sudah selesai tidak dapat diubah');
         }
 
-        const { soalIds, kelasIds, siswaIds, ...ujianData } = updateUjianDto;
+        const { paketSoalId, kelasIds, siswaIds, ...ujianData } = updateUjianDto;
 
-        // If soalIds provided, update the relations
-        if (soalIds) {
-            if (soalIds.length === 0) {
-                throw new BadRequestException('Ujian harus memiliki minimal 1 soal');
-            }
-
-            // Check if all soal exist
-            const soalCount = await this.prisma.bankSoal.count({
+        // If paketSoalId provided, update the soal relations from paket soal
+        if (paketSoalId) {
+            // Validate and get paket soal with soal items
+            const paketSoal = await this.prisma.paketSoal.findFirst({
                 where: {
-                    id: { in: soalIds },
+                    id: paketSoalId,
                     deletedAt: null,
+                },
+                include: {
+                    soalItems: {
+                        include: {
+                            bankSoal: true,
+                        },
+                        orderBy: {
+                            urutan: 'asc',
+                        },
+                    },
                 },
             });
 
-            if (soalCount !== soalIds.length) {
-                throw new NotFoundException('Beberapa soal tidak ditemukan');
+            if (!paketSoal) {
+                throw new NotFoundException('Paket soal tidak ditemukan');
             }
 
-            // Delete existing relations and create new ones
+            if (!paketSoal.soalItems || paketSoal.soalItems.length === 0) {
+                throw new BadRequestException('Paket soal tidak memiliki soal');
+            }
+
+            // Delete existing relations and create new ones from paket soal
             await this.prisma.ujianSoal.deleteMany({
                 where: { ujianId: id },
             });
 
             await this.prisma.ujianSoal.createMany({
-                data: soalIds.map((soalId, index) => ({
+                data: paketSoal.soalItems.map((item, index) => ({
                     ujianId: id,
-                    bankSoalId: soalId,
-                    nomorUrut: index + 1,
+                    bankSoalId: item.bankSoalId,
+                    nomorUrut: item.urutan || index + 1,
                     bobot: 1,
                 })),
             });
@@ -278,6 +322,19 @@ export class UjianService {
             });
             if (!mataPelajaran) {
                 throw new NotFoundException('Mata pelajaran tidak ditemukan');
+            }
+        }
+
+        // Validate guruId if provided
+        if (updateUjianDto.guruId) {
+            const guru = await this.prisma.guru.findFirst({
+                where: {
+                    id: updateUjianDto.guruId,
+                    deletedAt: null,
+                },
+            });
+            if (!guru) {
+                throw new NotFoundException('Guru tidak ditemukan');
             }
         }
 
@@ -313,6 +370,8 @@ export class UjianService {
             data: ujianData,
             include: {
                 mataPelajaran: true,
+                guru: true,
+                paketSoal: true,
                 kelas: true,
                 ujianSoal: {
                     include: {

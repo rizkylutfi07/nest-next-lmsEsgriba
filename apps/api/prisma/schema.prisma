@@ -82,6 +82,7 @@ model Guru {
   mataPelajaran MataPelajaran[] @relation("GuruMataPelajaran")
   paketSoal     PaketSoal[]
   kelasWali     Kelas[]         @relation("WaliKelas")
+  ujian         Ujian[]
 }
 
 enum StatusGuru {
@@ -286,6 +287,8 @@ model Ujian {
   deskripsi       String?       @db.Text
   mataPelajaranId String?
   mataPelajaran   MataPelajaran? @relation(fields: [mataPelajaranId], references: [id])
+  guruId          String?
+  guru            Guru?          @relation(fields: [guruId], references: [id])
   paketSoalId     String?
   paketSoal       PaketSoal?     @relation(fields: [paketSoalId], references: [id])
   kelasId         String?
@@ -307,6 +310,7 @@ model Ujian {
   ujianKelas      UjianKelas[] // Many-to-many relationship with Kelas
   
   @@index([mataPelajaranId])
+  @@index([guruId])
   @@index([kelasId])
   @@index([tanggalMulai])
 }

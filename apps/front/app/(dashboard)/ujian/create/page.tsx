@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { Loader2, ArrowLeft, Search, Filter, Users, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useRole } from "../../role-context";
 
 export default function CreateUjianPage() {
@@ -18,6 +17,8 @@ export default function CreateUjianPage() {
         judul: "",
         deskripsi: "",
         mataPelajaranId: "",
+        guruId: "",
+        paketSoalId: "",
         durasi: 60,
         tanggalMulai: "",
         tanggalSelesai: "",
@@ -29,22 +30,38 @@ export default function CreateUjianPage() {
     // Selection State
     const [kelasIds, setKelasIds] = useState<string[]>([]);
     const [siswaIds, setSiswaIds] = useState<string[]>([]);
-    const [selectedSoal, setSelectedSoal] = useState<any[]>([]);
 
     // Student Filtering State
     const [targetPeserta, setTargetPeserta] = useState<"ALL_CLASS" | "SPECIFIC">("ALL_CLASS");
     const [filterAgama, setFilterAgama] = useState<string>("ALL");
     const [searchStudent, setSearchStudent] = useState("");
+    
+    // Search state for guru and mata pelajaran
+    const [searchGuru, setSearchGuru] = useState<string>("");
+    const [searchMataPelajaran, setSearchMataPelajaran] = useState<string>("");
 
-    // Fetch mata pelajaran
-    const { data: mataPelajaranList } = useQuery({
-        queryKey: ["mata-pelajaran-list"],
+    // Fetch guru
+    const { data: guruList } = useQuery({
+        queryKey: ["guru-list"],
         queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/mata-pelajaran?limit=100`, {
+            const res = await fetch(`http://localhost:3001/guru?limit=100`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             return res.json();
         },
+    });
+
+    // Fetch guru detail with mata pelajaran when guru is selected
+    const { data: selectedGuru } = useQuery({
+        queryKey: ["guru-detail", formData.guruId],
+        queryFn: async () => {
+            if (!formData.guruId) return null;
+            const res = await fetch(`http://localhost:3001/guru/${formData.guruId}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            return res.json();
+        },
+        enabled: !!formData.guruId,
     });
 
     // Fetch kelas
@@ -58,16 +75,16 @@ export default function CreateUjianPage() {
         },
     });
 
-    // Fetch bank soal
-    const { data: bankSoalList } = useQuery({
-        queryKey: ["bank-soal-list", formData.mataPelajaranId],
+    // Fetch paket soal
+    const { data: paketSoalList } = useQuery({
+        queryKey: ["paket-soal-list", formData.mataPelajaranId],
         queryFn: async () => {
             const params = new URLSearchParams({ limit: "100" });
             if (formData.mataPelajaranId) {
                 params.append("mataPelajaranId", formData.mataPelajaranId);
             }
             const res = await fetch(
-                `http://localhost:3001/bank-soal?${params.toString()}`,
+                `http://localhost:3001/paket-soal?${params.toString()}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             return res.json();
@@ -163,8 +180,8 @@ export default function CreateUjianPage() {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (selectedSoal.length === 0) {
-            alert("Pilih minimal 1 soal!");
+        if (!formData.paketSoalId) {
+            alert("Pilih paket soal!");
             return;
         }
 
@@ -180,21 +197,14 @@ export default function CreateUjianPage() {
 
         const submitData = {
             ...formData,
-            soalIds: selectedSoal.map((s) => s.id),
             mataPelajaranId: formData.mataPelajaranId || undefined,
+            guruId: formData.guruId || undefined,
+            paketSoalId: formData.paketSoalId,
             kelasIds: kelasIds,
             siswaIds: targetPeserta === "SPECIFIC" ? siswaIds : undefined,
         };
 
         createMutation.mutate(submitData);
-    };
-
-    const toggleSoal = (soal: any) => {
-        if (selectedSoal.find((s) => s.id === soal.id)) {
-            setSelectedSoal(selectedSoal.filter((s) => s.id !== soal.id));
-        } else {
-            setSelectedSoal([...selectedSoal, soal]);
-        }
     };
 
     const toggleKelas = (id: string) => {
@@ -325,25 +335,112 @@ export default function CreateUjianPage() {
 
                             <div>
                                 <label className="mb-2 block text-sm font-medium">
-                                    Mata Pelajaran
+                                    Guru *
                                 </label>
+                                {/* Search Input for Guru */}
+                                <div className="mb-2 relative">
+                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <input
+                                        type="text"
+                                        placeholder="Cari guru..."
+                                        value={searchGuru}
+                                        onChange={(e) => setSearchGuru(e.target.value)}
+                                        className="w-full h-9 rounded-md border border-white/10 bg-white/5 pl-9 pr-4 text-sm outline-none focus:border-primary/50"
+                                    />
+                                </div>
                                 <select
-                                    value={formData.mataPelajaranId}
-                                    onChange={(e) =>
+                                    value={formData.guruId}
+                                    onChange={(e) => {
                                         setFormData({
                                             ...formData,
-                                            mataPelajaranId: e.target.value,
-                                        })
-                                    }
+                                            guruId: e.target.value,
+                                            mataPelajaranId: "", // Reset mata pelajaran when guru changes
+                                        });
+                                        setSearchMataPelajaran(""); // Reset search mata pelajaran
+                                    }}
                                     className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
                                 >
-                                    <option value="">Pilih Mata Pelajaran</option>
-                                    {mataPelajaranList?.data?.map((mp: any) => (
-                                        <option key={mp.id} value={mp.id}>
-                                            {mp.nama}
-                                        </option>
-                                    ))}
+                                    <option value="">Pilih Guru</option>
+                                    {guruList?.data
+                                        ?.filter((guru: any) => {
+                                            if (!searchGuru) return true;
+                                            const searchLower = searchGuru.toLowerCase();
+                                            return (
+                                                guru.nama.toLowerCase().includes(searchLower) ||
+                                                guru.nip?.toLowerCase().includes(searchLower)
+                                            );
+                                        })
+                                        .sort((a: any, b: any) => a.nama.localeCompare(b.nama, 'id', { sensitivity: 'base' }))
+                                        .map((guru: any) => (
+                                            <option key={guru.id} value={guru.id}>
+                                                {guru.nama} {guru.nip ? `(${guru.nip})` : ''}
+                                            </option>
+                                        ))}
                                 </select>
+                                {!formData.guruId && (
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                        Pilih guru terlebih dahulu untuk melihat mata pelajaran
+                                    </p>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                    Mata Pelajaran
+                                </label>
+                                {formData.guruId ? (
+                                    <>
+                                        {/* Search Input for Mata Pelajaran */}
+                                        <div className="mb-2 relative">
+                                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                            <input
+                                                type="text"
+                                                placeholder="Cari mata pelajaran..."
+                                                value={searchMataPelajaran}
+                                                onChange={(e) => setSearchMataPelajaran(e.target.value)}
+                                                className="w-full h-9 rounded-md border border-white/10 bg-white/5 pl-9 pr-4 text-sm outline-none focus:border-primary/50"
+                                            />
+                                        </div>
+                                        <select
+                                            value={formData.mataPelajaranId}
+                                            onChange={(e) =>
+                                                setFormData({
+                                                    ...formData,
+                                                    mataPelajaranId: e.target.value,
+                                                })
+                                            }
+                                            className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                                        >
+                                            <option value="">Pilih Mata Pelajaran</option>
+                                            {selectedGuru?.mataPelajaran
+                                                ?.filter((mp: any) => {
+                                                    if (!searchMataPelajaran) return true;
+                                                    const searchLower = searchMataPelajaran.toLowerCase();
+                                                    return (
+                                                        mp.nama.toLowerCase().includes(searchLower) ||
+                                                        mp.kode?.toLowerCase().includes(searchLower)
+                                                    );
+                                                })
+                                                .sort((a: any, b: any) => 
+                                                    a.nama.localeCompare(b.nama, 'id', { sensitivity: 'base' })
+                                                )
+                                                .map((mp: any) => (
+                                                    <option key={mp.id} value={mp.id}>
+                                                        {mp.nama} {mp.kode ? `(${mp.kode})` : ''}
+                                                    </option>
+                                                ))}
+                                        </select>
+                                        {selectedGuru?.mataPelajaran?.length === 0 && (
+                                            <p className="mt-1 text-xs text-muted-foreground">
+                                                Guru ini belum memiliki mata pelajaran yang diajar
+                                            </p>
+                                        )}
+                                    </>
+                                ) : (
+                                    <div className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-muted-foreground">
+                                        Pilih guru terlebih dahulu
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -648,53 +745,45 @@ export default function CreateUjianPage() {
                             </div>
                         </div>
 
-                        {/* Question Selection */}
+                        {/* Paket Soal Selection */}
                         <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-lg font-semibold">
-                                    Pilih Soal ({selectedSoal.length} dipilih)
+                            <div>
+                                <h3 className="text-lg font-semibold mb-4">
+                                    Pilih Paket Soal
                                 </h3>
-                            </div>
-
-                            <div className="space-y-2 max-h-96 overflow-y-auto">
-                                {bankSoalList?.data?.length === 0 ? (
-                                    <p className="text-sm text-muted-foreground text-center py-4">
-                                        Tidak ada soal tersedia
-                                    </p>
-                                ) : (
-                                    bankSoalList?.data?.map((soal: any) => (
-                                        <Card
-                                            key={soal.id}
-                                            className={`p-3 cursor-pointer transition ${selectedSoal.find((s) => s.id === soal.id)
-                                                ? "border-primary bg-primary/5"
-                                                : ""
-                                                }`}
-                                            onClick={() => toggleSoal(soal)}
-                                        >
-                                            <div className="flex items-start gap-3">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={!!selectedSoal.find((s) => s.id === soal.id)}
-                                                    onChange={() => { }}
-                                                    className="mt-1"
-                                                />
-                                                <div className="flex-1">
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                        <Badge variant="outline" className="text-xs">
-                                                            {soal.kode}
-                                                        </Badge>
-                                                        <Badge className="text-xs bg-blue-500/15 text-blue-600">
-                                                            {soal.tipe.replace("_", " ")}
-                                                        </Badge>
-                                                    </div>
-                                                    <p className="text-sm line-clamp-2">
-                                                        {soal.pertanyaan}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </Card>
-                                    ))
-                                )}
+                                <div>
+                                    <label className="mb-2 block text-sm font-medium">
+                                        Paket Soal *
+                                    </label>
+                                    <select
+                                        value={formData.paketSoalId}
+                                        onChange={(e) =>
+                                            setFormData({
+                                                ...formData,
+                                                paketSoalId: e.target.value,
+                                            })
+                                        }
+                                        required
+                                        className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                                    >
+                                        <option value="">Pilih Paket Soal</option>
+                                        {paketSoalList?.data?.map((paket: any) => (
+                                            <option key={paket.id} value={paket.id}>
+                                                {paket.nama} {paket.kode ? `(${paket.kode})` : ''} - {paket._count?.soalItems || 0} soal
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {paketSoalList?.data?.length === 0 && formData.mataPelajaranId && (
+                                        <p className="text-sm text-muted-foreground mt-2">
+                                            Tidak ada paket soal tersedia untuk mata pelajaran ini
+                                        </p>
+                                    )}
+                                    {!formData.mataPelajaranId && (
+                                        <p className="text-sm text-muted-foreground mt-2">
+                                            Pilih mata pelajaran terlebih dahulu untuk melihat paket soal
+                                        </p>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
@@ -710,7 +799,7 @@ export default function CreateUjianPage() {
                             </Button>
                             <Button
                                 type="submit"
-                                disabled={createMutation.isPending || selectedSoal.length === 0}
+                                disabled={createMutation.isPending || !formData.paketSoalId}
                                 className="flex-1"
                             >
                                 {createMutation.isPending ? (

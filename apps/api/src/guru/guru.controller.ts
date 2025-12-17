@@ -55,7 +55,6 @@ export class GuruController {
         'Email': 'ahmad@school.com',
         'Nomor Telepon': '081234567890',
         'Status': 'AKTIF',
-        'Buat Akun': 'Ya',
       },
     ];
 
@@ -112,7 +111,6 @@ export class GuruController {
       email: String(row['Email'] || row['email'] || ''),
       nomorTelepon: row['Nomor Telepon'] || row['nomorTelepon'] || '',
       status: row['Status'] || row['status'] || 'AKTIF',
-      createUserAccount: row['Buat Akun'] === 'Ya' || row['createUserAccount'] === true,
     }));
 
     return this.guruService.importFromExcel(transformedRows);
