@@ -99,7 +99,7 @@ function ManualAttendanceContent() {
             return '-';
         }
     };
-    const [statusFilter, setStatusFilter] = useState("all"); // all, attended, not-attended
+    const [statusFilter, setStatusFilter] = useState("all"); // all, attended, not-attended, hadir, terlambat, sakit, izin, alpha
     const [updatingStudentId, setUpdatingStudentId] = useState<string | null>(null);
 
     // Fetch classes
@@ -147,6 +147,16 @@ function ManualAttendanceContent() {
                 return student.attendance !== null;
             } else if (statusFilter === "not-attended") {
                 return student.attendance === null;
+            } else if (statusFilter === "hadir") {
+                return student.attendance?.status === "HADIR";
+            } else if (statusFilter === "terlambat") {
+                return student.attendance?.status === "TERLAMBAT";
+            } else if (statusFilter === "sakit") {
+                return student.attendance?.status === "SAKIT";
+            } else if (statusFilter === "izin") {
+                return student.attendance?.status === "IZIN";
+            } else if (statusFilter === "alpha") {
+                return student.attendance?.status === "ALPHA";
             }
 
             return true; // all
@@ -342,6 +352,11 @@ function ManualAttendanceContent() {
                                 <option value="all">Semua</option>
                                 <option value="attended">Sudah Hadir</option>
                                 <option value="not-attended">Belum Hadir</option>
+                                <option value="hadir">Hadir</option>
+                                <option value="terlambat">Terlambat</option>
+                                <option value="sakit">Sakit</option>
+                                <option value="izin">Izin</option>
+                                <option value="alpha">Alpha</option>
                             </select>
                         </div>
                     </div>
@@ -516,7 +531,7 @@ function ManualAttendanceContent() {
                                                                 )}
                                                             </Button>
                                                         ) : null}
-                                                        {(["HADIR", "SAKIT", "IZIN", "ALPHA"] as AttendanceStatus[]).map((status) => (
+                                                        {(["HADIR", "TERLAMBAT", "SAKIT", "IZIN", "ALPHA"] as AttendanceStatus[]).map((status) => (
                                                             <Button
                                                                 key={status}
                                                                 size="sm"
@@ -574,7 +589,7 @@ function ManualAttendanceContent() {
                                                 )}
                                         </div>
                                         <div className="flex gap-1">
-                                            {(["HADIR", "SAKIT", "IZIN", "ALPHA"] as AttendanceStatus[]).map((status) => (
+                                            {(["HADIR", "TERLAMBAT", "SAKIT", "IZIN", "ALPHA"] as AttendanceStatus[]).map((status) => (
                                                 <Button
                                                     key={status}
                                                     size="sm"
@@ -600,7 +615,7 @@ function ManualAttendanceContent() {
             </Card>
 
             <div className="text-sm text-muted-foreground">
-                <p>Keterangan: H = Hadir | S = Sakit | I = Izin | A = Alpha</p>
+                <p>Keterangan: H = Hadir | T = Terlambat | S = Sakit | I = Izin | A = Alpha</p>
             </div>
         </div>
     );

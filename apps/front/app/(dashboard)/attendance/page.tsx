@@ -10,7 +10,7 @@ import Link from "next/link";
 
 export default function AttendancePage() {
     const { token } = useRole();
-    const [statusFilter, setStatusFilter] = useState("all"); // all, attended, not-attended
+    const [statusFilter, setStatusFilter] = useState("all"); // all, attended, not-attended, terlambat, hadir, sakit, izin, alpha
 
     const { data: todayData, isLoading } = useQuery({
         queryKey: ["attendance-today"],
@@ -37,6 +37,11 @@ export default function AttendancePage() {
     const filteredAttendance = todayData?.attendance?.filter((att: any) => {
         if (statusFilter === "attended") return true; // All in attendance list are attended
         if (statusFilter === "not-attended") return false; // This will be handled separately
+        if (statusFilter === "terlambat") return att.status === "TERLAMBAT";
+        if (statusFilter === "hadir") return att.status === "HADIR";
+        if (statusFilter === "sakit") return att.status === "SAKIT";
+        if (statusFilter === "izin") return att.status === "IZIN";
+        if (statusFilter === "alpha") return att.status === "ALPHA";
         return true; // all
     }) || [];
 
@@ -182,6 +187,11 @@ export default function AttendancePage() {
                                 {statusFilter === "all" && "Semua siswa"}
                                 {statusFilter === "attended" && "Siswa yang sudah datang"}
                                 {statusFilter === "not-attended" && "Siswa yang belum datang"}
+                                {statusFilter === "terlambat" && "Siswa yang terlambat"}
+                                {statusFilter === "hadir" && "Siswa yang hadir tepat waktu"}
+                                {statusFilter === "sakit" && "Siswa yang sakit"}
+                                {statusFilter === "izin" && "Siswa yang izin"}
+                                {statusFilter === "alpha" && "Siswa yang alpha"}
                             </CardDescription>
                         </div>
                         <div className="flex items-center gap-2">
@@ -194,6 +204,11 @@ export default function AttendancePage() {
                                 <option value="all">Semua</option>
                                 <option value="attended">Sudah Datang</option>
                                 <option value="not-attended">Belum Datang</option>
+                                <option value="hadir">Hadir</option>
+                                <option value="terlambat">Terlambat</option>
+                                <option value="sakit">Sakit</option>
+                                <option value="izin">Izin</option>
+                                <option value="alpha">Alpha</option>
                             </select>
                         </div>
                     </div>
@@ -229,7 +244,15 @@ export default function AttendancePage() {
                             </div>
                         )
                     ) : filteredAttendance.length === 0 ? (
-                        <p className="text-center text-muted-foreground py-8">Belum ada absensi hari ini</p>
+                        <p className="text-center text-muted-foreground py-8">
+                            {statusFilter === "terlambat" && "Tidak ada siswa yang terlambat hari ini"}
+                            {statusFilter === "hadir" && "Tidak ada siswa yang hadir tepat waktu hari ini"}
+                            {statusFilter === "sakit" && "Tidak ada siswa yang sakit hari ini"}
+                            {statusFilter === "izin" && "Tidak ada siswa yang izin hari ini"}
+                            {statusFilter === "alpha" && "Tidak ada siswa yang alpha hari ini"}
+                            {statusFilter === "all" && "Belum ada absensi hari ini"}
+                            {statusFilter === "attended" && "Belum ada absensi hari ini"}
+                        </p>
                     ) : (
                         <div className="space-y-2">
                             {filteredAttendance.slice(0, 10).map((att: any) => (
@@ -248,11 +271,15 @@ export default function AttendancePage() {
                                             {new Date(att.jamMasuk).toLocaleTimeString("id-ID")}
                                         </p>
                                         <p
-                                            className={`text-xs ${att.status === "HADIR"
+                                            className={`text-xs font-semibold ${att.status === "HADIR"
                                                 ? "text-green-500"
                                                 : att.status === "TERLAMBAT"
-                                                    ? "text-yellow-500"
-                                                    : "text-red-500"
+                                                    ? "text-orange-500"
+                                                    : att.status === "SAKIT"
+                                                        ? "text-blue-500"
+                                                        : att.status === "IZIN"
+                                                            ? "text-yellow-500"
+                                                            : "text-red-500"
                                                 }`}
                                         >
                                             {att.status}

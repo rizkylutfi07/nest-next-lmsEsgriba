@@ -190,7 +190,7 @@ export default function AttendanceReportPage() {
                     </Card>
                     <Card>
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-yellow-500">Terlambat</CardTitle>
+                            <CardTitle className="text-sm font-medium text-orange-500">Terlambat</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{reportData.stats.terlambat}</div>
@@ -198,7 +198,7 @@ export default function AttendanceReportPage() {
                     </Card>
                     <Card>
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-blue-500">Izin</CardTitle>
+                            <CardTitle className="text-sm font-medium text-yellow-500">Izin</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{reportData.stats.izin}</div>
@@ -206,7 +206,7 @@ export default function AttendanceReportPage() {
                     </Card>
                     <Card>
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-orange-500">Sakit</CardTitle>
+                            <CardTitle className="text-sm font-medium text-blue-500">Sakit</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{reportData.stats.sakit}</div>
@@ -267,14 +267,14 @@ export default function AttendanceReportPage() {
                                             </td>
                                             <td className="px-4 py-3 text-sm">
                                                 <span
-                                                    className={`px-2 py-1 rounded text-xs ${att.status === "HADIR"
+                                                    className={`px-2 py-1 rounded text-xs font-medium ${att.status === "HADIR"
                                                         ? "bg-green-500/20 text-green-500"
                                                         : att.status === "TERLAMBAT"
-                                                            ? "bg-yellow-500/20 text-yellow-500"
+                                                            ? "bg-orange-500/20 text-orange-500"
                                                             : att.status === "IZIN"
-                                                                ? "bg-blue-500/20 text-blue-500"
+                                                                ? "bg-yellow-500/20 text-yellow-500"
                                                                 : att.status === "SAKIT"
-                                                                    ? "bg-orange-500/20 text-orange-500"
+                                                                    ? "bg-blue-500/20 text-blue-500"
                                                                     : "bg-red-500/20 text-red-500"
                                                         }`}
                                                 >

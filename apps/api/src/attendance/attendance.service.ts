@@ -149,6 +149,22 @@ export class AttendanceService {
             throw new BadRequestException('Siswa sudah melakukan absensi hari ini');
         }
 
+        // Auto-detect TERLAMBAT status if current time is past the threshold
+        let finalStatus = dto.status || AttendanceStatus.HADIR;
+        if (finalStatus === AttendanceStatus.HADIR) {
+            const lateTimeThreshold = await this.settingsService.getLateTimeThreshold();
+            const [hours, minutes] = lateTimeThreshold.split(':').map(Number);
+            
+            const jakartaTime = this.getJakartaTime();
+            const lateTime = new Date(jakartaTime);
+            lateTime.setHours(hours, minutes, 0, 0);
+
+            // If current time is past late threshold, mark as TERLAMBAT
+            if (jakartaTime > lateTime) {
+                finalStatus = AttendanceStatus.TERLAMBAT;
+            }
+        }
+
         const attendance = await this.prisma.attendance.create({
             data: {
                 siswaId: dto.siswaId,
@@ -156,7 +172,7 @@ export class AttendanceService {
                 // Reverting to new Date() (Real UTC) because DB seems to correct timestamps properly
                 // The previous issue of '04:40' (next day) implies we were double-adding.
                 jamMasuk: new Date(),
-                status: dto.status || AttendanceStatus.HADIR,
+                status: finalStatus,
                 keterangan: dto.keterangan,
                 scanBy: userId,
             },
@@ -560,10 +576,27 @@ export class AttendanceService {
             throw new BadRequestException('Attendance record has been deleted');
         }
 
+        // Auto-detect TERLAMBAT status if current time is past the threshold
+        // Only apply when changing status to HADIR
+        let finalStatus = dto.status;
+        if (dto.status === AttendanceStatus.HADIR) {
+            const lateTimeThreshold = await this.settingsService.getLateTimeThreshold();
+            const [hours, minutes] = lateTimeThreshold.split(':').map(Number);
+            
+            const jakartaTime = this.getJakartaTime();
+            const lateTime = new Date(jakartaTime);
+            lateTime.setHours(hours, minutes, 0, 0);
+
+            // If current time is past late threshold, mark as TERLAMBAT
+            if (jakartaTime > lateTime) {
+                finalStatus = AttendanceStatus.TERLAMBAT;
+            }
+        }
+
         return this.prisma.attendance.update({
             where: { id },
             data: {
-                status: dto.status,
+                status: finalStatus,
                 keterangan: dto.keterangan,
                 scanBy: userId,
             },
@@ -593,6 +626,23 @@ export class AttendanceService {
         // calculated as UTC to survive negative shifts
         const targetDate = new Date(Date.UTC(year, month - 1, day, 18, 0, 0, 0));
 
+        // Auto-detect TERLAMBAT status if current time is past the threshold
+        // Only apply for HADIR status (not for manual SAKIT, IZIN, ALPHA)
+        let finalStatus = dto.status;
+        if (dto.status === AttendanceStatus.HADIR) {
+            const lateTimeThreshold = await this.settingsService.getLateTimeThreshold();
+            const [hours, minutes] = lateTimeThreshold.split(':').map(Number);
+            
+            const jakartaTime = this.getJakartaTime();
+            const lateTime = new Date(jakartaTime);
+            lateTime.setHours(hours, minutes, 0, 0);
+
+            // If current time is past late threshold, mark as TERLAMBAT
+            if (jakartaTime > lateTime) {
+                finalStatus = AttendanceStatus.TERLAMBAT;
+            }
+        }
+
         // Check if attendance already exists
         const existing = await this.prisma.attendance.findFirst({
             where: {
@@ -607,8 +657,7 @@ export class AttendanceService {
             return this.prisma.attendance.update({
                 where: { id: existing.id },
                 data: {
-                    status: dto.status,
-                    jamKeluar: new Date(), // Revert to Real UTC
+                    status: finalStatus,
                     keterangan: dto.keterangan,
                     scanBy: userId,
                 },
@@ -626,7 +675,7 @@ export class AttendanceService {
                 siswaId: dto.siswaId,
                 tanggal: targetDate, // Uses 18:00 offset
                 jamMasuk: new Date(), // Revert to Real UTC
-                status: dto.status,
+                status: finalStatus,
                 keterangan: dto.keterangan,
                 scanBy: userId,
             },
