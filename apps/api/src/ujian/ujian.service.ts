@@ -3,14 +3,35 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateUjianDto } from './dto/create-ujian.dto';
 import { UpdateUjianDto } from './dto/update-ujian.dto';
 import { FilterUjianDto } from './dto/filter-ujian.dto';
-import { StatusUjian, StatusPengerjaan } from '@prisma/client';
+import { Prisma, StatusUjian, StatusPengerjaan } from '@prisma/client';
 
 @Injectable()
 export class UjianService {
     constructor(private prisma: PrismaService) { }
 
     async create(createUjianDto: CreateUjianDto, createdBy: string) {
-        const { paketSoalId, kelasIds, siswaIds, ...ujianData } = createUjianDto;
+        const { paketSoalId, kelasIds, siswaIds, ...rest } = createUjianDto;
+        
+        // Prepare ujianData with only valid Prisma fields (exclude kelasIds and siswaIds which are handled separately)
+        const tanggalMulai = new Date(rest.tanggalMulai);
+        const tanggalSelesai = new Date(rest.tanggalSelesai);
+
+        if (isNaN(tanggalMulai.getTime()) || isNaN(tanggalSelesai.getTime())) {
+            throw new BadRequestException('Tanggal mulai dan selesai harus valid');
+        }
+
+        const ujianData = {
+            judul: rest.judul,
+            deskripsi: rest.deskripsi,
+            mataPelajaranId: rest.mataPelajaranId || null,
+            guruId: rest.guruId || null,
+            durasi: rest.durasi,
+            tanggalMulai,
+            tanggalSelesai,
+            nilaiMinimal: rest.nilaiMinimal || null,
+            acakSoal: rest.acakSoal ?? true,
+            tampilkanNilai: rest.tampilkanNilai ?? false,
+        };
 
         // Validate paketSoalId
         if (!paketSoalId) {
@@ -109,61 +130,94 @@ export class UjianService {
             }
         }
 
-        // Generate unique kode
-        const kode = await this.generateKode();
-
-        // Create ujian with soal relations from paket soal and UjianKelas relations
-        const ujian = await this.prisma.ujian.create({
-            data: {
-                ...ujianData,
-                paketSoalId,
-                kode,
-                createdBy,
-                status: StatusUjian.DRAFT,
-                ujianSoal: {
-                    create: paketSoal.soalItems.map((item, index) => ({
-                        bankSoalId: item.bankSoalId,
-                        nomorUrut: item.urutan || index + 1,
-                        bobot: 1, // Default bobot, can be customized later
-                    })),
-                },
-                // Create UjianKelas records for multi-class support
-                ujianKelas: kelasIds && kelasIds.length > 0 ? {
-                    create: kelasIds.map((kelasId) => ({
-                        kelasId,
-                    })),
-                } : undefined,
-            },
-            include: {
-                mataPelajaran: true,
-                guru: true,
-                paketSoal: true,
-                kelas: true,
-                ujianKelas: {
+        const maxKodeRetries = 3;
+        for (let attempt = 0; attempt < maxKodeRetries; attempt++) {
+            const kode = await this.generateKode();
+            try {
+                // Create ujian with soal relations from paket soal and UjianKelas relations
+                const ujian = await this.prisma.ujian.create({
+                    data: {
+                        ...ujianData,
+                        paketSoalId,
+                        kode,
+                        createdBy,
+                        status: StatusUjian.DRAFT,
+                        ujianSoal: {
+                            create: paketSoal.soalItems.map((item, index) => ({
+                                bankSoalId: item.bankSoalId,
+                                nomorUrut: item.urutan || index + 1,
+                                bobot: 1, // Default bobot, can be customized later
+                            })),
+                        },
+                        // Create UjianKelas records for multi-class support
+                        ujianKelas: kelasIds && kelasIds.length > 0 ? {
+                            create: kelasIds.map((kelasId) => ({
+                                kelasId,
+                            })),
+                        } : undefined,
+                    },
                     include: {
+                        mataPelajaran: true,
+                        guru: true,
+                        paketSoal: true,
                         kelas: true,
+                        ujianKelas: {
+                            include: {
+                                kelas: true,
+                            },
+                        },
+                        ujianSoal: {
+                            include: {
+                                bankSoal: true,
+                            },
+                            orderBy: {
+                                nomorUrut: 'asc',
+                            },
+                        },
                     },
-                },
-                ujianSoal: {
-                    include: {
-                        bankSoal: true,
-                    },
-                    orderBy: {
-                        nomorUrut: 'asc',
-                    },
-                },
-            },
-        });
+                });
 
-        // Store siswaIds in the response metadata (we'll use this during assignment)
-        // Note: We're not storing siswaIds in the database directly, 
-        // but will use them when assignToStudents is called
-        return {
-            ...ujian,
-            _metadata: {
-                selectedSiswaIds: siswaIds || [],
-            },
-        };
+                // Store siswaIds in the response metadata (we'll use this during assignment)
+                // Note: We're not storing siswaIds in the database directly, 
+                // but will use them when assignToStudents is called
+                return {
+                    ...ujian,
+                    _metadata: {
+                        selectedSiswaIds: siswaIds || [],
+                    },
+                };
+            } catch (error) {
+                const isKodeDuplicate =
+                    error instanceof Prisma.PrismaClientKnownRequestError &&
+                    error.code === 'P2002' &&
+                    this.isKodeUniqueConstraint(error.meta?.target);
+
+                if (isKodeDuplicate && attempt < maxKodeRetries - 1) {
+                    // Retry with a fresh kode
+                    continue;
+                }
+
+                if (isKodeDuplicate) {
+                    throw new ConflictException('Kode ujian sudah digunakan, silakan coba lagi.');
+                }
+
+                throw error;
+            }
+        }
+
+        throw new ConflictException('Gagal membuat ujian karena kode unik tidak tersedia.');
+    }
+
+    private isKodeUniqueConstraint(target: unknown): boolean {
+        if (typeof target === 'string') {
+            return target.includes('Ujian_kode_key') || target.includes('kode');
+        }
+
+        if (Array.isArray(target)) {
+            return target.includes('kode');
+        }
+
+        return false;
     }
 
     async findAll(filterDto: FilterUjianDto) {
@@ -503,8 +557,25 @@ export class UjianService {
 
     async generateKode(): Promise<string> {
         const prefix = 'UJI';
-        const count = await this.prisma.ujian.count();
-        const number = (count + 1).toString().padStart(5, '0');
-        return `${prefix}-${number}`;
+        const lastExam = await this.prisma.ujian.findFirst({
+            where: {
+                kode: {
+                    startsWith: `${prefix}-`,
+                },
+            },
+            orderBy: {
+                kode: 'desc',
+            },
+            select: {
+                kode: true,
+            },
+        });
+
+        const lastNumber = lastExam
+            ? parseInt(lastExam.kode.replace(`${prefix}-`, ''), 10) || 0
+            : 0;
+        const nextNumber = lastNumber + 1;
+
+        return `${prefix}-${nextNumber.toString().padStart(5, '0')}`;
     }
 }

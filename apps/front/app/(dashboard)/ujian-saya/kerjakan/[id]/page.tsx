@@ -1,13 +1,51 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useQuery, useMutation } from "@tantml:function_calls>";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRouter, useParams } from "next/navigation";
 import { Loader2, Clock, AlertTriangle, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useRole } from "../../../role-context";
+
+type PilihanJawaban = {
+    id: string;
+    text: string;
+    value: string;
+};
+
+const normalizePilihanData = (source: any): PilihanJawaban[] => {
+    if (!source) return [];
+    let data = source;
+    if (typeof data === "string") {
+        try {
+            data = JSON.parse(data);
+        } catch {
+            return [];
+        }
+    }
+    if (Array.isArray(data)) {
+        return data.map((item: any, idx: number) => ({
+            id: item?.id ?? item?.value ?? `${idx}`,
+            text: item?.text ?? item?.label ?? item?.value ?? "",
+            value: item?.value ?? item?.id ?? `${idx}`,
+        }));
+    }
+    if (typeof data === "object") {
+        return Object.entries(data).map(([key, value]: [string, any], idx) => {
+            if (typeof value === "string") {
+                return { id: key ?? `${idx}`, text: value, value: key ?? `${idx}` };
+            }
+            return {
+                id: value?.id ?? key ?? `${idx}`,
+                text: value?.text ?? value?.label ?? value?.value ?? "",
+                value: value?.value ?? value?.id ?? key ?? `${idx}`,
+            };
+        });
+    }
+    return [];
+};
 
 export default function KerjakanUjianPage() {
     const { token } = useRole();
@@ -19,11 +57,15 @@ export default function KerjakanUjianPage() {
     const [timeLeft, setTimeLeft] = useState(0);
     const [violations, setViolations] = useState(0);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+    const [activeSoalId, setActiveSoalId] = useState<string | null>(null);
+    const [currentIndex, setCurrentIndex] = useState(0);
 
     // Fetch exam session
     const { data: session, isLoading } = useQuery({
         queryKey: ["ujian-session", ujianSiswaId],
         queryFn: async () => {
+            if (!token) return null;
             const res = await fetch(
                 `http://localhost:3001/ujian-siswa/session/${ujianSiswaId}`,
                 { headers: { Authorization: `Bearer ${token}` } }
@@ -31,6 +73,7 @@ export default function KerjakanUjianPage() {
             if (!res.ok) throw new Error("Failed to load exam");
             return res.json();
         },
+        enabled: Boolean(token),
         refetchInterval: false,
         refetchOnWindowFocus: false,
     });
@@ -121,22 +164,33 @@ export default function KerjakanUjianPage() {
         return () => clearInterval(timer);
     }, [session]);
 
+    const requestFullscreen = async () => {
+        try {
+            if (!document.fullscreenElement) {
+                await document.documentElement.requestFullscreen();
+            }
+        } catch (err) {
+            console.error("Fullscreen error:", err);
+        }
+    };
+
+    const exitFullscreen = async () => {
+        try {
+            if (document.fullscreenElement) {
+                await document.exitFullscreen();
+            }
+        } catch (err) {
+            console.error("Exit fullscreen error:", err);
+        }
+    };
+
     // Anti-cheat: Fullscreen
     useEffect(() => {
-        const enterFullscreen = async () => {
-            try {
-                await document.documentElement.requestFullscreen();
-            } catch (err) {
-                console.error("Fullscreen error:", err);
-            }
-        };
-
-        enterFullscreen();
-
         const handleFullscreenChange = () => {
-            if (!document.fullscreenElement) {
+            const currentlyFullscreen = Boolean(document.fullscreenElement);
+            setIsFullscreen(currentlyFullscreen);
+            if (!currentlyFullscreen) {
                 logActivityMutation.mutate("EXIT_FULLSCREEN");
-                enterFullscreen(); // Try to re-enter
             }
         };
 
@@ -144,9 +198,6 @@ export default function KerjakanUjianPage() {
 
         return () => {
             document.removeEventListener("fullscreenchange", handleFullscreenChange);
-            if (document.fullscreenElement) {
-                document.exitFullscreen();
-            }
         };
     }, []);
 
@@ -206,6 +257,25 @@ export default function KerjakanUjianPage() {
         }
     };
 
+    const soalList = session?.ujian?.ujianSoal ?? [];
+    const answeredCount = Object.values(jawaban).filter((val) => val !== undefined && val !== "").length;
+
+    useEffect(() => {
+        if (soalList.length === 0) {
+            setActiveSoalId(null);
+            setCurrentIndex(0);
+            return;
+        }
+        if (currentIndex >= soalList.length) {
+            setCurrentIndex(soalList.length - 1);
+        }
+        const current = soalList[Math.min(currentIndex, soalList.length - 1)];
+        const key = current?.bankSoalId ?? current?.id ?? null;
+        if (key && key !== activeSoalId) {
+            setActiveSoalId(key);
+        }
+    }, [soalList, currentIndex, activeSoalId]);
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -213,6 +283,27 @@ export default function KerjakanUjianPage() {
             </div>
         );
     }
+
+    if (!session) {
+        return (
+            <div className="flex items-center justify-center min-h-screen text-muted-foreground">
+                Data ujian tidak tersedia.
+            </div>
+        );
+    }
+
+    const goToIndex = (index: number) => {
+        if (index < 0 || index >= soalList.length) return;
+        setCurrentIndex(index);
+        const soal = soalList[index];
+        const key = soal.bankSoalId ?? soal.id;
+        setActiveSoalId(key);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+    const handleNavigateSoal = (index: number) => {
+        goToIndex(index);
+    };
 
     return (
         <div className="min-h-screen bg-background p-4">
@@ -247,6 +338,14 @@ export default function KerjakanUjianPage() {
                         </div>
 
                         <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => (isFullscreen ? exitFullscreen() : requestFullscreen())}
+                        >
+                            {isFullscreen ? "Keluar Fullscreen" : "Fullscreen"}
+                        </Button>
+
+                        <Button
                             onClick={handleSubmit}
                             disabled={isSubmitting || submitMutation.isPending}
                             size="sm"
@@ -269,99 +368,182 @@ export default function KerjakanUjianPage() {
 
             {/* Content */}
             <div className="max-w-4xl mx-auto pt-24 pb-8 space-y-6">
-                {session.soal.map((soal: any, index: number) => (
-                    <Card key={soal.id}>
-                        <CardContent className="p-6">
-                            <div className="mb-4">
-                                <div className="flex items-start gap-3">
-                                    <Badge variant="outline">Soal {index + 1}</Badge>
-                                    <Badge className="bg-blue-500/15 text-blue-600">
-                                        {soal.tipe.replace("_", " ")}
-                                    </Badge>
-                                    <span className="text-sm text-muted-foreground ml-auto">
-                                        Bobot: {soal.bobot}
-                                    </span>
-                                </div>
+                <Card>
+                    <CardContent className="p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-semibold">Navigasi Soal</p>
+                                <p className="text-xs text-muted-foreground">
+                                    Klik nomor untuk lompat ke soal
+                                </p>
                             </div>
-
-                            <div className="mb-6">
-                                <p className="text-base whitespace-pre-wrap">{soal.pertanyaan}</p>
+                            <div className="flex gap-3 text-xs text-muted-foreground">
+                                <span>
+                                    <span className="inline-flex h-3 w-3 rounded-full bg-muted mr-1" /> Belum
+                                </span>
+                                <span>
+                                    <span className="inline-flex h-3 w-3 rounded-full bg-green-500 mr-1" /> Terjawab
+                                </span>
                             </div>
+                        </div>
+                        <div className="grid grid-cols-5 sm:grid-cols-8 gap-2">
+                            {soalList.map((soal: any, index: number) => {
+                                const soalKey = soal.bankSoalId ?? soal.id;
+                                const isActive = currentIndex === index;
+                                const answered = Boolean(jawaban[soalKey]);
+                                return (
+                                    <button
+                                        key={soalKey}
+                                        type="button"
+                                        onClick={() => handleNavigateSoal(index)}
+                                        className={`rounded-md border px-0 py-2 text-xs font-semibold transition ${
+                                            isActive
+                                                ? "border-primary bg-primary text-primary-foreground"
+                                                : answered
+                                                ? "border-green-500 bg-green-500/10 text-green-700"
+                                                : "border-muted bg-muted/40 text-muted-foreground"
+                                        }`}
+                                    >
+                                        {index + 1}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </CardContent>
+                </Card>
+                {soalList.length > 0 && activeSoalId ? (
+                    (() => {
+                        const currentSoal = soalList[currentIndex];
+                        const soalKey = currentSoal.bankSoalId ?? currentSoal.id;
+                        const soalData = currentSoal.bankSoal ?? currentSoal;
+                        const tipeSoal = soalData?.tipe ?? currentSoal.tipe;
+                        const pertanyaan = soalData?.pertanyaan ?? currentSoal.pertanyaan ?? "";
+                        const pilihanRaw = soalData?.pilihanJawaban ?? currentSoal.pilihanJawaban;
+                        const pilihanJawaban = normalizePilihanData(pilihanRaw);
 
-                            {/* Answer options */}
-                            {soal.tipe === "PILIHAN_GANDA" && soal.pilihanJawaban && (
-                                <div className="space-y-2">
-                                    {soal.pilihanJawaban.map((pilihan: any) => (
-                                        <label
-                                            key={pilihan.id}
-                                            className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/30 transition"
+                        return (
+                            <Card>
+                                <CardContent className="p-6 space-y-6">
+                                    <div className="flex items-start gap-3">
+                                        <Badge variant="outline">Soal {currentIndex + 1}</Badge>
+                                        {tipeSoal && (
+                                            <Badge className="bg-blue-500/15 text-blue-600">
+                                                {tipeSoal.replace("_", " ")}
+                                            </Badge>
+                                        )}
+                                        <span className="text-sm text-muted-foreground ml-auto">
+                                            Bobot: {currentSoal.bobot}
+                                        </span>
+                                    </div>
+
+                                    {typeof pertanyaan === "string" && pertanyaan.includes("<") ? (
+                                        <div
+                                            className="prose prose-sm max-w-none"
+                                            dangerouslySetInnerHTML={{ __html: pertanyaan }}
+                                        />
+                                    ) : (
+                                        <p className="text-base whitespace-pre-wrap">{pertanyaan}</p>
+                                    )}
+
+                                    {tipeSoal === "PILIHAN_GANDA" && pilihanJawaban.length > 0 && (
+                                        <div className="space-y-2">
+                                            {pilihanJawaban.map((pilihan: any) => (
+                                                <label
+                                                    key={pilihan.id}
+                                                    className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/30 transition"
+                                                >
+                                                    <input
+                                                        type="radio"
+                                                        name={`soal-${soalKey}`}
+                                                        value={pilihan.value}
+                                                        checked={jawaban[soalKey] === pilihan.value}
+                                                        onChange={(e) =>
+                                                            setJawaban({ ...jawaban, [soalKey]: e.target.value })
+                                                        }
+                                                        className="mt-1"
+                                                    />
+                                                    <span className="flex-1">{pilihan.text || pilihan.value}</span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {tipeSoal === "BENAR_SALAH" && (
+                                        <div className="space-y-2">
+                                            <label className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/30 transition">
+                                                <input
+                                                    type="radio"
+                                                    name={`soal-${soalKey}`}
+                                                    value="BENAR"
+                                                    checked={jawaban[soalKey] === "BENAR"}
+                                                    onChange={(e) =>
+                                                        setJawaban({ ...jawaban, [soalKey]: e.target.value })
+                                                    }
+                                                />
+                                                <span>Benar</span>
+                                            </label>
+                                            <label className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/30 transition">
+                                                <input
+                                                    type="radio"
+                                                    name={`soal-${soalKey}`}
+                                                    value="SALAH"
+                                                    checked={jawaban[soalKey] === "SALAH"}
+                                                    onChange={(e) =>
+                                                        setJawaban({ ...jawaban, [soalKey]: e.target.value })
+                                                    }
+                                                />
+                                                <span>Salah</span>
+                                            </label>
+                                        </div>
+                                    )}
+
+                                    {(tipeSoal === "ESSAY" || tipeSoal === "ISIAN_SINGKAT") && (
+                                        <textarea
+                                            value={jawaban[soalKey] || ""}
+                                            onChange={(e) =>
+                                                setJawaban({ ...jawaban, [soalKey]: e.target.value })
+                                            }
+                                            placeholder="Tulis jawaban Anda di sini..."
+                                            className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                                            rows={tipeSoal === "ESSAY" ? 6 : 2}
+                                        />
+                                    )}
+
+                                    <div className="flex items-center justify-between pt-4">
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => goToIndex(currentIndex - 1)}
+                                            disabled={currentIndex === 0}
                                         >
-                                            <input
-                                                type="radio"
-                                                name={`soal-${soal.id}`}
-                                                value={pilihan.id}
-                                                checked={jawaban[soal.id] === pilihan.id}
-                                                onChange={(e) =>
-                                                    setJawaban({ ...jawaban, [soal.id]: e.target.value })
-                                                }
-                                                className="mt-1"
-                                            />
-                                            <span className="flex-1">{pilihan.text}</span>
-                                        </label>
-                                    ))}
-                                </div>
-                            )}
-
-                            {soal.tipe === "BENAR_SALAH" && (
-                                <div className="space-y-2">
-                                    <label className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/30 transition">
-                                        <input
-                                            type="radio"
-                                            name={`soal-${soal.id}`}
-                                            value="BENAR"
-                                            checked={jawaban[soal.id] === "BENAR"}
-                                            onChange={(e) =>
-                                                setJawaban({ ...jawaban, [soal.id]: e.target.value })
-                                            }
-                                        />
-                                        <span>Benar</span>
-                                    </label>
-                                    <label className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/30 transition">
-                                        <input
-                                            type="radio"
-                                            name={`soal-${soal.id}`}
-                                            value="SALAH"
-                                            checked={jawaban[soal.id] === "SALAH"}
-                                            onChange={(e) =>
-                                                setJawaban({ ...jawaban, [soal.id]: e.target.value })
-                                            }
-                                        />
-                                        <span>Salah</span>
-                                    </label>
-                                </div>
-                            )}
-
-                            {(soal.tipe === "ESSAY" || soal.tipe === "ISIAN_SINGKAT") && (
-                                <textarea
-                                    value={jawaban[soal.id] || ""}
-                                    onChange={(e) =>
-                                        setJawaban({ ...jawaban, [soal.id]: e.target.value })
-                                    }
-                                    placeholder="Tulis jawaban Anda di sini..."
-                                    className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 outline-none transition focus:border-primary/60 focus:bg-white/10"
-                                    rows={soal.tipe === "ESSAY" ? 6 : 2}
-                                />
-                            )}
-                        </CardContent>
-                    </Card>
-                ))}
+                                            Soal Sebelumnya
+                                        </Button>
+                                        <span className="text-sm text-muted-foreground">
+                                            Soal {currentIndex + 1} dari {soalList.length}
+                                        </span>
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => goToIndex(currentIndex + 1)}
+                                            disabled={currentIndex === soalList.length - 1}
+                                        >
+                                            Soal Berikutnya
+                                        </Button>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        );
+                    })()
+                ) : (
+                    <div className="p-6 text-center text-muted-foreground">
+                        Tidak ada soal untuk ditampilkan.
+                    </div>
+                )}
 
                 {/* Submit button at bottom */}
                 <Card className="sticky bottom-4">
                     <CardContent className="p-4">
                         <div className="flex items-center justify-between">
-                            <div className="text-sm text-muted-foreground">
-                                Terjawab: {Object.keys(jawaban).length} / {session.soal.length}
+                                        <div className="text-sm text-muted-foreground">
+                                Terjawab: {answeredCount} / {soalList.length}
                             </div>
                             <Button
                                 onClick={handleSubmit}
