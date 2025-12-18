@@ -26,21 +26,26 @@ const normalizePilihanData = (source: any): PilihanJawaban[] => {
         }
     }
     if (Array.isArray(data)) {
-        return data.map((item: any, idx: number) => ({
-            id: item?.id ?? item?.value ?? `${idx}`,
-            text: item?.text ?? item?.label ?? item?.value ?? "",
-            value: item?.value ?? item?.id ?? `${idx}`,
-        }));
+        return data.map((item: any, idx: number) => {
+            const id = item?.id ?? item?.value ?? `${idx}`;
+            return {
+                id,
+                text: item?.text ?? item?.label ?? item?.value ?? "",
+                value: id,
+            };
+        });
     }
     if (typeof data === "object") {
         return Object.entries(data).map(([key, value]: [string, any], idx) => {
             if (typeof value === "string") {
-                return { id: key ?? `${idx}`, text: value, value: key ?? `${idx}` };
+                const id = key ?? `${idx}`;
+                return { id, text: value, value: id };
             }
+            const id = value?.id ?? key ?? `${idx}`;
             return {
-                id: value?.id ?? key ?? `${idx}`,
+                id,
                 text: value?.text ?? value?.label ?? value?.value ?? "",
-                value: value?.value ?? value?.id ?? key ?? `${idx}`,
+                value: id,
             };
         });
     }
@@ -52,6 +57,7 @@ export default function KerjakanUjianPage() {
     const router = useRouter();
     const params = useParams();
     const ujianSiswaId = params.id as string;
+    const STORAGE_KEY = `ujian-jawaban-${ujianSiswaId}`;
 
     const [jawaban, setJawaban] = useState<Record<string, string>>({});
     const [timeLeft, setTimeLeft] = useState(0);
@@ -60,6 +66,31 @@ export default function KerjakanUjianPage() {
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [activeSoalId, setActiveSoalId] = useState<string | null>(null);
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [hasLoadedSavedAnswers, setHasLoadedSavedAnswers] = useState(false);
+
+    // Load saved answers from localStorage (if any)
+    useEffect(() => {
+        if (typeof window === "undefined" || !ujianSiswaId) return;
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                if (parsed && typeof parsed === "object") {
+                    setJawaban(parsed);
+                }
+            } catch {
+                // ignore parse errors
+            }
+        }
+        setHasLoadedSavedAnswers(true);
+    }, [ujianSiswaId]);
+
+    // Persist answers locally on every change
+    useEffect(() => {
+        if (typeof window === "undefined" || !ujianSiswaId) return;
+        if (!hasLoadedSavedAnswers) return; // avoid overwriting before load
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(jawaban));
+    }, [jawaban, ujianSiswaId, hasLoadedSavedAnswers]);
 
     // Fetch exam session
     const { data: session, isLoading } = useQuery({
@@ -101,8 +132,7 @@ export default function KerjakanUjianPage() {
             if (data.violations !== undefined) {
                 setViolations(data.violations);
                 if (data.violations >= 3) {
-                    alert("Terlalu banyak pelanggaran! Ujian akan di-submit otomatis.");
-                    submitMutation.mutate();
+                    alert("Terlalu banyak pelanggaran! Silakan lanjutkan atau hubungi pengawas.");
                 }
             }
         },
@@ -131,6 +161,9 @@ export default function KerjakanUjianPage() {
             return res.json();
         },
         onSuccess: () => {
+            if (typeof window !== "undefined") {
+                localStorage.removeItem(STORAGE_KEY);
+            }
             router.push(`/ujian-saya/hasil/${ujianSiswaId}`);
         },
     });
@@ -156,8 +189,7 @@ export default function KerjakanUjianPage() {
 
             if (remaining <= 0) {
                 clearInterval(timer);
-                alert("Waktu habis! Ujian akan di-submit otomatis.");
-                submitMutation.mutate();
+                alert("Waktu habis! Ujian akan dikirim otomatis oleh sistem.");
             }
         }, 1000);
 
@@ -447,24 +479,29 @@ export default function KerjakanUjianPage() {
 
                                     {tipeSoal === "PILIHAN_GANDA" && pilihanJawaban.length > 0 && (
                                         <div className="space-y-2">
-                                            {pilihanJawaban.map((pilihan: any) => (
-                                                <label
-                                                    key={pilihan.id}
-                                                    className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/30 transition"
-                                                >
-                                                    <input
-                                                        type="radio"
-                                                        name={`soal-${soalKey}`}
-                                                        value={pilihan.value}
-                                                        checked={jawaban[soalKey] === pilihan.value}
-                                                        onChange={(e) =>
-                                                            setJawaban({ ...jawaban, [soalKey]: e.target.value })
-                                                        }
-                                                        className="mt-1"
-                                                    />
-                                                    <span className="flex-1">{pilihan.text || pilihan.value}</span>
-                                                </label>
-                                            ))}
+                                            {pilihanJawaban.map((pilihan: any, idx: number) => {
+                                                const optionKey = `${pilihan.id ?? "opt"}-${idx}`;
+                                                const optionValue = pilihan.id ?? pilihan.value ?? `${idx}`;
+                                                const optionLabel = pilihan.text || optionValue;
+                                                return (
+                                                    <label
+                                                        key={optionKey}
+                                                        className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/30 transition"
+                                                    >
+                                                        <input
+                                                            type="radio"
+                                                            name={`soal-${soalKey}`}
+                                                            value={optionValue}
+                                                            checked={jawaban[soalKey] === optionValue}
+                                                            onChange={(e) =>
+                                                                setJawaban({ ...jawaban, [soalKey]: e.target.value })
+                                                            }
+                                                            className="mt-1"
+                                                        />
+                                                        <span className="flex-1">{optionLabel}</span>
+                                                    </label>
+                                                );
+                                            })}
                                         </div>
                                     )}
 

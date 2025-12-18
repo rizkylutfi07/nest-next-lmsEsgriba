@@ -221,7 +221,7 @@ export default function PaketSoalPage() {
 
 function DeleteModal({ item, onClose, onConfirm, isLoading }: any) {
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-md">
             <Card className="w-full max-w-md">
                 <CardHeader>
                     <h3 className="text-lg font-semibold">Konfirmasi Hapus</h3>

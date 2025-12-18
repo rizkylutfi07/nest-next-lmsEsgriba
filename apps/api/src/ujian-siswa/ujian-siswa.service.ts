@@ -168,7 +168,8 @@ export class UjianSiswaService {
         // Shuffle questions if acakSoal is true
         let soal = ujianSiswa.ujian.ujianSoal;
         if (ujianSiswa.ujian.acakSoal) {
-            soal = this.shuffleArray([...soal]);
+            // Deterministic shuffle per ujianSiswa to avoid reordering on refresh
+            soal = this.shuffleArrayStable([...soal], ujianSiswa.id);
         }
 
         return {
@@ -395,12 +396,32 @@ export class UjianSiswaService {
         return maxScore > 0 ? (totalScore / maxScore) * 100 : 0;
     }
 
-    private shuffleArray<T>(array: T[]): T[] {
+    private shuffleArrayStable<T>(array: T[], seedString: string): T[] {
+        // Create deterministic random generator from seed string
+        const seed = this.hashStringToSeed(seedString);
+        const rand = this.mulberry32(seed);
         const shuffled = [...array];
         for (let i = shuffled.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
+            const j = Math.floor(rand() * (i + 1));
             [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
         }
         return shuffled;
+    }
+
+    private hashStringToSeed(str: string): number {
+        let h = 0;
+        for (let i = 0; i < str.length; i++) {
+            h = Math.imul(31, h) + str.charCodeAt(i);
+        }
+        return h >>> 0; // Ensure positive 32-bit
+    }
+
+    private mulberry32(a: number) {
+        return function () {
+            let t = (a += 0x6d2b79f5);
+            t = Math.imul(t ^ (t >>> 15), t | 1);
+            t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
     }
 }

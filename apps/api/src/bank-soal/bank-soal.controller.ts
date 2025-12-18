@@ -180,7 +180,7 @@ export class BankSoalController {
                     for (let i = 0; i < jawaban.length && i < 5; i++) {
                         pilihanJawaban.push({
                             id: options[i],
-                            text: jawaban[i].trim(),
+                            text: jawaban[i],
                             isCorrect: options[i] === kunciJawaban,
                         });
                     }

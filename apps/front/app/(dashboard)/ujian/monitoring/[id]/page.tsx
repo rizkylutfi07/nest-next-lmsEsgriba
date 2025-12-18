@@ -266,7 +266,7 @@ export default function MonitoringPage() {
 
             {/* Activity Logs Modal */}
             {selectedStudent && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md">
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-md">
                     <Card className="w-full max-w-2xl max-h-[80vh] overflow-y-auto">
                         <CardHeader>
                             <div className="flex items-center justify-between">

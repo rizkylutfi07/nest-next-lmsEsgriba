@@ -239,7 +239,7 @@ function ImportModal({ onClose, onSuccess, token }: { onClose: () => void; onSuc
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-md">
             <Card className="w-full max-w-lg">
                 <CardHeader>
                     <div className="flex items-center justify-between">

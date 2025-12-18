@@ -291,7 +291,7 @@ export default function KenaikanKelasPage() {
             )}
 
             {showResult && result && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
                     <Card className="w-full max-w-md">
                         <CardHeader>
                             <CardTitle>Hasil Kenaikan Kelas</CardTitle>

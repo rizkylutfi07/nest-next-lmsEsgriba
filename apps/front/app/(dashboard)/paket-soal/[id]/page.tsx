@@ -1,6 +1,7 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, ArrowLeft, Plus, Trash2, Upload, FileText, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,60 @@ import { Badge } from "@/components/ui/badge";
 import { useRole } from "../../role-context";
 import { useRouter } from "next/navigation";
 
+// ... (keep types and normalizePilihanData existing code)
+
+type PilihanJawaban = {
+    id: string;
+    text: string;
+    value: string;
+};
+
+const normalizePilihanData = (source: any): PilihanJawaban[] => {
+    if (!source) return [];
+    let data = source;
+    if (typeof data === "string") {
+        try {
+            data = JSON.parse(data);
+        } catch {
+            return [];
+        }
+    }
+    if (Array.isArray(data)) {
+        return data.map((item: any, idx: number) => {
+            const id = item?.id ?? item?.value ?? `${idx}`;
+            return {
+                id,
+                text: item?.text ?? item?.label ?? item?.value ?? "",
+                value: id,
+            };
+        });
+    }
+    if (typeof data === "object") {
+        return Object.entries(data).map(([key, value]: [string, any], idx) => {
+            if (typeof value === "string") {
+                const id = key ?? `${idx}`;
+                return { id, text: value, value: id };
+            }
+            const id = value?.id ?? key ?? `${idx}`;
+            return {
+                id,
+                text: value?.text ?? value?.label ?? value?.value ?? "",
+                value: id,
+            };
+        });
+    }
+    return [];
+};
+
+function ModalPortal({ children }: { children: React.ReactNode }) {
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
+    if (!mounted) return null;
+    return createPortal(children, document.body);
+}
+
+
+
 export default function PaketSoalDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
     const { token } = useRole();
@@ -16,6 +71,9 @@ export default function PaketSoalDetailPage({ params }: { params: Promise<{ id: 
     const queryClient = useQueryClient();
     const [showAddModal, setShowAddModal] = useState(false);
     const [addMode, setAddMode] = useState<"bank" | "import" | null>(null);
+    const [showPreview, setShowPreview] = useState(false);
+    const [previewIndex, setPreviewIndex] = useState(0);
+    const [previewAnswers, setPreviewAnswers] = useState<Record<string, string>>({});
 
     const { data: paketSoal, isLoading } = useQuery({
         queryKey: ["paket-soal", id],
@@ -87,6 +145,19 @@ export default function PaketSoalDetailPage({ params }: { params: Promise<{ id: 
                         </p>
                     )}
                 </div>
+            </div>
+
+            <div className="flex justify-end">
+                <Button
+                    variant="outline"
+                    onClick={() => {
+                        setPreviewIndex(0);
+                        setShowPreview(true);
+                    }}
+                >
+                    <FileText size={16} className="mr-2" />
+                    Pratinjau seperti siswa
+                </Button>
             </div>
 
             {/* Statistics */}
@@ -217,6 +288,17 @@ export default function PaketSoalDetailPage({ params }: { params: Promise<{ id: 
                     }}
                 />
             )}
+
+            {showPreview && (
+                <PreviewModal
+                    paketSoal={paketSoal}
+                    index={previewIndex}
+                    setIndex={setPreviewIndex}
+                    answers={previewAnswers}
+                    setAnswers={setPreviewAnswers}
+                    onClose={() => setShowPreview(false)}
+                />
+            )}
         </div>
     );
 }
@@ -262,72 +344,77 @@ function AddFromBankModal({ paketSoalId, token, onClose, onSuccess }: any) {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md">
-            <Card className="w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
-                <CardHeader>
-                    <CardTitle>Pilih Soal dari Bank Soal</CardTitle>
-                </CardHeader>
-                <CardContent className="flex-1 overflow-y-auto">
-                    <input
-                        type="text"
-                        placeholder="Cari soal..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 mb-4 outline-none transition focus:border-primary/60 focus:bg-white/10"
-                    />
+        <ModalPortal>
+            <div className="fixed inset-0 z-[99999] overflow-y-auto">
+                <div className="flex min-h-full items-center justify-center p-4 text-center">
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-md transition-opacity" onClick={onClose} />
+                    <Card className="relative z-50 w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col shadow-xl">
+                        <CardHeader>
+                            <CardTitle>Pilih Soal dari Bank Soal</CardTitle>
+                        </CardHeader>
+                        <CardContent className="flex-1 overflow-y-auto">
+                            <input
+                                type="text"
+                                placeholder="Cari soal..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 mb-4 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                            />
 
-                    <div className="space-y-2">
-                        {bankSoal?.data?.map((soal: any) => (
-                            <div
-                                key={soal.id}
-                                onClick={() => toggleSoal(soal.id)}
-                                className={`p-3 rounded-lg border cursor-pointer transition ${selectedSoal.includes(soal.id)
-                                    ? "border-primary bg-primary/10"
-                                    : "border-white/10 hover:border-white/20"
-                                    }`}
-                            >
-                                <div className="flex items-start gap-2">
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedSoal.includes(soal.id)}
-                                        onChange={() => toggleSoal(soal.id)}
-                                        className="mt-1"
-                                    />
-                                    <div className="flex-1">
-                                        <p className="text-sm">{soal.pertanyaan}</p>
-                                        <div className="flex gap-2 mt-1">
-                                            <Badge className="text-xs">{soal.tipe}</Badge>
-                                            <Badge variant="outline" className="text-xs">
-                                                Bobot: {soal.bobot}
-                                            </Badge>
+                            <div className="space-y-2">
+                                {bankSoal?.data?.map((soal: any) => (
+                                    <div
+                                        key={soal.id}
+                                        onClick={() => toggleSoal(soal.id)}
+                                        className={`p-3 rounded-lg border cursor-pointer transition ${selectedSoal.includes(soal.id)
+                                            ? "border-primary bg-primary/10"
+                                            : "border-white/10 hover:border-white/20"
+                                            }`}
+                                    >
+                                        <div className="flex items-start gap-2">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedSoal.includes(soal.id)}
+                                                onChange={() => toggleSoal(soal.id)}
+                                                className="mt-1"
+                                            />
+                                            <div className="flex-1">
+                                                <p className="text-sm">{soal.pertanyaan}</p>
+                                                <div className="flex gap-2 mt-1">
+                                                    <Badge className="text-xs">{soal.tipe}</Badge>
+                                                    <Badge variant="outline" className="text-xs">
+                                                        Bobot: {soal.bobot}
+                                                    </Badge>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                ))}
                             </div>
-                        ))}
-                    </div>
-                </CardContent>
-                <div className="p-4 border-t flex gap-2">
-                    <Button variant="outline" onClick={onClose} className="flex-1">
-                        Batal
-                    </Button>
-                    <Button
-                        onClick={() => addSoalMutation.mutate(selectedSoal)}
-                        disabled={selectedSoal.length === 0 || addSoalMutation.isPending}
-                        className="flex-1"
-                    >
-                        {addSoalMutation.isPending ? (
-                            <>
-                                <Loader2 className="animate-spin mr-2" size={16} />
-                                Menambahkan...
-                            </>
-                        ) : (
-                            `Tambahkan ${selectedSoal.length} Soal`
-                        )}
-                    </Button>
+                        </CardContent>
+                        <div className="p-4 border-t flex gap-2">
+                            <Button variant="outline" onClick={onClose} className="flex-1">
+                                Batal
+                            </Button>
+                            <Button
+                                onClick={() => addSoalMutation.mutate(selectedSoal)}
+                                disabled={selectedSoal.length === 0 || addSoalMutation.isPending}
+                                className="flex-1"
+                            >
+                                {addSoalMutation.isPending ? (
+                                    <>
+                                        <Loader2 className="animate-spin mr-2" size={16} />
+                                        Menambahkan...
+                                    </>
+                                ) : (
+                                    `Tambahkan ${selectedSoal.length} Soal`
+                                )}
+                            </Button>
+                        </div>
+                    </Card>
                 </div>
-            </Card>
-        </div>
+            </div>
+        </ModalPortal>
     );
 }
 
@@ -378,86 +465,255 @@ function ImportSoalModal({ paketSoalId, token, onClose, onSuccess }: any) {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md">
-            <Card className="w-full max-w-2xl">
-                <CardHeader>
-                    <CardTitle>Import Soal ke Paket</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div>
-                        <p className="text-sm text-muted-foreground mb-4">
-                            Upload file Word (.docx) dengan format yang sama seperti Bank Soal.
-                            Soal akan otomatis ditambahkan ke Bank Soal dan paket ini.
-                        </p>
+        <ModalPortal>
+            <div className="fixed inset-0 z-[99999] overflow-y-auto">
+                <div className="flex min-h-full items-center justify-center p-4 text-center">
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-md transition-opacity" onClick={onClose} />
+                    <Card className="relative z-50 w-full max-w-2xl transform overflow-hidden shadow-xl text-left">
+                        <CardHeader>
+                            <CardTitle>Import Soal ke Paket</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div>
+                                <p className="text-sm text-muted-foreground mb-4">
+                                    Upload file Word (.docx) dengan format yang sama seperti Bank Soal.
+                                    Soal akan otomatis ditambahkan ke Bank Soal dan paket ini.
+                                </p>
 
-                        <div className="border-2 border-dashed border-white/10 rounded-lg p-6 text-center">
-                            <input
-                                type="file"
-                                accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                                onChange={handleFileChange}
-                                className="hidden"
-                                id="file-upload"
-                            />
-                            <label
-                                htmlFor="file-upload"
-                                className="cursor-pointer flex flex-col items-center gap-2"
-                            >
-                                <Upload size={32} className="text-muted-foreground" />
-                                <div>
-                                    <p className="font-medium">
-                                        {file ? file.name : "Pilih file Word"}
-                                    </p>
-                                    <p className="text-sm text-muted-foreground">
-                                        Format: .doc atau .docx
-                                    </p>
+                                <div className="border-2 border-dashed border-white/10 rounded-lg p-6 text-center">
+                                    <input
+                                        type="file"
+                                        accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                        onChange={handleFileChange}
+                                        className="hidden"
+                                        id="file-upload"
+                                    />
+                                    <label
+                                        htmlFor="file-upload"
+                                        className="cursor-pointer flex flex-col items-center gap-2"
+                                    >
+                                        <Upload size={32} className="text-muted-foreground" />
+                                        <div>
+                                            <p className="font-medium">
+                                                {file ? file.name : "Pilih file Word"}
+                                            </p>
+                                            <p className="text-sm text-muted-foreground">
+                                                Format: .doc atau .docx
+                                            </p>
+                                        </div>
+                                    </label>
                                 </div>
-                            </label>
-                        </div>
-                    </div>
-
-                    {result && (
-                        <div className="space-y-2">
-                            <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                                <p className="text-sm font-medium text-green-600">
-                                    ✓ {result.success?.length || 0} soal berhasil diimport
-                                </p>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    {result.addedToPackage} soal ditambahkan ke paket
-                                </p>
                             </div>
-                            {result.failed?.length > 0 && (
-                                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-                                    <p className="text-sm font-medium text-red-600">
-                                        ✗ {result.failed.length} soal gagal diimport
-                                    </p>
+
+                            {result && (
+                                <div className="space-y-2">
+                                    <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                                        <p className="text-sm font-medium text-green-600">
+                                            ✓ {result.success?.length || 0} soal berhasil diimport
+                                        </p>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            {result.addedToPackage} soal ditambahkan ke paket
+                                        </p>
+                                    </div>
+                                    {result.failed?.length > 0 && (
+                                        <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                                            <p className="text-sm font-medium text-red-600">
+                                                ✗ {result.failed.length} soal gagal diimport
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                             )}
-                        </div>
-                    )}
 
-                    <div className="flex gap-2 pt-4">
-                        <Button variant="outline" onClick={onClose} className="flex-1">
-                            {result ? "Tutup" : "Batal"}
-                        </Button>
-                        {!result && (
-                            <Button
-                                onClick={handleUpload}
-                                disabled={!file || uploading}
-                                className="flex-1"
-                            >
-                                {uploading ? (
-                                    <>
-                                        <Loader2 className="animate-spin mr-2" size={16} />
-                                        Mengupload...
-                                    </>
-                                ) : (
-                                    "Upload & Import"
+                            <div className="flex gap-2 pt-4">
+                                <Button variant="outline" onClick={onClose} className="flex-1">
+                                    {result ? "Tutup" : "Batal"}
+                                </Button>
+                                {!result && (
+                                    <Button
+                                        onClick={handleUpload}
+                                        disabled={!file || uploading}
+                                        className="flex-1"
+                                    >
+                                        {uploading ? (
+                                            <>
+                                                <Loader2 className="animate-spin mr-2" size={16} />
+                                                Mengupload...
+                                            </>
+                                        ) : (
+                                            "Upload & Import"
+                                        )}
+                                    </Button>
                                 )}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+        </ModalPortal>
+    );
+}
+
+function PreviewModal({ paketSoal, index, setIndex, answers, setAnswers, onClose }: any) {
+    const soalItems = paketSoal?.soalItems || [];
+    const current = soalItems[index] || soalItems[0];
+    const soalData = current?.bankSoal ?? current;
+    const tipe = soalData?.tipe;
+    const pertanyaan = soalData?.pertanyaan ?? "";
+    const pilihanJawaban = normalizePilihanData(soalData?.pilihanJawaban);
+    const total = soalItems.length;
+    const goTo = (i: number) => {
+        if (i < 0 || i >= total) return;
+        setIndex(i);
+    };
+
+    return (
+        <ModalPortal>
+            <div className="fixed inset-0 z-[99999] overflow-y-auto">
+                <div className="flex min-h-full items-center justify-center p-4 text-center">
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-md transition-opacity" onClick={onClose} />
+                    <Card className="relative z-50 w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col shadow-xl text-left">
+                        <CardHeader className="flex flex-row items-start justify-between gap-4">
+                            <div>
+                                <CardTitle>Pratinjau Soal (tampilan siswa)</CardTitle>
+                                <p className="text-sm text-muted-foreground">
+                                    Urutan mengikuti acak siswa (deterministik) dan opsi sesuai yang akan terlihat oleh siswa.
+                                </p>
+                            </div>
+                            <Button variant="ghost" size="sm" onClick={onClose}>
+                                Tutup
                             </Button>
-                        )}
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
+                        </CardHeader>
+                        <CardContent className="flex-1 overflow-y-auto space-y-4">
+                            <div className="p-4 rounded-lg border bg-muted/40">
+                                <p className="text-sm font-semibold mb-2">Navigasi Soal</p>
+                                <div className="grid grid-cols-5 sm:grid-cols-8 gap-2">
+                                    {soalItems.map((item: any, idx: number) => {
+                                        const key = item.bankSoalId ?? item.id;
+                                        const isActive = idx === index;
+                                        const answered = Boolean(answers[key]);
+                                        return (
+                                            <button
+                                                key={key}
+                                                type="button"
+                                                onClick={() => goTo(idx)}
+                                                className={`rounded-md border px-0 py-2 text-xs font-semibold transition ${isActive
+                                                    ? "border-primary bg-primary text-primary-foreground"
+                                                    : answered
+                                                        ? "border-green-500 bg-green-500/10 text-green-700"
+                                                        : "border-muted bg-muted/40 text-muted-foreground"
+                                                    }`}
+                                            >
+                                                {idx + 1}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {current ? (
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-2">
+                                        <Badge variant="outline">Soal {index + 1}</Badge>
+                                        {tipe && (
+                                            <Badge className="bg-blue-500/15 text-blue-600">
+                                                {tipe.replace("_", " ")}
+                                            </Badge>
+                                        )}
+                                        <Badge variant="outline">Bobot: {current.bankSoal?.bobot ?? 1}</Badge>
+                                    </div>
+                                    <p className="text-base whitespace-pre-wrap">{pertanyaan}</p>
+
+                                    {tipe === "PILIHAN_GANDA" && pilihanJawaban.length > 0 && (
+                                        <div className="space-y-2">
+                                            {pilihanJawaban.map((pilihan: any, idx: number) => {
+                                                const optionKey = `${pilihan.id ?? "opt"}-${idx}`;
+                                                const optionValue = pilihan.id ?? pilihan.value ?? `${idx}`;
+                                                const optionLabel = pilihan.text || optionValue;
+                                                const soalKey = current.bankSoalId ?? current.id;
+                                                return (
+                                                    <label
+                                                        key={optionKey}
+                                                        className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/30 transition"
+                                                    >
+                                                        <input
+                                                            type="radio"
+                                                            name={`preview-${soalKey}`}
+                                                            value={optionValue}
+                                                            checked={answers[soalKey] === optionValue}
+                                                            onChange={(e) =>
+                                                                setAnswers({ ...answers, [soalKey]: e.target.value })
+                                                            }
+                                                            className="mt-1"
+                                                        />
+                                                        <span className="flex-1">{optionLabel}</span>
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+
+                                    {tipe === "BENAR_SALAH" && (
+                                        <div className="space-y-2">
+                                            {["BENAR", "SALAH"].map((opt) => {
+                                                const soalKey = current.bankSoalId ?? current.id;
+                                                return (
+                                                    <label
+                                                        key={opt}
+                                                        className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/30 transition"
+                                                    >
+                                                        <input
+                                                            type="radio"
+                                                            name={`preview-${soalKey}`}
+                                                            value={opt}
+                                                            checked={answers[soalKey] === opt}
+                                                            onChange={(e) =>
+                                                                setAnswers({ ...answers, [soalKey]: e.target.value })
+                                                            }
+                                                            className="mt-1"
+                                                        />
+                                                        <span className="flex-1">{opt === "BENAR" ? "Benar" : "Salah"}</span>
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+
+                                    {(tipe === "ESSAY" || tipe === "ISIAN_SINGKAT") && (
+                                        <div className="p-3 rounded-lg border bg-muted/30 text-sm text-muted-foreground">
+                                            Tampilan jawaban siswa akan berupa area teks di sini.
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="text-center text-muted-foreground py-10">
+                                    Tidak ada soal untuk dipratinjau.
+                                </div>
+                            )}
+                        </CardContent>
+
+                        <div className="p-4 border-t flex items-center justify-between">
+                            <Button
+                                variant="outline"
+                                disabled={index === 0}
+                                onClick={() => goTo(index - 1)}
+                            >
+                                Soal Sebelumnya
+                            </Button>
+                            <span className="text-sm text-muted-foreground">
+                                Soal {index + 1} dari {total}
+                            </span>
+                            <Button
+                                variant="outline"
+                                disabled={index >= total - 1}
+                                onClick={() => goTo(index + 1)}
+                            >
+                                Soal Berikutnya
+                            </Button>
+                        </div>
+                    </Card>
+                </div>
+            </div>
+        </ModalPortal>
     );
 }

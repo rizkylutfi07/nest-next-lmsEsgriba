@@ -309,7 +309,7 @@ function UserFormModal({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
             <Card className="w-full max-w-md">
                 <CardHeader>
                     <div className="flex items-center justify-between">
@@ -394,7 +394,7 @@ function DeleteConfirmModal({
     isLoading: boolean;
 }) {
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
             <Card className="w-full max-w-md">
                 <CardHeader>
                     <CardTitle>Hapus User</CardTitle>

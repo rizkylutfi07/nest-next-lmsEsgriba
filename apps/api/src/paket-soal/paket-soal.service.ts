@@ -330,18 +330,36 @@ export class PaketSoalService {
                             pertanyaan += ' ' + lines[i];
                         }
                     } else if (line.match(/^JAWABAN:/i)) {
-                        // Collect all answer options
+                        // Collect all answer options (with or without A./B./C. prefix)
+                        const optionLabels = ['A', 'B', 'C', 'D', 'E'];
+                        let optionIndex = 0;
+
                         while (i + 1 < lines.length && !lines[i + 1].match(/^KUNCI JAWABAN:/i)) {
                             i++;
-                            const answerLine = lines[i].trim();
-                            const optionMatch = answerLine.match(/^([A-E])\.\s*(.+)/i);
+                            const answerLine = lines[i]; // keep original text to avoid trimming first letter
+                            if (!answerLine) continue;
+
+                            const optionMatch = answerLine.match(/^([A-E])[\.\)]\s*(.+)/);
+
+                            let optionId = optionLabels[optionIndex] || `${optionIndex + 1}`;
+                            let optionText = answerLine;
+
                             if (optionMatch) {
-                                jawaban.push({
-                                    id: optionMatch[1].toUpperCase(),
-                                    text: optionMatch[2].trim(),
-                                    isCorrect: false,
-                                });
+                                optionId = optionMatch[1].toUpperCase();
+                                optionText = optionMatch[2];
+
+                                const matchedIndex = optionLabels.indexOf(optionId);
+                                if (matchedIndex >= 0) {
+                                    optionIndex = matchedIndex;
+                                }
                             }
+                            jawaban.push({
+                                id: optionId,
+                                text: optionText,
+                                isCorrect: false,
+                            });
+
+                            optionIndex++;
                         }
                     } else if (line.match(/^KUNCI JAWABAN:/i)) {
                         const match = line.match(/KUNCI JAWABAN:\s*([A-E])/i);

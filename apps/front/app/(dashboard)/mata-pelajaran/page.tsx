@@ -278,7 +278,7 @@ function ImportModal({ onClose, onSuccess, token }: { onClose: () => void; onSuc
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
       <Card className="w-full max-w-md">
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -363,7 +363,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
       <Card className="w-full max-w-md">
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -456,7 +456,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
 
 function DeleteModal({ item, onClose, onConfirm, isLoading }: any) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Hapus Mata Pelajaran</CardTitle>
