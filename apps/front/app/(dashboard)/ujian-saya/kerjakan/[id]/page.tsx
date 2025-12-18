@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRouter, useParams } from "next/navigation";
-import { Loader2, Clock, AlertTriangle, Send } from "lucide-react";
+import { Loader2, Clock, AlertTriangle, Send, AlertCircle, Ban } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -105,9 +105,29 @@ export default function KerjakanUjianPage() {
             return res.json();
         },
         enabled: Boolean(token),
+
         refetchInterval: false,
         refetchOnWindowFocus: false,
     });
+
+    // Real-time status check for blocking
+    const { data: statusData, refetch: refetchStatus } = useQuery({
+        queryKey: ["ujian-status", ujianSiswaId],
+        queryFn: async () => {
+            if (!token) return null;
+            const res = await fetch(
+                `http://localhost:3001/ujian-siswa/session/${ujianSiswaId}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (!res.ok) return null;
+            return res.json();
+        },
+        enabled: Boolean(token),
+        refetchInterval: 2000, // Check every 2 seconds
+        refetchOnWindowFocus: true,
+    });
+
+    const isBlocked = statusData?.status === "DIBLOKIR";
 
     // Log activity mutation
     const logActivityMutation = useMutation({
@@ -129,11 +149,12 @@ export default function KerjakanUjianPage() {
             return res.json();
         },
         onSuccess: (data) => {
-            if (data.violations !== undefined) {
-                setViolations(data.violations);
-                if (data.violations >= 3) {
-                    alert("Terlalu banyak pelanggaran! Silakan lanjutkan atau hubungi pengawas.");
-                }
+            if (data.violationCount !== undefined) {
+                setViolations(data.violationCount);
+            }
+            if (data.blocked) {
+                // Immediately refetch status to show blocking popup
+                refetchStatus();
             }
         },
     });
@@ -339,6 +360,34 @@ export default function KerjakanUjianPage() {
 
     return (
         <div className="min-h-screen bg-background p-4">
+            {/* Blocking Modal */}
+            {isBlocked && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-md p-4">
+                    <div className="max-w-md w-full text-center space-y-6 animate-in fade-in zoom-in duration-300">
+                        <div className="mx-auto w-24 h-24 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+                            <Ban className="w-12 h-12 text-red-600 dark:text-red-500" />
+                        </div>
+                        <div className="space-y-2">
+                            <h2 className="text-2xl font-bold text-foreground">Ujian Diblokir</h2>
+                            <p className="text-muted-foreground">
+                                Sistem mendeteksi aktivitas mencurigakan pada akun Anda. Akses ujian telah diblokir sementara untuk menjaga integritas ujian.
+                            </p>
+                        </div>
+                        <div className="bg-card border border-border p-4 rounded-lg text-sm text-left space-y-2 shadow-sm">
+                            <p className="font-medium text-foreground">Apa yang harus saya lakukan?</p>
+                            <ul className="list-disc list-inside text-muted-foreground space-y-1">
+                                <li>Jangan tutup halaman ini.</li>
+                                <li>Hubungi pengawas ujian segera.</li>
+                                <li>Minta pengawas untuk membuka blokir Anda.</li>
+                            </ul>
+                        </div>
+                        <p className="text-xs text-muted-foreground animate-pulse">
+                            Menunggu konfirmasi pembukaan blokir dari pengawas...
+                        </p>
+                    </div>
+                </div>
+            )}
+
             {/* Header - Fixed */}
             <div className="fixed top-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-b z-50 p-4">
                 <div className="max-w-4xl mx-auto flex items-center justify-between">
@@ -354,7 +403,7 @@ export default function KerjakanUjianPage() {
                             <div className="flex items-center gap-2 text-red-600">
                                 <AlertTriangle size={20} />
                                 <span className="text-sm font-semibold">
-                                    Pelanggaran: {violations}/3
+                                    Pelanggaran: {violations}/1
                                 </span>
                             </div>
                         )}
@@ -428,13 +477,12 @@ export default function KerjakanUjianPage() {
                                         key={soalKey}
                                         type="button"
                                         onClick={() => handleNavigateSoal(index)}
-                                        className={`rounded-md border px-0 py-2 text-xs font-semibold transition ${
-                                            isActive
-                                                ? "border-primary bg-primary text-primary-foreground"
-                                                : answered
+                                        className={`rounded-md border px-0 py-2 text-xs font-semibold transition ${isActive
+                                            ? "border-primary bg-primary text-primary-foreground"
+                                            : answered
                                                 ? "border-green-500 bg-green-500/10 text-green-700"
                                                 : "border-muted bg-muted/40 text-muted-foreground"
-                                        }`}
+                                            }`}
                                     >
                                         {index + 1}
                                     </button>
@@ -457,7 +505,7 @@ export default function KerjakanUjianPage() {
                             <Card>
                                 <CardContent className="p-6 space-y-6">
                                     <div className="flex items-start gap-3">
-                                        <Badge variant="outline">Soal {currentIndex + 1}</Badge>
+                                        <Badge className="bg-muted text-muted-foreground border border-border">Soal {currentIndex + 1}</Badge>
                                         {tipeSoal && (
                                             <Badge className="bg-blue-500/15 text-blue-600">
                                                 {tipeSoal.replace("_", " ")}
@@ -579,7 +627,7 @@ export default function KerjakanUjianPage() {
                 <Card className="sticky bottom-4">
                     <CardContent className="p-4">
                         <div className="flex items-center justify-between">
-                                        <div className="text-sm text-muted-foreground">
+                            <div className="text-sm text-muted-foreground">
                                 Terjawab: {answeredCount} / {soalList.length}
                             </div>
                             <Button

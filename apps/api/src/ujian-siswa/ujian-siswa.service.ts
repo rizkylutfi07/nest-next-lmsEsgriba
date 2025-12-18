@@ -8,7 +8,7 @@ import { StatusUjian, StatusPengerjaan, TipeSoal } from '@prisma/client';
 @Injectable()
 export class UjianSiswaService {
     private activityLogs: Map<string, any[]> = new Map(); // In-memory storage for activity logs
-    private readonly MAX_VIOLATIONS = 3; // Auto-submit after 3 violations
+    private readonly MAX_VIOLATIONS = 1; // Auto-block after 1 violation
 
     constructor(private prisma: PrismaService) { }
 
@@ -145,8 +145,12 @@ export class UjianSiswaService {
             throw new NotFoundException('Sesi ujian tidak ditemukan');
         }
 
-        if (ujianSiswa.status !== StatusPengerjaan.SEDANG_MENGERJAKAN) {
-            throw new BadRequestException('Sesi ujian tidak aktif');
+        if (ujianSiswa.status === StatusPengerjaan.SELESAI) {
+            throw new BadRequestException('Ujian sudah selesai');
+        }
+
+        if (ujianSiswa.status === StatusPengerjaan.BELUM_MULAI) {
+            throw new BadRequestException('Ujian belum dimulai');
         }
 
         // Check if time is up
@@ -276,11 +280,11 @@ export class UjianSiswaService {
         ).length;
 
         if (violationCount >= this.MAX_VIOLATIONS) {
-            await this.autoSubmit(ujianSiswaId, 'Terlalu banyak pelanggaran');
+            await this.blockStudent(ujianSiswaId);
             return {
                 logged: true,
-                autoSubmitted: true,
-                message: 'Ujian di-submit otomatis karena terlalu banyak pelanggaran',
+                blocked: true,
+                message: 'Akun Anda diblokir sementara karena terdeteksi melakukan kecurangan. Hubungi pengawas untuk membuka blokir.',
             };
         }
 
@@ -394,6 +398,66 @@ export class UjianSiswaService {
 
         // Return percentage score
         return maxScore > 0 ? (totalScore / maxScore) * 100 : 0;
+    }
+
+    async getMonitoringData(ujianId: string) {
+        const result = await this.prisma.ujianSiswa.findMany({
+            where: {
+                ujianId,
+            },
+            include: {
+                siswa: {
+                    include: {
+                        kelas: true,
+                    },
+                },
+                ujian: {
+                    select: {
+                        _count: {
+                            select: {
+                                ujianSoal: true,
+                            },
+                        },
+                    },
+                },
+            },
+            orderBy: {
+                siswa: {
+                    nama: 'asc',
+                },
+            },
+        });
+
+        // Attach violation count from in-memory logs
+        return result.map(u => {
+            const logs = this.activityLogs.get(u.id) || [];
+            const violationCount = logs.filter(
+                (log) => log.activityType === 'TAB_SWITCH' || log.activityType === 'EXIT_FULLSCREEN'
+            ).length;
+
+            return {
+                ...u,
+                violationCount,
+            };
+        });
+    }
+
+    async blockStudent(ujianSiswaId: string) {
+        return this.prisma.ujianSiswa.update({
+            where: { id: ujianSiswaId },
+            data: {
+                status: StatusPengerjaan.DIBLOKIR,
+            },
+        });
+    }
+
+    async unblockStudent(ujianSiswaId: string) {
+        return this.prisma.ujianSiswa.update({
+            where: { id: ujianSiswaId },
+            data: {
+                status: StatusPengerjaan.SEDANG_MENGERJAKAN,
+            },
+        });
     }
 
     private shuffleArrayStable<T>(array: T[], seedString: string): T[] {

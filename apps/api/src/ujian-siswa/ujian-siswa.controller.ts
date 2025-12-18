@@ -67,4 +67,22 @@ export class UjianSiswaController {
     getActivityLogs(@Param('id') id: string) {
         return this.ujianSiswaService.getActivityLogs(id);
     }
+
+    @Post(':id/block')
+    @Roles(Role.ADMIN, Role.GURU)
+    blockStudent(@Param('id') id: string) {
+        return this.ujianSiswaService.blockStudent(id);
+    }
+
+    @Post(':id/unblock')
+    @Roles(Role.ADMIN, Role.GURU)
+    unblockStudent(@Param('id') id: string) {
+        return this.ujianSiswaService.unblockStudent(id);
+    }
+
+    @Get('monitoring/:ujianId')
+    @Roles(Role.ADMIN, Role.GURU)
+    getMonitoringData(@Param('ujianId') ujianId: string) {
+        return this.ujianSiswaService.getMonitoringData(ujianId);
+    }
 }
