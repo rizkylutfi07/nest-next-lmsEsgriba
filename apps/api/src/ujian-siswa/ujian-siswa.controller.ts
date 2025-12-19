@@ -50,6 +50,16 @@ export class UjianSiswaController {
         return this.ujianSiswaService.submitAnswer(id, submitDto, req.user.siswaId);
     }
 
+    @Post('progress/:id')
+    @Roles(Role.SISWA)
+    saveProgress(
+        @Param('id') id: string,
+        @Body() submitDto: SubmitJawabanDto,
+        @Request() req,
+    ) {
+        return this.ujianSiswaService.saveProgress(id, submitDto, req.user.siswaId);
+    }
+
     @Post('log-activity')
     @Roles(Role.SISWA)
     logActivity(@Body() logDto: LogActivityDto, @Request() req) {

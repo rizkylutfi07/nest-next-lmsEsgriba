@@ -377,5 +377,4 @@ enum StatusPengerjaan {
   SEDANG_MENGERJAKAN
   SELESAI
   TIDAK_HADIR
-  DIBLOKIR
 }

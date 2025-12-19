@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useRouter, useParams } from "next/navigation";
-import { Loader2, ArrowLeft, CheckCircle, XCircle, Clock, Award } from "lucide-react";
+import { Loader2, ArrowLeft, CheckCircle, XCircle, Clock, Award, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +38,67 @@ export default function HasilUjianPage() {
     const duration = result.durasiPengerjaan
         ? `${Math.floor(result.durasiPengerjaan / 60)} menit ${result.durasiPengerjaan % 60} detik`
         : "-";
+
+    const normalizeText = (text: string) =>
+        (text || "")
+            .toLowerCase()
+            .replace(/[^a-z0-9\u00c0-\u024f\s]/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+
+    const isEssayCorrect = (kunci: string | null | undefined, jawaban: string | null | undefined) => {
+        if (!kunci || !jawaban) return false;
+        const keyNorm = normalizeText(kunci);
+        const ansNorm = normalizeText(jawaban);
+        if (!keyNorm || !ansNorm) return false;
+        if (keyNorm === ansNorm) return true;
+        if (ansNorm.includes(keyNorm) || keyNorm.includes(ansNorm)) return true;
+        const keyTokens = new Set(keyNorm.split(" "));
+        const ansTokens = new Set(ansNorm.split(" "));
+        const intersect = Array.from(keyTokens).filter((t) => ansTokens.has(t)).length;
+        const union = new Set([...Array.from(keyTokens), ...Array.from(ansTokens)]).size || 1;
+        const jaccard = intersect / union;
+        return jaccard >= 0.5;
+    };
+
+    const soalList = result.ujian.ujianSoal || [];
+    const jawabanMap = Array.isArray(result.jawaban)
+        ? result.jawaban.reduce((acc: any, item: any) => {
+            acc[item.soalId] = item.jawaban;
+            return acc;
+        }, {})
+        : {};
+
+    const soalBreakdown = soalList.map((soal: any, idx: number) => {
+        const tipe = soal.bankSoal.tipe;
+        const kunci = soal.bankSoal.jawabanBenar;
+        const jawabanSiswa = jawabanMap[soal.bankSoalId];
+        const isPg = tipe === "PILIHAN_GANDA" || tipe === "BENAR_SALAH";
+        const pilihanJawaban = Array.isArray(soal.bankSoal.pilihanJawaban)
+            ? soal.bankSoal.pilihanJawaban
+            : [];
+        const correctOption = pilihanJawaban.find((p: any) => p.isCorrect);
+
+        let status: "BENAR" | "SALAH" | "BELUM_DIISI" | "OTOMATIS" = "BELUM_DIISI";
+        if (jawabanSiswa) {
+            if (isPg && correctOption) {
+                status = jawabanSiswa === correctOption.id ? "BENAR" : "SALAH";
+            } else if (tipe === "ESSAY" || tipe === "ISIAN_SINGKAT") {
+                status = isEssayCorrect(kunci, jawabanSiswa) ? "BENAR" : "OTOMATIS";
+            }
+        }
+
+        return {
+            idx,
+            soal,
+            status,
+            jawabanSiswa,
+            correctLabel: isPg ? correctOption?.text : kunci,
+        };
+    });
+
+    const correctCount = soalBreakdown.filter((s: any) => s.status === "BENAR").length;
+    const answeredCount = soalBreakdown.filter((s: any) => s.status !== "BELUM_DIISI").length;
 
     return (
         <div className="max-w-4xl mx-auto space-y-6 p-4">
@@ -191,6 +252,63 @@ export default function HasilUjianPage() {
                                 Nilai Anda belum mencapai passing grade. Tetap semangat dan terus belajar!
                             </p>
                         )}
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Breakdown */}
+            {result.ujian.tampilkanNilai && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Rincian Soal</CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                            Benar: {correctCount} • Dijawab: {answeredCount} / {soalBreakdown.length}
+                        </p>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {soalBreakdown.map((item: any) => (
+                            <div
+                                key={item.soal.id}
+                                className="border border-border rounded-lg p-4 space-y-2 bg-muted/30"
+                            >
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <span className="font-semibold text-foreground">Soal {item.idx + 1}</span>
+                                    <Badge variant="outline" className="text-xs">
+                                        {item.soal.bankSoal.tipe.replace("_", " ")}
+                                    </Badge>
+                                </div>
+                                <div className="text-foreground" dangerouslySetInnerHTML={{ __html: item.soal.bankSoal.pertanyaan }} />
+                                <div className="flex items-center gap-2 text-sm">
+                                    {item.status === "BENAR" && (
+                                        <Badge className="bg-green-500/15 text-green-700">Benar</Badge>
+                                    )}
+                                    {item.status === "SALAH" && (
+                                        <Badge className="bg-red-500/15 text-red-700">Salah</Badge>
+                                    )}
+                                    {item.status === "BELUM_DIISI" && (
+                                        <Badge className="bg-amber-500/15 text-amber-700">Belum diisi</Badge>
+                                    )}
+                                    {item.status === "OTOMATIS" && (
+                                        <Badge className="bg-blue-500/15 text-blue-700 flex items-center gap-1">
+                                            <HelpCircle size={14} />
+                                            Perlu cek manual
+                                        </Badge>
+                                    )}
+                                </div>
+                                <div className="text-sm text-muted-foreground space-y-1">
+                                    <div>
+                                        <span className="font-medium text-foreground">Jawaban Anda: </span>
+                                        <span>{item.jawabanSiswa ?? "-"}</span>
+                                    </div>
+                                    {item.correctLabel && (
+                                        <div>
+                                            <span className="font-medium text-foreground">Kunci: </span>
+                                            <span>{item.correctLabel}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
                     </CardContent>
                 </Card>
             )}

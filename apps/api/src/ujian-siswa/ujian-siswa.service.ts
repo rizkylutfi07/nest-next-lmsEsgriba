@@ -214,17 +214,22 @@ export class UjianSiswaService {
             throw new BadRequestException('Ujian sudah selesai');
         }
 
+        // Ensure waktuMulai exists to avoid submission being blocked
+        const waktuMulai = ujianSiswa.waktuMulai ?? new Date();
+        if (!ujianSiswa.waktuMulai) {
+            await this.prisma.ujianSiswa.update({
+                where: { id: ujianSiswaId },
+                data: { waktuMulai, status: StatusPengerjaan.SEDANG_MENGERJAKAN },
+            });
+        }
+
         // Calculate score
         const score = await this.calculateScore(ujianSiswa.ujian.ujianSoal, submitDto.jawaban);
 
         // Calculate duration
-        if (!ujianSiswa.waktuMulai) {
-            throw new BadRequestException('Ujian belum dimulai');
-        }
-
-        const waktuMulai = new Date(ujianSiswa.waktuMulai);
+        const waktuMulaiDate = new Date(waktuMulai);
         const waktuSelesai = new Date();
-        const durasi = Math.floor((waktuSelesai.getTime() - waktuMulai.getTime()) / 60000); // in minutes
+        const durasi = Math.floor((waktuSelesai.getTime() - waktuMulaiDate.getTime()) / 60000); // in minutes
 
         // Determine if passed
         const isPassed = ujianSiswa.ujian.nilaiMinimal
@@ -245,6 +250,47 @@ export class UjianSiswaService {
         });
 
         return updated;
+    }
+
+    async saveProgress(ujianSiswaId: string, submitDto: SubmitJawabanDto, siswaId: string) {
+        const ujianSiswa = await this.prisma.ujianSiswa.findFirst({
+            where: {
+                id: ujianSiswaId,
+                siswaId,
+            },
+        });
+
+        if (!ujianSiswa) {
+            throw new NotFoundException('Sesi ujian tidak ditemukan');
+        }
+
+        if (ujianSiswa.status === StatusPengerjaan.SELESAI) {
+            throw new BadRequestException('Ujian sudah selesai');
+        }
+
+        const waktuMulai = ujianSiswa.waktuMulai ?? new Date();
+
+        const updated = await this.prisma.ujianSiswa.update({
+            where: { id: ujianSiswaId },
+            data: {
+                jawaban: submitDto.jawaban as any,
+                waktuMulai,
+                status: ujianSiswa.status === StatusPengerjaan.BELUM_MULAI
+                    ? StatusPengerjaan.SEDANG_MENGERJAKAN
+                    : ujianSiswa.status,
+            },
+        });
+
+        const answeredCount = Array.isArray(updated.jawaban)
+            ? updated.jawaban.length
+            : updated.jawaban && typeof updated.jawaban === 'object'
+                ? Object.keys(updated.jawaban as any).length
+                : 0;
+
+        return {
+            saved: true,
+            answeredCount,
+        };
     }
 
     async logActivity(logDto: LogActivityDto, siswaId: string) {
@@ -378,6 +424,30 @@ export class UjianSiswaService {
         let totalScore = 0;
         let maxScore = 0;
 
+        const normalizeText = (text: string) =>
+            text
+                .toLowerCase()
+                .replace(/[^a-z0-9\u00C0-\u024f\s]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+
+        const isEssayCorrect = (kunci: string | null | undefined, jawabanSiswa: string | null | undefined) => {
+            if (!kunci || !jawabanSiswa) return false;
+            const keyNorm = normalizeText(kunci);
+            const ansNorm = normalizeText(jawabanSiswa);
+            if (!keyNorm || !ansNorm) return false;
+            if (keyNorm === ansNorm) return true;
+            if (ansNorm.includes(keyNorm) || keyNorm.includes(ansNorm)) return true;
+
+            // Simple token overlap
+            const keyTokens = new Set(keyNorm.split(' '));
+            const ansTokens = new Set(ansNorm.split(' '));
+            const intersect = [...keyTokens].filter(t => ansTokens.has(t)).length;
+            const union = new Set([...keyTokens, ...ansTokens]).size || 1;
+            const jaccard = intersect / union;
+            return jaccard >= 0.5;
+        };
+
         for (const soal of ujianSoal) {
             maxScore += soal.bobot;
 
@@ -393,7 +463,12 @@ export class UjianSiswaService {
                     totalScore += soal.bobot;
                 }
             }
-            // Essay and short answer need manual grading
+            // Essay and short answer: auto-grade if kunci ada
+            if (soal.bankSoal.tipe === TipeSoal.ESSAY || soal.bankSoal.tipe === TipeSoal.ISIAN_SINGKAT) {
+                if (isEssayCorrect(soal.bankSoal.jawabanBenar, jawabanSiswa.jawaban)) {
+                    totalScore += soal.bobot;
+                }
+            }
         }
 
         // Return percentage score
@@ -401,6 +476,13 @@ export class UjianSiswaService {
     }
 
     async getMonitoringData(ujianId: string) {
+        const getAnsweredCount = (jawaban: any): number => {
+            if (!jawaban) return 0;
+            if (Array.isArray(jawaban)) return jawaban.length;
+            if (typeof jawaban === 'object') return Object.keys(jawaban).length;
+            return 0;
+        };
+
         const result = await this.prisma.ujianSiswa.findMany({
             where: {
                 ujianId,
@@ -438,6 +520,7 @@ export class UjianSiswaService {
             return {
                 ...u,
                 violationCount,
+                answeredCount: getAnsweredCount(u.jawaban),
             };
         });
     }

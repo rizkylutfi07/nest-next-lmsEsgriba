@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict p0fI5nPa3f8Q5zjAdf02sWjM6cE0KD960ZXllDTZFR322SP36rUPGdkTIFdfbcT
+\restrict O3XJja99m3iMRLiH6iylEBKybqPP6sF2kytj3qjAbkxgCA4j6vXqciB2Y8bnwSn
 
 -- Dumped from database version 17.7
 -- Dumped by pg_dump version 17.7
@@ -20,13 +20,45 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
+-- Name: public; Type: SCHEMA; Schema: -; Owner: postgres
+--
+
+-- *not* creating schema, since initdb creates it
+
+
+ALTER SCHEMA public OWNER TO postgres;
+
+--
+-- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: postgres
+--
+
+COMMENT ON SCHEMA public IS '';
+
+
+--
+-- Name: AttendanceStatus; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public."AttendanceStatus" AS ENUM (
+    'HADIR',
+    'IZIN',
+    'SAKIT',
+    'ALPHA',
+    'TERLAMBAT'
+);
+
+
+ALTER TYPE public."AttendanceStatus" OWNER TO postgres;
+
+--
 -- Name: Role; Type: TYPE; Schema: public; Owner: postgres
 --
 
 CREATE TYPE public."Role" AS ENUM (
     'ADMIN',
     'GURU',
-    'SISWA'
+    'SISWA',
+    'PETUGAS_ABSENSI'
 );
 
 
@@ -46,14 +78,30 @@ CREATE TYPE public."StatusGuru" AS ENUM (
 ALTER TYPE public."StatusGuru" OWNER TO postgres;
 
 --
+-- Name: StatusPengerjaan; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public."StatusPengerjaan" AS ENUM (
+    'BELUM_MULAI',
+    'SEDANG_MENGERJAKAN',
+    'SELESAI',
+    'TIDAK_HADIR',
+    'DIBLOKIR'
+);
+
+
+ALTER TYPE public."StatusPengerjaan" OWNER TO postgres;
+
+--
 -- Name: StatusSiswa; Type: TYPE; Schema: public; Owner: postgres
 --
 
 CREATE TYPE public."StatusSiswa" AS ENUM (
     'AKTIF',
-    'MAGANG',
+    'PKL',
+    'LULUS',
     'PINDAH',
-    'ALUMNI'
+    'KELUAR'
 );
 
 
@@ -72,9 +120,81 @@ CREATE TYPE public."StatusTahunAjaran" AS ENUM (
 
 ALTER TYPE public."StatusTahunAjaran" OWNER TO postgres;
 
+--
+-- Name: StatusUjian; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public."StatusUjian" AS ENUM (
+    'DRAFT',
+    'PUBLISHED',
+    'ONGOING',
+    'SELESAI',
+    'DIBATALKAN'
+);
+
+
+ALTER TYPE public."StatusUjian" OWNER TO postgres;
+
+--
+-- Name: TipeSoal; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public."TipeSoal" AS ENUM (
+    'PILIHAN_GANDA',
+    'ESSAY',
+    'BENAR_SALAH',
+    'ISIAN_SINGKAT'
+);
+
+
+ALTER TYPE public."TipeSoal" OWNER TO postgres;
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
+
+--
+-- Name: Attendance; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."Attendance" (
+    id text NOT NULL,
+    "siswaId" text NOT NULL,
+    tanggal date DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "jamMasuk" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "jamKeluar" timestamp(3) without time zone,
+    status public."AttendanceStatus" DEFAULT 'HADIR'::public."AttendanceStatus" NOT NULL,
+    keterangan text,
+    "scanBy" text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    "deletedAt" timestamp(3) without time zone
+);
+
+
+ALTER TABLE public."Attendance" OWNER TO postgres;
+
+--
+-- Name: BankSoal; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."BankSoal" (
+    id text NOT NULL,
+    kode text NOT NULL,
+    pertanyaan text NOT NULL,
+    tipe public."TipeSoal" DEFAULT 'PILIHAN_GANDA'::public."TipeSoal" NOT NULL,
+    "mataPelajaranId" text,
+    "pilihanJawaban" jsonb,
+    "jawabanBenar" text,
+    bobot integer DEFAULT 1 NOT NULL,
+    penjelasan text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    "deletedAt" timestamp(3) without time zone
+);
+
+
+ALTER TABLE public."BankSoal" OWNER TO postgres;
 
 --
 -- Name: Guru; Type: TABLE; Schema: public; Owner: postgres
@@ -125,7 +245,6 @@ CREATE TABLE public."Kelas" (
     "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     "updatedAt" timestamp(3) without time zone NOT NULL,
     "deletedAt" timestamp(3) without time zone,
-    "tahunAjaranId" text NOT NULL,
     "waliKelasId" text,
     "jurusanId" text
 );
@@ -153,6 +272,56 @@ CREATE TABLE public."MataPelajaran" (
 ALTER TABLE public."MataPelajaran" OWNER TO postgres;
 
 --
+-- Name: PaketSoal; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."PaketSoal" (
+    id text NOT NULL,
+    kode text NOT NULL,
+    nama text NOT NULL,
+    deskripsi text,
+    "mataPelajaranId" text,
+    "totalSoal" integer DEFAULT 0 NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    "deletedAt" timestamp(3) without time zone,
+    "guruId" text
+);
+
+
+ALTER TABLE public."PaketSoal" OWNER TO postgres;
+
+--
+-- Name: PaketSoalItem; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."PaketSoalItem" (
+    id text NOT NULL,
+    "paketSoalId" text NOT NULL,
+    "bankSoalId" text NOT NULL,
+    urutan integer NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."PaketSoalItem" OWNER TO postgres;
+
+--
+-- Name: Settings; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."Settings" (
+    id text NOT NULL,
+    key text NOT NULL,
+    value text NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."Settings" OWNER TO postgres;
+
+--
 -- Name: Siswa; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -169,11 +338,33 @@ CREATE TABLE public."Siswa" (
     "updatedAt" timestamp(3) without time zone NOT NULL,
     "deletedAt" timestamp(3) without time zone,
     "kelasId" text,
-    "userId" text
+    "userId" text,
+    "tahunAjaranId" text,
+    agama text
 );
 
 
 ALTER TABLE public."Siswa" OWNER TO postgres;
+
+--
+-- Name: SiswaKelasHistory; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."SiswaKelasHistory" (
+    id text NOT NULL,
+    "siswaId" text NOT NULL,
+    "kelasId" text NOT NULL,
+    "tahunAjaranId" text NOT NULL,
+    "tanggalMulai" timestamp(3) without time zone NOT NULL,
+    "tanggalSelesai" timestamp(3) without time zone,
+    status text NOT NULL,
+    catatan text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."SiswaKelasHistory" OWNER TO postgres;
 
 --
 -- Name: TahunAjaran; Type: TABLE; Schema: public; Owner: postgres
@@ -182,7 +373,6 @@ ALTER TABLE public."Siswa" OWNER TO postgres;
 CREATE TABLE public."TahunAjaran" (
     id text NOT NULL,
     tahun text NOT NULL,
-    semester integer NOT NULL,
     "tanggalMulai" timestamp(3) without time zone NOT NULL,
     "tanggalSelesai" timestamp(3) without time zone NOT NULL,
     status public."StatusTahunAjaran" DEFAULT 'AKAN_DATANG'::public."StatusTahunAjaran" NOT NULL,
@@ -193,6 +383,88 @@ CREATE TABLE public."TahunAjaran" (
 
 
 ALTER TABLE public."TahunAjaran" OWNER TO postgres;
+
+--
+-- Name: Ujian; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."Ujian" (
+    id text NOT NULL,
+    kode text NOT NULL,
+    judul text NOT NULL,
+    deskripsi text,
+    "mataPelajaranId" text,
+    "kelasId" text,
+    durasi integer NOT NULL,
+    "tanggalMulai" timestamp(3) without time zone NOT NULL,
+    "tanggalSelesai" timestamp(3) without time zone NOT NULL,
+    "nilaiMinimal" integer,
+    "acakSoal" boolean DEFAULT true NOT NULL,
+    "tampilkanNilai" boolean DEFAULT false NOT NULL,
+    status public."StatusUjian" DEFAULT 'DRAFT'::public."StatusUjian" NOT NULL,
+    "createdBy" text NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    "deletedAt" timestamp(3) without time zone,
+    "paketSoalId" text,
+    "guruId" text
+);
+
+
+ALTER TABLE public."Ujian" OWNER TO postgres;
+
+--
+-- Name: UjianKelas; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."UjianKelas" (
+    id text NOT NULL,
+    "ujianId" text NOT NULL,
+    "kelasId" text NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."UjianKelas" OWNER TO postgres;
+
+--
+-- Name: UjianSiswa; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."UjianSiswa" (
+    id text NOT NULL,
+    "ujianId" text NOT NULL,
+    "siswaId" text NOT NULL,
+    "tokenAkses" text,
+    "waktuMulai" timestamp(3) without time zone,
+    "waktuSelesai" timestamp(3) without time zone,
+    durasi integer,
+    status public."StatusPengerjaan" DEFAULT 'BELUM_MULAI'::public."StatusPengerjaan" NOT NULL,
+    "nilaiTotal" double precision,
+    "isPassed" boolean,
+    jawaban jsonb,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."UjianSiswa" OWNER TO postgres;
+
+--
+-- Name: UjianSoal; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."UjianSoal" (
+    id text NOT NULL,
+    "ujianId" text NOT NULL,
+    "bankSoalId" text NOT NULL,
+    "nomorUrut" integer NOT NULL,
+    bobot integer DEFAULT 1 NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."UjianSoal" OWNER TO postgres;
 
 --
 -- Name: User; Type: TABLE; Schema: public; Owner: postgres
@@ -242,10 +514,48 @@ CREATE TABLE public._prisma_migrations (
 ALTER TABLE public._prisma_migrations OWNER TO postgres;
 
 --
+-- Data for Name: Attendance; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Attendance" (id, "siswaId", tanggal, "jamMasuk", "jamKeluar", status, keterangan, "scanBy", "createdAt", "updatedAt", "deletedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: BankSoal; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."BankSoal" (id, kode, pertanyaan, tipe, "mataPelajaranId", "pilihanJawaban", "jawabanBenar", bobot, penjelasan, "createdAt", "updatedAt", "deletedAt") FROM stdin;
+\.
+
+
+--
 -- Data for Name: Guru; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public."Guru" (id, nip, nama, email, "nomorTelepon", status, "createdAt", "updatedAt", "deletedAt", "userId") FROM stdin;
+cmj9z8yg3002w5dud29sel0av	00000000000000977	Siska Purwanti, S.E.	purwantisiska25@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.53	2025-12-17 12:17:54.53	\N	cmj9z8yfy002v5dudvf51yqq4
+cmj9z8yhl002y5dudqly12oc3	8549764665110030	Syamsul Rizal, S.Pd.I.	rizalpecintaseni@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.585	2025-12-17 12:17:54.585	\N	cmj9z8yhh002x5dud9my7ci8i
+cmj9z8xtu00225dudew59ixr7	8550751654200000	Aini Abdul Cholis S.Pd.	ainiabdcholis.73@gmail.com	081234567890	AKTIF	2025-12-17 12:17:53.73	2025-12-17 12:17:53.73	\N	cmj9z8xto00215dudxiyqcr71
+cmj9z8xvg00245duda7dxbp56	3449744648300010	Dra. Subur Hindartin	drasuburhindartin@gmail.com	081234567890	AKTIF	2025-12-17 12:17:53.787	2025-12-17 12:17:53.787	\N	cmj9z8xvb00235dudd4xbolii
+cmj9z8xwv00265dud0w98oh1m	00000000230011444	Dwi Wahyudi, S.T,	yudiaster1922@gmail.com	081234567890	AKTIF	2025-12-17 12:17:53.839	2025-12-17 12:17:53.839	\N	cmj9z8xws00255dudbgtsplon
+cmj9z8xyc00285dudgvf5bnnv	3455763666300010	Erlin Novia Diana, S.E.	erlinnoviadiana@gmail.com	081234567890	AKTIF	2025-12-17 12:17:53.891	2025-12-17 12:17:53.891	\N	cmj9z8xy800275dudsv8ypuim
+cmj9z8xzs002a5dudw0c717l2	00000000000000022222	Fera Mega Haristina, S.Tr.Kom.	feramegaharistiana@gmail.com	081234567890	AKTIF	2025-12-17 12:17:53.943	2025-12-17 12:17:53.943	\N	cmj9z8xzp00295dudiet5g8kd
+cmj9z8y1b002c5dudh3e7fyuu	0000000023232323	Frances Laurence Setyo Budi, S.Pd.	franceskoyen16@gmail.com	081234567890	AKTIF	2025-12-17 12:17:53.998	2025-12-17 12:17:53.998	\N	cmj9z8y16002b5dudps21lpfm
+cmj9z8y2q002e5dud69l0gx00	00000000000000004	Imtiana, S.Pd	imtianateguh@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.049	2025-12-17 12:17:54.049	\N	cmj9z8y2n002d5dudjgj6nzx4
+cmj9z8y4a002g5dudjlq4s2jp	0000000000000066	M. Fais Jainuddin, S.Pd	faizabrahammalik@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.105	2025-12-17 12:17:54.105	\N	cmj9z8y44002f5dudfvho6nza
+cmj9z8y5q002i5dudk3gr40r9	00000000000023235	Moh. Rohim, S.T.	mohrohim02@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.158	2025-12-17 12:17:54.158	\N	cmj9z8y5n002h5dud9vb23462
+cmj9z8y77002k5dudwjch4365	8834765666130320	Moh. Yunus Ansori, S.Pd.	yunuskacer@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.211	2025-12-17 12:17:54.211	\N	cmj9z8y73002j5dud9ooury49
+cmj9z8y8o002m5dudwnycw1jf	0000000000000006	Mulyono, S.Th.	danzia22@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.263	2025-12-17 12:17:54.263	\N	cmj9z8y8l002l5dudo8u4k81t
+cmj9z8ya7002o5dudm0yzma1k	5736762663300210	Nunung Indrawati, S.Pd.	nunungindrawati437@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.318	2025-12-17 12:17:54.318	\N	cmj9z8ya2002n5dudxxrmi27p
+cmj9z8ybn002q5dud7n4058u9	5040758659300040	Nurmala Evayanti S.Pd.	nurmalaevayanti2006@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.371	2025-12-17 12:17:54.371	\N	cmj9z8ybk002p5dudp5man22v
+cmj9z8yd4002s5dudqb9lav2o	0000000000000007878	Nurul Hidayah, S.E.	nurulhidayahse485@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.423	2025-12-17 12:17:54.423	\N	cmj9z8ycz002r5duda3p9ojun
+cmj9z8yem002u5dudolwskcz4	1201212121212110	Rizky Lutfi Romadona, S.Kom	rizkielutfi@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.477	2025-12-17 12:17:54.477	\N	cmj9z8yej002t5dudlb0wn4mh
+cmj9z8yj000305dudtwddc0j1	0000000000000010044	Udayani, S.Pd.	udayaniprayuda@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.635	2025-12-17 12:17:54.635	\N	cmj9z8yix002z5dudbc4lk8nv
+cmj9z8ykj00325dudk20mdgjx	00000000003444211	Wahyu Mirnawati, S.Ak.	wahyumirnawati30@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.691	2025-12-17 12:17:54.691	\N	cmj9z8ykf00315duda3u6niqb
+cmj9z8ynh00365dudxaiuoy08	00000000000000076	Maulida Putri Lesmana	pa717885@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.797	2025-12-17 12:17:54.797	\N	cmj9z8ynd00355dudycn1e6hi
+cmj9z8yox00385dudt5p2uvo1	1234567891	Ila Febti Sherly M., S.E	ilafebtisherly@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.849	2025-12-17 12:25:57.706	\N	cmj9z8you00375dudrf1e71qe
+cmj9z8yly00345dudadjrqvfh	0000000000000044	Zulfi Amaliyah, S.Kom	zulfiamaliyah1306@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.742	2025-12-17 12:26:16.194	\N	cmj9z8ylv00335dudr8tet2na
 \.
 
 
@@ -254,9 +564,9 @@ COPY public."Guru" (id, nip, nama, email, "nomorTelepon", status, "createdAt", "
 --
 
 COPY public."Jurusan" (id, kode, nama, deskripsi, "createdAt", "updatedAt", "deletedAt") FROM stdin;
-cmj2syqsn0000oqi0bqjngdsz	AK	Akuntansi	\N	2025-12-12 11:47:37.127	2025-12-12 11:47:37.127	\N
-cmj2sz28x0001oqi0v7eu44h0	TKJ	Teknik Komputer dan Jaringan	\N	2025-12-12 11:47:51.969	2025-12-12 11:47:51.969	\N
-cmj2sz9x10002oqi0t52not0j	TKR	Teknik Kendaraan Ringan	\N	2025-12-12 11:48:01.909	2025-12-12 11:48:01.909	\N
+cmj5cz42g00034iudqf3vd4tn	AK	Akuntansi	\N	2025-12-14 06:43:19	2025-12-14 06:43:19	\N
+cmj5czfhl00044iudsyvwnrok	TKJ	Teknik Komputer dan Jaringan	\N	2025-12-14 06:43:33.801	2025-12-14 06:43:33.801	\N
+cmj5czn6h00054iuds6wh2zr0	TKR	Teknik Kendaraan Ringan	\N	2025-12-14 06:43:43.768	2025-12-14 06:43:43.768	\N
 \.
 
 
@@ -264,16 +574,16 @@ cmj2sz9x10002oqi0t52not0j	TKR	Teknik Kendaraan Ringan	\N	2025-12-12 11:48:01.909
 -- Data for Name: Kelas; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public."Kelas" (id, nama, tingkat, kapasitas, "createdAt", "updatedAt", "deletedAt", "tahunAjaranId", "waliKelasId", "jurusanId") FROM stdin;
-cmj4d91oo00bl7yi0hp2pdna7	XII TKJ	XII	30	2025-12-13 14:03:16.296	2025-12-13 14:06:15.319	\N	cmj30obk60000nyi0d2cbh0g0	\N	cmj2sz28x0001oqi0v7eu44h0
-cmj4d5zz600bg7yi0mzv0geb6	X AK	X	30	2025-12-13 14:00:54.114	2025-12-13 14:00:54.114	\N	cmj30obk60000nyi0d2cbh0g0	\N	cmj2syqsn0000oqi0bqjngdsz
-cmj4d867h00bi7yi06tgfiuci	XII AK	XII	30	2025-12-13 14:02:35.5	2025-12-13 14:02:35.5	\N	cmj30obk60000nyi0d2cbh0g0	\N	cmj2syqsn0000oqi0bqjngdsz
-cmj4d7vdl00bh7yi0sh0tye2g	XI AK	XI	30	2025-12-13 14:02:21.465	2025-12-13 14:02:40.973	\N	cmj30obk60000nyi0d2cbh0g0	\N	cmj2syqsn0000oqi0bqjngdsz
-cmj4d8kv400bj7yi00ujftazo	X TKJ	X	30	2025-12-13 14:02:54.496	2025-12-13 14:02:54.496	\N	cmj30obk60000nyi0d2cbh0g0	\N	cmj2sz28x0001oqi0v7eu44h0
-cmj4d8tyx00bk7yi0voaq9xy2	XI TKJ	XI	30	2025-12-13 14:03:06.297	2025-12-13 14:03:06.297	\N	cmj30obk60000nyi0d2cbh0g0	\N	cmj2sz28x0001oqi0v7eu44h0
-cmj4d9dbb00bm7yi0kqp0zoxs	X TKR	X	30	2025-12-13 14:03:31.367	2025-12-13 14:03:31.367	\N	cmj30obk60000nyi0d2cbh0g0	\N	cmj2sz9x10002oqi0t52not0j
-cmj4d9lfa00bn7yi0ovesrwcj	XI TKR	XI	30	2025-12-13 14:03:41.878	2025-12-13 14:04:33.877	\N	cmj30obk60000nyi0d2cbh0g0	\N	cmj2sz9x10002oqi0t52not0j
-cmj4d9txt00bo7yi0cx6go8jq	XII TKR	XII	30	2025-12-13 14:03:52.913	2025-12-13 14:04:38.349	\N	cmj30obk60000nyi0d2cbh0g0	\N	cmj2sz9x10002oqi0t52not0j
+COPY public."Kelas" (id, nama, tingkat, kapasitas, "createdAt", "updatedAt", "deletedAt", "waliKelasId", "jurusanId") FROM stdin;
+cmj5ec9zf0000jsudgpxci2hf	X Akuntansi	X	30	2025-12-14 07:21:32.811	2025-12-14 07:21:32.811	\N	\N	cmj5cz42g00034iudqf3vd4tn
+cmj5ec9zx0001jsud5cnf1k74	XI Akuntansi	XI	30	2025-12-14 07:21:32.829	2025-12-14 07:21:32.829	\N	\N	cmj5cz42g00034iudqf3vd4tn
+cmj5eca050002jsudq5rc3oa3	XII Akuntansi	XII	30	2025-12-14 07:21:32.837	2025-12-14 07:21:32.837	\N	\N	cmj5cz42g00034iudqf3vd4tn
+cmj5eca0e0003jsud1uxj50o4	X Teknik Komputer dan Jaringan	X	30	2025-12-14 07:21:32.846	2025-12-14 07:21:32.846	\N	\N	cmj5czfhl00044iudsyvwnrok
+cmj5eca0k0004jsuddjewnal1	XI Teknik Komputer dan Jaringan	XI	30	2025-12-14 07:21:32.852	2025-12-14 07:21:32.852	\N	\N	cmj5czfhl00044iudsyvwnrok
+cmj5eca0o0005jsud0ambwla7	XII Teknik Komputer dan Jaringan	XII	30	2025-12-14 07:21:32.856	2025-12-14 07:21:32.856	\N	\N	cmj5czfhl00044iudsyvwnrok
+cmj5eca0w0006jsud9bca11b3	X Teknik Kendaraan Ringan	X	30	2025-12-14 07:21:32.864	2025-12-14 07:21:32.864	\N	\N	cmj5czn6h00054iuds6wh2zr0
+cmj5eca130007jsudvzwt5rjx	XI Teknik Kendaraan Ringan	XI	30	2025-12-14 07:21:32.871	2025-12-14 07:21:32.871	\N	\N	cmj5czn6h00054iuds6wh2zr0
+cmj5eca170008jsudb4r1h58n	XII Teknik Kendaraan Ringan	XII	30	2025-12-14 07:21:32.875	2025-12-14 07:21:32.875	\N	\N	cmj5czn6h00054iuds6wh2zr0
 \.
 
 
@@ -282,6 +592,56 @@ cmj4d9txt00bo7yi0cx6go8jq	XII TKR	XII	30	2025-12-13 14:03:52.913	2025-12-13 14:0
 --
 
 COPY public."MataPelajaran" (id, kode, nama, "jamPelajaran", deskripsi, tingkat, "createdAt", "updatedAt", "deletedAt") FROM stdin;
+cmj9z7q7y001c5dudu38a65qb	MTK	Matematika	4		SEMUA	2025-12-17 12:16:57.214	2025-12-17 12:16:57.214	\N
+cmj9z7q84001d5dud60yqektg	BIND	Bahasa Indonesia	4		SEMUA	2025-12-17 12:16:57.22	2025-12-17 12:16:57.22	\N
+cmj9z7q87001e5dudb1uk5u9j	DPK TKJ	Dasar Program Keahlian TKJ	4		SEMUA	2025-12-17 12:16:57.223	2025-12-17 12:16:57.223	\N
+cmj9z7q8c001f5dudtoyt49tx	Informatika	Informatika	4		SEMUA	2025-12-17 12:16:57.228	2025-12-17 12:16:57.228	\N
+cmj9z7q8h001g5dud3cnj22wr	IPAS	IPAS	4		SEMUA	2025-12-17 12:16:57.233	2025-12-17 12:16:57.233	\N
+cmj9z7q8k001h5dudkou2wtsf	Bahasa Inggris	Bahasa Inggris	4		SEMUA	2025-12-17 12:16:57.236	2025-12-17 12:16:57.236	\N
+cmj9z7q8m001i5dudi334c2ms	Sejarah Indonesia	Sejarah Indonesia	4		SEMUA	2025-12-17 12:16:57.238	2025-12-17 12:16:57.238	\N
+cmj9z7q8q001j5dudx5o1zuri	PPKN	Pendidikan Pancasila dan Kewarganegaraan	4		SEMUA	2025-12-17 12:16:57.242	2025-12-17 12:16:57.242	\N
+cmj9z7q8v001k5dudwd0dr0f2	PJOK	PJOK	4		SEMUA	2025-12-17 12:16:57.247	2025-12-17 12:16:57.247	\N
+cmj9z7q8x001l5dudh15r8ocj	PKKWU AK	PKKWU AK	4		SEMUA	2025-12-17 12:16:57.249	2025-12-17 12:16:57.249	\N
+cmj9z7q90001m5dud5q6cvaku	PAI	PAI	4		SEMUA	2025-12-17 12:16:57.252	2025-12-17 12:16:57.252	\N
+cmj9z7q94001n5dudvyt50cow	DPK AK	Dasar Program Keahlian AK	4		SEMUA	2025-12-17 12:16:57.256	2025-12-17 12:16:57.256	\N
+cmj9z7q98001o5dudu8zzru3q	DPK TKR	Dasar Program Keahlian TKR	4		SEMUA	2025-12-17 12:16:57.26	2025-12-17 12:16:57.26	\N
+cmj9z7q9c001p5dudhh2cp17a	Bahasa Daerah	Bahasa Daerah	4		SEMUA	2025-12-17 12:16:57.264	2025-12-17 12:16:57.264	\N
+cmj9z7q9f001q5dud3giiabft	KK TKR	Konsentrasi Keahlian TKR	4		SEMUA	2025-12-17 12:16:57.267	2025-12-17 12:16:57.267	\N
+cmj9z7q9i001r5dudnscpl8q0	KK AK	Konsentrasi Keahlian AK	4		SEMUA	2025-12-17 12:16:57.27	2025-12-17 12:16:57.27	\N
+cmj9z7q9n001s5dudxr525koc	KK TKJ	Konsentrasi Keahlian TKJ	4		SEMUA	2025-12-17 12:16:57.275	2025-12-17 12:16:57.275	\N
+cmj9z7q9q001t5dudysev7yd8	PAK	PAK	4		SEMUA	2025-12-17 12:16:57.278	2025-12-17 12:16:57.278	\N
+cmj9z7q9s001u5dudswlkj5ya	Mapel Pilihan AK	Mapel Pilihan AK	4		SEMUA	2025-12-17 12:16:57.28	2025-12-17 12:16:57.28	\N
+cmj9z7q9v001v5dud8r2heab2	Mapel Pilihan TKJ	Mapel Pilihan TKJ	4		SEMUA	2025-12-17 12:16:57.283	2025-12-17 12:16:57.283	\N
+cmj9z7qa0001w5dudmau1sngf	Mapel Pilihan TKR	Mapel Pilihan TKR	4		SEMUA	2025-12-17 12:16:57.288	2025-12-17 12:16:57.288	\N
+cmj9z7qa5001x5dudniu477gy	PKKWU TKJ	PKKWU TKJ	4		SEMUA	2025-12-17 12:16:57.293	2025-12-17 12:16:57.293	\N
+cmj9z7qa8001y5dud4gjab2sw	PKKWU TKR	PKKWU TKR	4		SEMUA	2025-12-17 12:16:57.296	2025-12-17 12:16:57.296	\N
+cmj9z7qaa001z5dudjfz3mlu8	Pramuka	Pramuka	4		SEMUA	2025-12-17 12:16:57.298	2025-12-17 12:16:57.298	\N
+cmj9z7qae00205dudqey9zf1h	Seni Budaya	Seni Budaya	4		SEMUA	2025-12-17 12:16:57.302	2025-12-17 12:16:57.302	\N
+\.
+
+
+--
+-- Data for Name: PaketSoal; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."PaketSoal" (id, kode, nama, deskripsi, "mataPelajaranId", "totalSoal", "createdAt", "updatedAt", "deletedAt", "guruId") FROM stdin;
+\.
+
+
+--
+-- Data for Name: PaketSoalItem; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."PaketSoalItem" (id, "paketSoalId", "bankSoalId", urutan, "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: Settings; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Settings" (id, key, value, "createdAt", "updatedAt") FROM stdin;
+cmjaxivkf0000u0udfciy166n	late_time_threshold	07:00	2025-12-18 04:17:24.303	2025-12-18 04:17:24.303
 \.
 
 
@@ -289,110 +649,118 @@ COPY public."MataPelajaran" (id, kode, nama, "jamPelajaran", deskripsi, tingkat,
 -- Data for Name: Siswa; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public."Siswa" (id, nisn, nama, "tanggalLahir", alamat, "nomorTelepon", email, status, "createdAt", "updatedAt", "deletedAt", "kelasId", "userId") FROM stdin;
-cmj4djzku00n67yi0k09r7d26	81475874	ABI HARTO WICAKSONO	1970-01-01 00:00:38.431	Situbondo	8123456789	abihartowicaksono@cbt.com	AKTIF	2025-12-13 14:11:46.782	2025-12-13 14:11:46.782	\N	cmj4d9lfa00bn7yi0ovesrwcj	cmj4djzkn00n57yi0e60qa8hl
-cmj4djzmb00n87yi0so2uwejf	95805399	ADAM SYAHREZA GUMILANG	1970-01-01 00:00:38.431	Situbondo	8123456789	adamsyahrezagumilang@cbt.com	AKTIF	2025-12-13 14:11:46.834	2025-12-13 14:11:46.834	\N	cmj4d9lfa00bn7yi0ovesrwcj	cmj4djzm700n77yi0ayhugouo
-cmj4djznr00na7yi01o6gp9mj	3088037976	ADITIYA RIZKY BAYU PRADIKA	1970-01-01 00:00:38.431	Situbondo	8123456789	aditiyarizkybayupradika@cbt.com	AKTIF	2025-12-13 14:11:46.887	2025-12-13 14:11:46.887	\N	cmj4d9lfa00bn7yi0ovesrwcj	cmj4djzno00n97yi0k6olgvpb
-cmj4djzp600nc7yi06imxzbzi	84194598	ADITYA CATUR PRAYOGO	1970-01-01 00:00:38.431	Situbondo	8123456789	adityacaturprayogo@cbt.com	AKTIF	2025-12-13 14:11:46.938	2025-12-13 14:11:46.938	\N	cmj4d91oo00bl7yi0hp2pdna7	cmj4djzp400nb7yi0tmitn3ku
-cmj4djzql00ne7yi07jqj5nys	108737154	ADITYA DAMARA PUTRA KRISTIAWAN	1970-01-01 00:00:38.431	Situbondo	8123456789	example12@cbt.com	AKTIF	2025-12-13 14:11:46.989	2025-12-13 14:11:46.989	\N	cmj4d8kv400bj7yi00ujftazo	cmj4djzqi00nd7yi0oxqzuj2o
-cmj4djzs000ng7yi0gm9ydf1v	76544902	ADRIANO DWI PRADHITA	1970-01-01 00:00:38.431	Situbondo	8123456789	adrianodwipradhita@cbt.com	AKTIF	2025-12-13 14:11:47.04	2025-12-13 14:11:47.04	\N	cmj4d9txt00bo7yi0cx6go8jq	cmj4djzrx00nf7yi0gmqosiz1
-cmj4djztf00ni7yi0oljplvqe	77382296	AGUNG TRISNA DEWI	1970-01-01 00:00:38.431	Situbondo	8123456789	agungtrisnadewi@cbt.com	AKTIF	2025-12-13 14:11:47.091	2025-12-13 14:11:47.091	\N	cmj4d867h00bi7yi06tgfiuci	cmj4djztd00nh7yi0isomfof5
-cmj4djzuw00nk7yi0sjsz4vuq	86881070	AGUS WIRA ADI PURNOMO	1970-01-01 00:00:38.431	Situbondo	8123456789	aguswiraadipurnomo@cbt.com	AKTIF	2025-12-13 14:11:47.143	2025-12-13 14:11:47.143	\N	cmj4d91oo00bl7yi0hp2pdna7	cmj4djzut00nj7yi0rkt707d4
-cmj4djzwb00nm7yi0dss8lbky	99461767	AHMAD DIMAS KURNIAWAN	1970-01-01 00:00:38.431	Situbondo	8123456789	example1@cbt.com	AKTIF	2025-12-13 14:11:47.194	2025-12-13 14:11:47.194	\N	cmj4d9dbb00bm7yi0kqp0zoxs	cmj4djzw800nl7yi05wzhngwv
-cmj4djzxq00no7yi0of9o9obw	86817502	AHMAD RIAN ZUHRI AFANDI	1970-01-01 00:00:38.431	Situbondo	8123456789	ahmadrianzuhriafandi@cbt.com	AKTIF	2025-12-13 14:11:47.245	2025-12-13 14:11:47.245	\N	cmj4d9txt00bo7yi0cx6go8jq	cmj4djzxn00nn7yi0wg4m7o8o
-cmj4djzz500nq7yi0uboi6cbv	99396650	AINO YOEL	1970-01-01 00:00:38.431	Situbondo	8123456789	example2@cbt.com	AKTIF	2025-12-13 14:11:47.297	2025-12-13 14:11:47.297	\N	cmj4d9dbb00bm7yi0kqp0zoxs	cmj4djzz300np7yi0fnjjzv2t
-cmj4dk00k00ns7yi0vhrcze2b	50397766	AINUR ROHMAH	1970-01-01 00:00:38.431	Situbondo	8123456789	ainurrohmah@cbt.com	AKTIF	2025-12-13 14:11:47.348	2025-12-13 14:11:47.348	\N	cmj4d7vdl00bh7yi0sh0tye2g	cmj4dk00i00nr7yi0u673k9qt
-cmj4dk02000nu7yi0yvw7g7b8	79686226	ALDI PRAYATNA	1970-01-01 00:00:38.431	Situbondo	8123456789	aldiprayatna@cbt.com	AKTIF	2025-12-13 14:11:47.399	2025-12-13 14:11:47.399	\N	cmj4d91oo00bl7yi0hp2pdna7	cmj4dk01x00nt7yi0qhshefp9
-cmj4dk03h00nw7yi0h722ypif	57279011	ALDO ILFAN PRATAMA	1970-01-01 00:00:38.431	Situbondo	8123456789	aldoilfanpratama@cbt.com	AKTIF	2025-12-13 14:11:47.453	2025-12-13 14:11:47.453	\N	cmj4d9txt00bo7yi0cx6go8jq	cmj4dk03e00nv7yi0ztnmk0kp
-cmj4dk04w00ny7yi0xmt21wel	78367595	ALFA TRI EFENDI	1970-01-01 00:00:38.431	Situbondo	8123456789	alfatriefendi@cbt.com	AKTIF	2025-12-13 14:11:47.504	2025-12-13 14:11:47.504	\N	cmj4d9txt00bo7yi0cx6go8jq	cmj4dk04u00nx7yi07hx0b2r1
-cmj4dk06b00o07yi0xg9va4ym	97678393	ALFAZA OKTAVINO PRADITIA	1970-01-01 00:00:38.431	Situbondo	8123456789	example13@cbt.com	AKTIF	2025-12-13 14:11:47.555	2025-12-13 14:11:47.555	\N	cmj4d8kv400bj7yi00ujftazo	cmj4dk06900nz7yi01b0iakh4
-cmj4dk07r00o27yi0bfwvwvjb	97759070	ALIFATUR ROSIKIN	1970-01-01 00:00:38.431	Situbondo	8123456789	alifaturrosikin@cbt.com	AKTIF	2025-12-13 14:11:47.606	2025-12-13 14:11:47.606	\N	cmj4d9lfa00bn7yi0ovesrwcj	cmj4dk07o00o17yi0o3x3wd3a
-cmj4dk09600o47yi0zz6n60yl	85609468	AMELIA DEWI SINTA	1970-01-01 00:00:38.431	Situbondo	8123456789	ameliadewisinta@cbt.com	AKTIF	2025-12-13 14:11:47.658	2025-12-13 14:11:47.658	\N	cmj4d867h00bi7yi06tgfiuci	cmj4dk09400o37yi0l8juaxow
-cmj4dk0al00o67yi0sz94gcl1	94461900	ANANDA MAYCKO WIJAYA	1970-01-01 00:00:38.431	Situbondo	8123456789	example3@cbt.com	AKTIF	2025-12-13 14:11:47.709	2025-12-13 14:11:47.709	\N	cmj4d9dbb00bm7yi0kqp0zoxs	cmj4dk0ai00o57yi0ccnr0zl8
-cmj4dk0c000o87yi01gpf15u2	88279036	ANDHIKA BAYU SAPUTRA	1970-01-01 00:00:38.431	Situbondo	8123456789	andhikabayusaputra@cbt.com	AKTIF	2025-12-13 14:11:47.76	2025-12-13 14:11:47.76	\N	cmj4d9lfa00bn7yi0ovesrwcj	cmj4dk0bx00o77yi0imiqs5jg
-cmj4dk0df00oa7yi0kd63j0u6	104207471	ANGGA CAHYO PRATAMA	1970-01-01 00:00:38.431	Situbondo	8123456789	example4@cbt.com	AKTIF	2025-12-13 14:11:47.81	2025-12-13 14:11:47.81	\N	cmj4d9dbb00bm7yi0kqp0zoxs	cmj4dk0dc00o97yi02qmupqdg
-cmj4dk0eu00oc7yi0kitaqmdp	87785971	ANGGI VIRNANDA PUTRI	1970-01-01 00:00:38.431	Situbondo	8123456789	anggivirnandaputri@cbt.com	AKTIF	2025-12-13 14:11:47.861	2025-12-13 14:11:47.861	\N	cmj4d7vdl00bh7yi0sh0tye2g	cmj4dk0er00ob7yi01e5xt6vq
-cmj4dk0g900oe7yi08fhm1vti	3080015591	AWANG SETIAWAN	1970-01-01 00:00:38.431	Situbondo	8123456789	awangsetiawan@cbt.com	AKTIF	2025-12-13 14:11:47.912	2025-12-13 14:11:47.912	\N	cmj4d9lfa00bn7yi0ovesrwcj	cmj4dk0g600od7yi0uj89iia2
-cmj4dk0hp00og7yi0xq4g3ykq	95325705	AYUNI ARIMBI	1970-01-01 00:00:38.431	Situbondo	8123456789	example25@cbt.com	AKTIF	2025-12-13 14:11:47.965	2025-12-13 14:11:47.965	\N	cmj4d5zz600bg7yi0mzv0geb6	cmj4dk0hm00of7yi0bme716h2
-cmj4dk0j500oi7yi0k11x8caf	88137615	AZAI DENIS SAFARULLAH	1970-01-01 00:00:38.431	Situbondo	8123456789	example5@cbt.com	AKTIF	2025-12-13 14:11:48.017	2025-12-13 14:11:48.017	\N	cmj4d9dbb00bm7yi0kqp0zoxs	cmj4dk0j200oh7yi09es3zb4i
-cmj4dk0kk00ok7yi0tu2xro7u	99940723	BADRIA NUR ANISA	1970-01-01 00:00:38.431	Situbondo	8123456789	example14@cbt.com	AKTIF	2025-12-13 14:11:48.067	2025-12-13 14:11:48.067	\N	cmj4d8kv400bj7yi00ujftazo	cmj4dk0kh00oj7yi0d8m7ge97
-cmj4dk0ly00om7yi0opz7pyza	85744170	BAGUS SETIAWAN	1970-01-01 00:00:38.431	Situbondo	8123456789	bagussetiawan@cbt.com	AKTIF	2025-12-13 14:11:48.118	2025-12-13 14:11:48.118	\N	cmj4d9lfa00bn7yi0ovesrwcj	cmj4dk0lv00ol7yi0ad1qhv9b
-cmj4dk0ne00oo7yi020rit839	3096187956	CANDRA PRATAMA	1970-01-01 00:00:38.431	Situbondo	8123456789	example6@cbt.com	AKTIF	2025-12-13 14:11:48.17	2025-12-13 14:11:48.17	\N	cmj4d9dbb00bm7yi0kqp0zoxs	cmj4dk0nb00on7yi0yql2cgbq
-cmj4dk0ov00oq7yi0i7ixsfik	69853933	DANU BAGUS PRAYOGO	1970-01-01 00:00:38.431	Situbondo	8123456789	danubagusprayogo@cbt.com	AKTIF	2025-12-13 14:11:48.222	2025-12-13 14:11:48.222	\N	cmj4d9txt00bo7yi0cx6go8jq	cmj4dk0os00op7yi04inbamx6
-cmj4dk0qa00os7yi0splfr4h1	3080427888	DAVA PUTRA PRASETYA	1970-01-01 00:00:38.431	Situbondo	8123456789	davaputraprasetya@cbt.com	AKTIF	2025-12-13 14:11:48.274	2025-12-13 14:11:48.274	\N	cmj4d9lfa00bn7yi0ovesrwcj	cmj4dk0q700or7yi0x1terot2
-cmj4dk0rq00ou7yi03x62bm3v	75360603	DEFI NINGTYAS	1970-01-01 00:00:38.431	Situbondo	8123456789	definingtyas@cbt.com	AKTIF	2025-12-13 14:11:48.325	2025-12-13 14:11:48.325	\N	cmj4d91oo00bl7yi0hp2pdna7	cmj4dk0rn00ot7yi0i4jn3114
-cmj4dk0t500ow7yi05yn4en0u	86514583	DENDI BAYU PRATAMA	1970-01-01 00:00:38.431	Situbondo	8123456789	dendibayupratama@cbt.com	AKTIF	2025-12-13 14:11:48.377	2025-12-13 14:11:48.377	\N	cmj4d9lfa00bn7yi0ovesrwcj	cmj4dk0t200ov7yi0q47gdokk
-cmj4dk0w000p07yi0kjcnog5y	71300771	DEWI WAHYUNI	1970-01-01 00:00:38.431	Situbondo	8123456789	dewiwahyuni@cbt.com	AKTIF	2025-12-13 14:11:48.479	2025-12-13 14:11:48.479	\N	cmj4d91oo00bl7yi0hp2pdna7	cmj4dk0vx00oz7yi0xs9m4h81
-cmj4dk0xf00p27yi0vzivy3mr	74612857	DINA RIZA AYU MATUSSHOLEHA	1970-01-01 00:00:38.431	Situbondo	8123456789	dinarizaayumatussholeha@cbt.com	AKTIF	2025-12-13 14:11:48.531	2025-12-13 14:11:48.531	\N	cmj4d867h00bi7yi06tgfiuci	cmj4dk0xd00p17yi0twc9q3lb
-cmj4dk0yv00p47yi08yc2gdje	88236354	DINO ABI PRATAMA	1970-01-01 00:00:38.431	Situbondo	8123456789	dinoabipratama@cbt.com	AKTIF	2025-12-13 14:11:48.583	2025-12-13 14:11:48.583	\N	cmj4d8tyx00bk7yi0voaq9xy2	cmj4dk0ys00p37yi0j9shau5s
-cmj4dk10d00p67yi0ae1adf74	84607003	DIZA YOGA YUDISTIA	1970-01-01 00:00:38.431	Situbondo	8123456789	dizayogayudistia@cbt.com	AKTIF	2025-12-13 14:11:48.636	2025-12-13 14:11:48.636	\N	cmj4d7vdl00bh7yi0sh0tye2g	cmj4dk10800p57yi01c1b5oha
-cmj4dk11t00p87yi08qtnlfpo	108153368	DWI AYU MEI JAYANTI	1970-01-01 00:00:38.431	Situbondo	8123456789	example15@cbt.com	AKTIF	2025-12-13 14:11:48.688	2025-12-13 14:11:48.688	\N	cmj4d8kv400bj7yi00ujftazo	cmj4dk11q00p77yi0vpm8o1nv
-cmj4dk13700pa7yi0xxqxzhmv	85947084	DWI SINTIA PUTRI	1970-01-01 00:00:38.431	Situbondo	8123456789	dwisintiaputri@cbt.com	AKTIF	2025-12-13 14:11:48.739	2025-12-13 14:11:48.739	\N	cmj4d91oo00bl7yi0hp2pdna7	cmj4dk13500p97yi0vv2qq26m
-cmj4dk14n00pc7yi012cfhcbt	83725353	EKA DEVI AINUROHMA	1970-01-01 00:00:38.431	Situbondo	8123456789	ekadeviainurohma@cbt.com	AKTIF	2025-12-13 14:11:48.791	2025-12-13 14:11:48.791	\N	cmj4d867h00bi7yi06tgfiuci	cmj4dk14k00pb7yi014gld8av
-cmj4dk16300pe7yi0ucmlqlms	24142799	ENGGAR DWI PRASETYO	1970-01-01 00:00:38.431	Situbondo	8123456789	enggardwiprasetyo@cbt.com	AKTIF	2025-12-13 14:11:48.843	2025-12-13 14:11:48.843	\N	cmj4d91oo00bl7yi0hp2pdna7	cmj4dk16000pd7yi05v191omk
-cmj4dk17j00pg7yi02f085it5	76887989	ESA AGIL PUTRA	1970-01-01 00:00:38.431	Situbondo	8123456789	esaagilputra@cbt.com	AKTIF	2025-12-13 14:11:48.894	2025-12-13 14:11:48.894	\N	cmj4d91oo00bl7yi0hp2pdna7	cmj4dk17g00pf7yi0ndgwdhog
-cmj4dk18y00pi7yi00p2zr3tt	82535073	FAHMI ADLIYANTO	1970-01-01 00:00:38.431	Situbondo	8123456789	fahmiadliyanto@cbt.com	AKTIF	2025-12-13 14:11:48.945	2025-12-13 14:11:48.945	\N	cmj4d9lfa00bn7yi0ovesrwcj	cmj4dk18v00ph7yi0w4r27j4x
-cmj4dk1ad00pk7yi0u1vh40k2	3087966253	FAREL ADITYA PUTRA	1970-01-01 00:00:38.431	Situbondo	8123456789	fareladityaputra@cbt.com	AKTIF	2025-12-13 14:11:48.996	2025-12-13 14:11:48.996	\N	cmj4d9lfa00bn7yi0ovesrwcj	cmj4dk1aa00pj7yi0zxxpivow
-cmj4dk1bt00pm7yi0wpyrn8v1	78956609	FATURROHMAN	1970-01-01 00:00:38.431	Situbondo	8123456789	faturrohman@cbt.com	AKTIF	2025-12-13 14:11:49.048	2025-12-13 14:11:49.048	\N	cmj4d8tyx00bk7yi0voaq9xy2	cmj4dk1bp00pl7yi0dtwipyzo
-cmj4dk1d800po7yi0omd305or	108026037	FERDIO PUTRA PRASETYA	1970-01-01 00:00:38.431	Situbondo	8123456789	example16@cbt.com	AKTIF	2025-12-13 14:11:49.099	2025-12-13 14:11:49.099	\N	cmj4d8kv400bj7yi00ujftazo	cmj4dk1d500pn7yi0ezc4q1c7
-cmj4dk1en00pq7yi0bjtrc62t	83278579	FIOLA SEPTIANA RAMADANI	1970-01-01 00:00:38.431	Situbondo	8123456789	fiolaseptianaramadani@cbt.com	AKTIF	2025-12-13 14:11:49.15	2025-12-13 14:11:49.15	\N	cmj4d867h00bi7yi06tgfiuci	cmj4dk1ek00pp7yi0cqef76n0
-cmj4dk1g100ps7yi0r55jebds	91017410	FIQI ADITIA	1970-01-01 00:00:38.431	Situbondo	8123456789	fiqiaditia@cbt.com	AKTIF	2025-12-13 14:11:49.201	2025-12-13 14:11:49.201	\N	cmj4d8tyx00bk7yi0voaq9xy2	cmj4dk1fz00pr7yi0ig87bx34
-cmj4dk1hh00pu7yi0udelp53a	73255473	FITRIANA EKA AMELIA	1970-01-01 00:00:38.431	Situbondo	8123456789	fitrianaekaamelia@cbt.com	AKTIF	2025-12-13 14:11:49.252	2025-12-13 14:11:49.252	\N	cmj4d867h00bi7yi06tgfiuci	cmj4dk1he00pt7yi0nw3d3ual
-cmj4dk1ix00pw7yi0fuajx8tm	81943244	HERNANDA WILDAN FIRDAUSI	1970-01-01 00:00:38.431	Situbondo	8123456789	hernandawildanfirdausi@cbt.com	AKTIF	2025-12-13 14:11:49.304	2025-12-13 14:11:49.304	\N	cmj4d9lfa00bn7yi0ovesrwcj	cmj4dk1iu00pv7yi0ibq4sw6g
-cmj4dk1ke00py7yi0bufj1s7x	91150081	HUMAM FAUZI YANTO	1970-01-01 00:00:38.431	Situbondo	8123456789	example7@cbt.com	AKTIF	2025-12-13 14:11:49.357	2025-12-13 14:11:49.357	\N	cmj4d9dbb00bm7yi0kqp0zoxs	cmj4dk1ka00px7yi0ix965enz
-cmj4dk1lt00q07yi0p2pnupre	82276835	ICHA JUWITA	1970-01-01 00:00:38.431	Situbondo	8123456789	ichajuwita@cbt.com	AKTIF	2025-12-13 14:11:49.409	2025-12-13 14:11:49.409	\N	cmj4d8tyx00bk7yi0voaq9xy2	cmj4dk1lq00pz7yi0coq9zps5
-cmj4dk1n800q27yi0075qswfq	83877893	INA AZRIANA DEVI	1970-01-01 00:00:38.431	Situbondo	8123456789	inaazrianadevi@cbt.com	AKTIF	2025-12-13 14:11:49.459	2025-12-13 14:11:49.459	\N	cmj4d867h00bi7yi06tgfiuci	cmj4dk1n500q17yi01kvip10i
-cmj4dk1om00q47yi0ebtopry5	3083956550	INTAN BALQIS HUMAIRO	1970-01-01 00:00:38.431	Situbondo	8123456789	intanbalqishumairo@cbt.com	AKTIF	2025-12-13 14:11:49.51	2025-12-13 14:11:49.51	\N	cmj4d8tyx00bk7yi0voaq9xy2	cmj4dk1ok00q37yi0yks807qr
-cmj4dk1q200q67yi0l6wrmqr3	93398824	JENI EKA NURSABELA	1970-01-01 00:00:38.431	Situbondo	8123456789	jeniekanursabela@cbt.com	AKTIF	2025-12-13 14:11:49.562	2025-12-13 14:11:49.562	\N	cmj4d7vdl00bh7yi0sh0tye2g	cmj4dk1pz00q57yi0icqeg1ut
-cmj4dk1ri00q87yi0zmig1xct	27420464	JESEN ARDIYANTO	1970-01-01 00:00:38.431	Situbondo	8123456789	jesenardiyanto@cbt.com	AKTIF	2025-12-13 14:11:49.613	2025-12-13 14:11:49.613	\N	cmj4d9lfa00bn7yi0ovesrwcj	cmj4dk1rf00q77yi05rgei2pi
-cmj4dk1sy00qa7yi0pama6myv	71482878	JESIKA MARTA AL-ZAHRA	1970-01-01 00:00:38.431	Situbondo	8123456789	jesikamartaal-zahra@cbt.com	AKTIF	2025-12-13 14:11:49.665	2025-12-13 14:11:49.665	\N	cmj4d867h00bi7yi06tgfiuci	cmj4dk1sv00q97yi028x7jk9g
-cmj4dk1ud00qc7yi0d8z44s7d	84405603	JOSHUA BAGUS NUGROHO	1970-01-01 00:00:38.431	Situbondo	8123456789	joshuabagusnugroho@cbt.com	AKTIF	2025-12-13 14:11:49.717	2025-12-13 14:11:49.717	\N	cmj4d91oo00bl7yi0hp2pdna7	cmj4dk1ua00qb7yi0af8m3ucv
-cmj4dk1vs00qe7yi0ll9s81ws	98437959	KETUT DIMAS MUHAMAD RISAL	1970-01-01 00:00:38.431	Situbondo	8123456789	example17@cbt.com	AKTIF	2025-12-13 14:11:49.768	2025-12-13 14:11:49.768	\N	cmj4d8kv400bj7yi00ujftazo	cmj4dk1vp00qd7yi0xbby1vhu
-cmj4dk1x700qg7yi0j5h46i27	3102507572	KEVIN MAULANA ISHAQ	1970-01-01 00:00:38.431	Situbondo	8123456789	example8@cbt.com	AKTIF	2025-12-13 14:11:49.819	2025-12-13 14:11:49.819	\N	cmj4d9dbb00bm7yi0kqp0zoxs	cmj4dk1x400qf7yi0pkz6tzk5
-cmj4dk1ym00qi7yi0eqjng4tq	72745125	KHAIRUL RIZAL FAUZI TUKIMIN	1970-01-01 00:00:38.431	Situbondo	8123456789	khairulrizalfauzitukimin@cbt.com	AKTIF	2025-12-13 14:11:49.87	2025-12-13 14:11:49.87	\N	cmj4d9txt00bo7yi0cx6go8jq	cmj4dk1yk00qh7yi05ai25j5n
-cmj4dk20200qk7yi0oaspym4l	76188634	KHALUD SAIFUL ANWAR	1970-01-01 00:00:38.431	Situbondo	8123456789	khaludsaifulanwar@cbt.com	AKTIF	2025-12-13 14:11:49.921	2025-12-13 14:11:49.921	\N	cmj4d91oo00bl7yi0hp2pdna7	cmj4dk1zz00qj7yi0m7cs8yc8
-cmj4dk21i00qm7yi0ygn3rhbv	82219934	LIANA RANTIKA PUTRI	1970-01-01 00:00:38.431	Situbondo	8123456789	lianarantikaputri@cbt.com	AKTIF	2025-12-13 14:11:49.973	2025-12-13 14:11:49.973	\N	cmj4d7vdl00bh7yi0sh0tye2g	cmj4dk21e00ql7yi0x641al2z
-cmj4dk22y00qo7yi0pur40d5u	81662471	LIVIAN AYUNING UTAMI	1970-01-01 00:00:38.431	Situbondo	8123456789	livianayuningutami@cbt.com	AKTIF	2025-12-13 14:11:50.025	2025-12-13 14:11:50.025	\N	cmj4d867h00bi7yi06tgfiuci	cmj4dk22v00qn7yi012bf6147
-cmj4dk24d00qq7yi0djmqsyas	94280655	LUCKY ADITYA PRATAMA	1970-01-01 00:00:38.431	Situbondo	8123456789	luckyadityapratama@cbt.com	AKTIF	2025-12-13 14:11:50.077	2025-12-13 14:11:50.077	\N	cmj4d9lfa00bn7yi0ovesrwcj	cmj4dk24a00qp7yi0y43z9oor
-cmj4dk25t00qs7yi0yzon5z59	67491019	LUKMAN AFANDI	1970-01-01 00:00:38.431	Situbondo	8123456789	lukmanafandi@cbt.com	AKTIF	2025-12-13 14:11:50.128	2025-12-13 14:11:50.128	\N	cmj4d9txt00bo7yi0cx6go8jq	cmj4dk25q00qr7yi08ybeyi9y
-cmj4dk27700qu7yi044mvab3q	3088988176	M. BAGAS SANTOSO	1970-01-01 00:00:38.431	Situbondo	8123456789	mbagassantoso@cbt.com	AKTIF	2025-12-13 14:11:50.179	2025-12-13 14:11:50.179	\N	cmj4d9lfa00bn7yi0ovesrwcj	cmj4dk27500qt7yi01fryn32t
-cmj4dk28l00qw7yi0x1eycqvg	3088352964	M. BAGUS SATRIO	1970-01-01 00:00:38.431	Situbondo	8123456789	mbagussatrio@cbt.com	AKTIF	2025-12-13 14:11:50.229	2025-12-13 14:11:50.229	\N	cmj4d9lfa00bn7yi0ovesrwcj	cmj4dk28j00qv7yi0f14xcybq
-cmj4dk29z00qy7yi0hld0h2el	97802751	M. SAIFURROSI	1970-01-01 00:00:38.431	Situbondo	8123456789	example9@cbt.com	AKTIF	2025-12-13 14:11:50.279	2025-12-13 14:11:50.279	\N	cmj4d9dbb00bm7yi0kqp0zoxs	cmj4dk29x00qx7yi0isz0tn8v
-cmj4dk2be00r07yi08t1568su	93234409	M. YUSRON GINANDA	1970-01-01 00:00:38.431	Situbondo	8123456789	example18@cbt.com	AKTIF	2025-12-13 14:11:50.329	2025-12-13 14:11:50.329	\N	cmj4d8kv400bj7yi00ujftazo	cmj4dk2bb00qz7yi0hyebqnwo
-cmj4dk2cs00r27yi07dcs8uwh	78252676	MARCEL GALIH GINANJAR	1970-01-01 00:00:38.431	Situbondo	8123456789	marcelgalihginanjar@cbt.com	AKTIF	2025-12-13 14:11:50.38	2025-12-13 14:11:50.38	\N	cmj4d9lfa00bn7yi0ovesrwcj	cmj4dk2cp00r17yi0puunqm8f
-cmj4dk2e600r47yi03nx8qdek	81962676	MAZELLO ITO AFRIANZIE	1970-01-01 00:00:38.431	Situbondo	8123456789	mazelloitoafrianzie@cbt.com	AKTIF	2025-12-13 14:11:50.43	2025-12-13 14:11:50.43	\N	cmj4d91oo00bl7yi0hp2pdna7	cmj4dk2e400r37yi0dwyfx3nd
-cmj4dk2fl00r67yi0zekjr4pf	29537229	MINEL ASARI	1970-01-01 00:00:38.431	Situbondo	8123456789	minelasari@cbt.com	AKTIF	2025-12-13 14:11:50.48	2025-12-13 14:11:50.48	\N	cmj4d91oo00bl7yi0hp2pdna7	cmj4dk2fi00r57yi01ej00y8z
-cmj4dk2h000r87yi09cy9y97u	82560328	MOH. AMAR MA'RUF	1970-01-01 00:00:38.431	Situbondo	8123456789	example10000@example.com	AKTIF	2025-12-13 14:11:50.532	2025-12-13 14:11:50.532	\N	cmj4d9dbb00bm7yi0kqp0zoxs	cmj4dk2gx00r77yi03vamwzbq
-cmj4dk2ig00ra7yi0n5kh0ezp	94760422	MOH. BAYU AINURROHMAN	1970-01-01 00:00:38.431	Situbondo	8123456789	mohbayuainurrohman@cbt.com	AKTIF	2025-12-13 14:11:50.584	2025-12-13 14:11:50.584	\N	cmj4d8tyx00bk7yi0voaq9xy2	cmj4dk2id00r97yi012bf69wf
-cmj4dk2jw00rc7yi0kutfna12	3093129285	MOH. RADITH MUSTOFA	1970-01-01 00:00:38.431	Situbondo	8123456789	example10@cbt.com	AKTIF	2025-12-13 14:11:50.635	2025-12-13 14:11:50.635	\N	cmj4d9dbb00bm7yi0kqp0zoxs	cmj4dk2jt00rb7yi070nw57xu
-cmj4dk2lb00re7yi0g8sx61da	78005721	MOHAMMAD ZIDAN MAULANA	1970-01-01 00:00:38.431	Situbondo	8123456789	mohammadzidanmaulana@cbt.com	AKTIF	2025-12-13 14:11:50.686	2025-12-13 14:11:50.686	\N	cmj4d9txt00bo7yi0cx6go8jq	cmj4dk2l800rd7yi0nwe3gi05
-cmj4dk2mq00rg7yi08267ftui	89145134	MUHAMAD RISKI NEO VALENTINO	1970-01-01 00:00:38.431	Situbondo	8123456789	example19@cbt.com	AKTIF	2025-12-13 14:11:50.737	2025-12-13 14:11:50.737	\N	cmj4d8kv400bj7yi00ujftazo	cmj4dk2mn00rf7yi007zkp1v4
-cmj4dk2o500ri7yi0tld1ggnv	119631620	MUHAMMAD RIZKI	1970-01-01 00:00:38.431	Situbondo	8123456789	example20@cbt.com	AKTIF	2025-12-13 14:11:50.789	2025-12-13 14:11:50.789	\N	cmj4d8kv400bj7yi00ujftazo	cmj4dk2o200rh7yi01nxd0dhk
-cmj4dk2pk00rk7yi02a17b57s	101593710	MUHAMMAD ZAINAL ABIDIN	1970-01-01 00:00:38.431	Situbondo	8123456789	example11@cbt.com	AKTIF	2025-12-13 14:11:50.84	2025-12-13 14:11:50.84	\N	cmj4d9dbb00bm7yi0kqp0zoxs	cmj4dk2pi00rj7yi0h6pdkcv0
-cmj4dk2qz00rm7yi0ejtj3tsg	83159381	NADIATUZZAHROH	1970-01-01 00:00:38.431	Situbondo	8123456789	nadiatuzzahroh@cbt.com	AKTIF	2025-12-13 14:11:50.891	2025-12-13 14:11:50.891	\N	cmj4d867h00bi7yi06tgfiuci	cmj4dk2qx00rl7yi0xke4l1d5
-cmj4dk2sf00ro7yi07hf4zpvd	95829771	NAUFAL DZAKI HANIF ABIYYI	1970-01-01 00:00:38.431	Situbondo	8123456789	example21@cbt.com	AKTIF	2025-12-13 14:11:50.942	2025-12-13 14:11:50.942	\N	cmj4d8kv400bj7yi00ujftazo	cmj4dk2sc00rn7yi0qz4wqdg1
-cmj4dk2tu00rq7yi025umz9ga	74347595	NAYSILA NADINE CEYSEANA	1970-01-01 00:00:38.431	Situbondo	8123456789	naysilanadineceyseana@cbt.com	AKTIF	2025-12-13 14:11:50.994	2025-12-13 14:11:50.994	\N	cmj4d867h00bi7yi06tgfiuci	cmj4dk2ts00rp7yi0fxogonzg
-cmj4dk2v900rs7yi0nnm2qo7z	89544490	NOUVAL YURI SAPUTRA	1970-01-01 00:00:38.431	Situbondo	8123456789	nouvalyurisaputra@cbt.com	AKTIF	2025-12-13 14:11:51.045	2025-12-13 14:11:51.045	\N	cmj4d9txt00bo7yi0cx6go8jq	cmj4dk2v600rr7yi0pw6xbbqy
-cmj4dk2wo00ru7yi0ujmi4l0s	79295893	NUKE KUSUMA WARDANI	1970-01-01 00:00:38.431	Situbondo	8123456789	nukekusumawardani@cbt.com	AKTIF	2025-12-13 14:11:51.096	2025-12-13 14:11:51.096	\N	cmj4d867h00bi7yi06tgfiuci	cmj4dk2wl00rt7yi0u9vjetf8
-cmj4dk2y400rw7yi0xaqgp2ir	78151631	NURHASAN	1970-01-01 00:00:38.431	Situbondo	8123456789	example27@cbt.com	AKTIF	2025-12-13 14:11:51.147	2025-12-13 14:11:51.147	\N	cmj4d5zz600bg7yi0mzv0geb6	cmj4dk2y000rv7yi0a5mcde8m
-cmj4dk2zj00ry7yi0nuykx6t1	65243793	PHILIPUS JAYA BALAN RAKASIWI	1970-01-01 00:00:38.431	Situbondo	8123456789	philipusjayabalanrakasiwi@cbt.com	AKTIF	2025-12-13 14:11:51.198	2025-12-13 14:11:51.198	\N	cmj4d9lfa00bn7yi0ovesrwcj	cmj4dk2zg00rx7yi0305dq46p
-cmj4dk30x00s07yi0ctq150ql	78440641	RAHMAD FIRMANSYAH	1970-01-01 00:00:38.431	Situbondo	8123456789	rahmadfirmansyah@cbt.com	AKTIF	2025-12-13 14:11:51.249	2025-12-13 14:11:51.249	\N	cmj4d9txt00bo7yi0cx6go8jq	cmj4dk30u00rz7yi0h5eqo6xx
-cmj4dk32b00s27yi0j7wfvy60	81034228	RAVADAL ADHA	1970-01-01 00:00:38.431	Situbondo	8123456789	ravadaladha@cbt.com	AKTIF	2025-12-13 14:11:51.299	2025-12-13 14:11:51.299	\N	cmj4d7vdl00bh7yi0sh0tye2g	cmj4dk32900s17yi0re2uxspj
-cmj4dk33q00s47yi0pypb832r	99114829	RAZKY GABRIL WAHYUDI	1970-01-01 00:00:38.431	Situbondo	8123456789	example22@cbt.com	AKTIF	2025-12-13 14:11:51.35	2025-12-13 14:11:51.35	\N	cmj4d8kv400bj7yi00ujftazo	cmj4dk33o00s37yi0gn5r7itq
-cmj4dk35500s67yi05zk9x83j	71528590	REZY ANGGARA BAHARI	1970-01-01 00:00:38.431	Situbondo	8123456789	rezyanggarabahari@cbt.com	AKTIF	2025-12-13 14:11:51.4	2025-12-13 14:11:51.4	\N	cmj4d867h00bi7yi06tgfiuci	cmj4dk35200s57yi0ndfb8n0a
-cmj4dk36k00s87yi0s52s1m3z	98069279	RIDHO IRWANSYAH	1970-01-01 00:00:38.431	Situbondo	8123456789	ridhoirwansyah@cbt.com	AKTIF	2025-12-13 14:11:51.451	2025-12-13 14:11:51.451	\N	cmj4d8tyx00bk7yi0voaq9xy2	cmj4dk36h00s77yi04c002oxs
-cmj4dk37y00sa7yi0c5mholkg	82598502	RIVA ADITYA PUTRA	1970-01-01 00:00:38.431	Situbondo	8123456789	rivaadityaputra@cbt.com	AKTIF	2025-12-13 14:11:51.502	2025-12-13 14:11:51.502	\N	cmj4d9lfa00bn7yi0ovesrwcj	cmj4dk37w00s97yi0gztiabg2
-cmj4dk39d00sc7yi0qzvlwoku	109444333	RIZKY WIDODO	1970-01-01 00:00:38.431	Situbondo	8123456789	example23@cbt.com	AKTIF	2025-12-13 14:11:51.553	2025-12-13 14:11:51.553	\N	cmj4d8kv400bj7yi00ujftazo	cmj4dk39a00sb7yi0m59yohqg
-cmj4dk3at00se7yi0auaisby4	77627927	SEPTIA IRFAN RAMADHAN	1970-01-01 00:00:38.431	Situbondo	8123456789	septiairfanramadhan@cbt.com	AKTIF	2025-12-13 14:11:51.604	2025-12-13 14:11:51.604	\N	cmj4d9txt00bo7yi0cx6go8jq	cmj4dk3aq00sd7yi0t995vuva
-cmj4dk3c700sg7yi0vdbtkt3t	113396361	SUPRIYADI	1970-01-01 00:00:38.431	Situbondo	8123456789	example24@cbt.com	AKTIF	2025-12-13 14:11:51.655	2025-12-13 14:11:51.655	\N	cmj4d8kv400bj7yi00ujftazo	cmj4dk3c400sf7yi0zrkdwv9r
-cmj4dk3dm00si7yi0b6hznkob	86217954	TESYA HERLIANA	1970-01-01 00:00:38.431	Situbondo	8123456789	tesyaherliana@cbt.com	AKTIF	2025-12-13 14:11:51.706	2025-12-13 14:11:51.706	\N	cmj4d867h00bi7yi06tgfiuci	cmj4dk3dj00sh7yi0gcnqryi1
-cmj4dk3f200sk7yi0rr04dl6f	75001728	WISNU MAULANA	1970-01-01 00:00:38.431	Situbondo	8123456789	wisnumaulana@cbt.com	AKTIF	2025-12-13 14:11:51.757	2025-12-13 14:11:51.757	\N	cmj4d867h00bi7yi06tgfiuci	cmj4dk3ez00sj7yi0768vpbxv
-cmj4dk3gg00sm7yi0fa9dmetk	83757487	WULAN FEBRIYANTI	1970-01-01 00:00:38.431	Situbondo	8123456789	wulanfebriyanti@cbt.com	AKTIF	2025-12-13 14:11:51.808	2025-12-13 14:11:51.808	\N	cmj4d867h00bi7yi06tgfiuci	cmj4dk3gd00sl7yi0k4zpzult
-cmj4dk3hv00so7yi0b0uxhn7j	88579651	YEHEZKIEL KEVIN RAHARJO	1970-01-01 00:00:38.431	Situbondo	8123456789	yehezkielkevinraharjo@cbt.com	AKTIF	2025-12-13 14:11:51.859	2025-12-13 14:11:51.859	\N	cmj4d91oo00bl7yi0hp2pdna7	cmj4dk3hs00sn7yi0u22pnts8
-cmj4dk3j900sq7yi05u4ysgjg	79467322	YOHANES DWI PRAYOGA	1970-01-01 00:00:38.431	Situbondo	8123456789	yohanesdwiprayoga@cbt.com	AKTIF	2025-12-13 14:11:51.909	2025-12-13 14:11:51.909	\N	cmj4d9txt00bo7yi0cx6go8jq	cmj4dk3j700sp7yi0hdarbfl7
-cmj4dk3ko00ss7yi0h8yvy19l	97561362	YUDA WIRASA	1970-01-01 00:00:38.431	Situbondo	8123456789	example28@cbt.com	AKTIF	2025-12-13 14:11:51.96	2025-12-13 14:11:51.96	\N	cmj4d5zz600bg7yi0mzv0geb6	cmj4dk3km00sr7yi02jrhvxfe
-cmj4dk3m300su7yi0o0mfxdox	71347347	YULI YATIMAH	1970-01-01 00:00:38.431	Situbondo	8123456789	yuliyatimah@cbt.com	AKTIF	2025-12-13 14:11:52.011	2025-12-13 14:11:52.011	\N	cmj4d867h00bi7yi06tgfiuci	cmj4dk3m000st7yi0wadpf5aq
-cmj4dk0ul00oy7yi0br8t6lop	3093967437	DESY MUSTIKA MAYA SARI	2000-12-13 00:00:00	Situbondo	8123456789	example26@cbt.com	AKTIF	2025-12-13 14:11:48.428	2025-12-13 14:13:48.917	\N	cmj4d5zz600bg7yi0mzv0geb6	cmj4dk0ui00ox7yi09rk9u1ee
+COPY public."Siswa" (id, nisn, nama, "tanggalLahir", alamat, "nomorTelepon", email, status, "createdAt", "updatedAt", "deletedAt", "kelasId", "userId", "tahunAjaranId", agama) FROM stdin;
+cmj5gwyqw000135udakhyrrna	81475874	ABI HARTO WICAKSONO	1970-01-01 00:00:38.367	Jl. Merdeka No. 123	81234567890	abihartowicaksono@cbt.com	AKTIF	2025-12-14 08:33:37.255	2025-12-14 08:33:37.255	\N	cmj5eca130007jsudvzwt5rjx	cmj5gwyql000035udj9kefx0z	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gwysk000335ud06zbjkum	95805399	ADAM SYAHREZA GUMILANG	1970-01-01 00:00:38.431	Jl. Sudirman No. 45	81234567891	adamsyahrezagumilang@cbt.com	AKTIF	2025-12-14 08:33:37.315	2025-12-14 08:33:37.315	\N	cmj5eca130007jsudvzwt5rjx	cmj5gwysf000235udeqpf8mo9	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gwyu3000535udp8xm32kg	3088037976	ADITIYA RIZKY BAYU PRADIKA	1970-01-01 00:00:38.431	Jl. Sudirman No. 46	81234567892	aditiyarizkybayupradika@cbt.com	AKTIF	2025-12-14 08:33:37.371	2025-12-14 08:33:37.371	\N	cmj5eca130007jsudvzwt5rjx	cmj5gwytz000435ud3k5i6zne	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gwyvo000735udytelfevq	84194598	ADITYA CATUR PRAYOGO	1970-01-01 00:00:38.431	Jl. Sudirman No. 47	81234567893	adityacaturprayogo@cbt.com	AKTIF	2025-12-14 08:33:37.427	2025-12-14 08:33:37.427	\N	cmj5eca0o0005jsud0ambwla7	cmj5gwyvj000635udzcqos5da	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gwyx9000935ud28f9ggyr	108737154	ADITYA DAMARA PUTRA KRISTIAWAN	1970-01-01 00:00:38.431	Jl. Sudirman No. 48	81234567894	example12@cbt.com	AKTIF	2025-12-14 08:33:37.485	2025-12-14 08:33:37.485	\N	cmj5eca0e0003jsud1uxj50o4	cmj5gwyx4000835udq2k2tbxp	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gwz0g000d35ud5n8q889d	77382296	AGUNG TRISNA DEWI	1970-01-01 00:00:38.431	Jl. Sudirman No. 50	81234567896	agungtrisnadewi@cbt.com	AKTIF	2025-12-14 08:33:37.599	2025-12-14 08:33:37.599	\N	cmj5eca050002jsudq5rc3oa3	cmj5gwz0c000c35udn9g3zoan	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gwz23000f35udoygf650d	86881070	AGUS WIRA ADI PURNOMO	1970-01-01 00:00:38.431	Jl. Sudirman No. 51	81234567897	aguswiraadipurnomo@cbt.com	AKTIF	2025-12-14 08:33:37.659	2025-12-14 08:33:37.659	\N	cmj5eca0o0005jsud0ambwla7	cmj5gwz1y000e35udzacwpk0x	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gwz3n000h35udillr14ag	99461767	AHMAD DIMAS KURNIAWAN	1970-01-01 00:00:38.431	Jl. Sudirman No. 52	81234567898	example1@cbt.com	AKTIF	2025-12-14 08:33:37.714	2025-12-14 08:33:37.714	\N	cmj5eca0w0006jsud9bca11b3	cmj5gwz3i000g35udydzzmr53	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gwz6t000l35ud8wsvgkyz	99396650	AINO YOEL	1970-01-01 00:00:38.431	Jl. Sudirman No. 54	81234567900	example2@cbt.com	AKTIF	2025-12-14 08:33:37.828	2025-12-14 08:33:37.828	\N	cmj5eca0w0006jsud9bca11b3	cmj5gwz6p000k35ud68fsf33i	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gwz8c000n35ud8pxa34ep	50397766	AINUR ROHMAH	1970-01-01 00:00:38.431	Jl. Sudirman No. 55	81234567901	ainurrohmah@cbt.com	AKTIF	2025-12-14 08:33:37.883	2025-12-14 08:33:37.883	\N	cmj5ec9zx0001jsud5cnf1k74	cmj5gwz88000m35ud5x4ctx7s	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gwz9u000p35uddazsd00z	79686226	ALDI PRAYATNA	1970-01-01 00:00:38.431	Jl. Sudirman No. 56	81234567902	aldiprayatna@cbt.com	AKTIF	2025-12-14 08:33:37.937	2025-12-14 08:33:37.937	\N	cmj5eca0o0005jsud0ambwla7	cmj5gwz9q000o35ud7f7d7ltw	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gwzeh000v35udwd1xnzk8	97678393	ALFAZA OKTAVINO PRADITIA	1970-01-01 00:00:38.431	Jl. Sudirman No. 59	81234567905	example13@cbt.com	AKTIF	2025-12-14 08:33:38.105	2025-12-14 08:33:38.105	\N	cmj5eca0e0003jsud1uxj50o4	cmj5gwzed000u35udlnddwq47	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gwzg0000x35udzy1o8cpn	97759070	ALIFATUR ROSIKIN	1970-01-01 00:00:38.431	Jl. Sudirman No. 60	81234567906	alifaturrosikin@cbt.com	AKTIF	2025-12-14 08:33:38.16	2025-12-14 08:33:38.16	\N	cmj5eca130007jsudvzwt5rjx	cmj5gwzfw000w35udzc26ap9b	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gwzhi000z35udkij11ubh	85609468	AMELIA DEWI SINTA	1970-01-01 00:00:38.431	Jl. Sudirman No. 61	81234567907	ameliadewisinta@cbt.com	AKTIF	2025-12-14 08:33:38.214	2025-12-14 08:33:38.214	\N	cmj5eca050002jsudq5rc3oa3	cmj5gwzhe000y35udg8o4lrsn	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gwzj2001135udp7u21il5	94461900	ANANDA MAYCKO WIJAYA	1970-01-01 00:00:38.431	Jl. Sudirman No. 62	81234567908	example3@cbt.com	AKTIF	2025-12-14 08:33:38.269	2025-12-14 08:33:38.269	\N	cmj5eca0w0006jsud9bca11b3	cmj5gwziy001035udhbgntn1o	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gwzkk001335uddaybproj	88279036	ANDHIKA BAYU SAPUTRA	1970-01-01 00:00:38.431	Jl. Sudirman No. 63	81234567909	andhikabayusaputra@cbt.com	AKTIF	2025-12-14 08:33:38.324	2025-12-14 08:33:38.324	\N	cmj5eca130007jsudvzwt5rjx	cmj5gwzkg001235uda1zowq2b	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gwzm3001535ud35s55raa	104207471	ANGGA CAHYO PRATAMA	1970-01-01 00:00:38.431	Jl. Sudirman No. 64	81234567910	example4@cbt.com	AKTIF	2025-12-14 08:33:38.378	2025-12-14 08:33:38.378	\N	cmj5eca0w0006jsud9bca11b3	cmj5gwzlz001435udoar1p1ou	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gwznm001735udpzuadsi6	87785971	ANGGI VIRNANDA PUTRI	1970-01-01 00:00:38.431	Jl. Sudirman No. 65	81234567911	anggivirnandaputri@cbt.com	AKTIF	2025-12-14 08:33:38.434	2025-12-14 08:33:38.434	\N	cmj5ec9zx0001jsud5cnf1k74	cmj5gwzni001635udt2intkub	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gwzp6001935udi39qku1d	3080015591	AWANG SETIAWAN	1970-01-01 00:00:38.431	Jl. Sudirman No. 66	81234567912	awangsetiawan@cbt.com	AKTIF	2025-12-14 08:33:38.489	2025-12-14 08:33:38.489	\N	cmj5eca130007jsudvzwt5rjx	cmj5gwzp2001835udtswr5q1s	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gwzqp001b35udoas61cxe	95325705	AYUNI ARIMBI	1970-01-01 00:00:38.431	Jl. Sudirman No. 67	81234567913	example25@cbt.com	AKTIF	2025-12-14 08:33:38.544	2025-12-14 08:33:38.544	\N	cmj5ec9zf0000jsudgpxci2hf	cmj5gwzql001a35udfoqzqfcv	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gwzs8001d35ud78grtko5	88137615	AZAI DENIS SAFARULLAH	1970-01-01 00:00:38.431	Jl. Sudirman No. 68	81234567914	example5@cbt.com	AKTIF	2025-12-14 08:33:38.599	2025-12-14 08:33:38.599	\N	cmj5eca0w0006jsud9bca11b3	cmj5gwzs4001c35udaqgx22e1	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gwztr001f35udgp2iqne6	99940723	BADRIA NUR ANISA	1970-01-01 00:00:38.431	Jl. Sudirman No. 69	81234567915	example14@cbt.com	AKTIF	2025-12-14 08:33:38.654	2025-12-14 08:33:38.654	\N	cmj5eca0e0003jsud1uxj50o4	cmj5gwztn001e35udd3b8c4mg	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gwzv9001h35udc6lry71w	85744170	BAGUS SETIAWAN	1970-01-01 00:00:38.431	Jl. Sudirman No. 70	81234567916	bagussetiawan@cbt.com	AKTIF	2025-12-14 08:33:38.708	2025-12-14 08:33:38.708	\N	cmj5eca130007jsudvzwt5rjx	cmj5gwzv5001g35ud5bbn2qzz	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gwzws001j35ud376v2a11	3096187956	CANDRA PRATAMA	1970-01-01 00:00:38.431	Jl. Sudirman No. 71	81234567917	example6@cbt.com	AKTIF	2025-12-14 08:33:38.764	2025-12-14 08:33:38.764	\N	cmj5eca0w0006jsud9bca11b3	cmj5gwzwo001i35uduhbzcboi	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gwzzu001n35udi1ekaazg	3080427888	DAVA PUTRA PRASETYA	1970-01-01 00:00:38.431	Jl. Sudirman No. 73	81234567919	davaputraprasetya@cbt.com	AKTIF	2025-12-14 08:33:38.874	2025-12-14 08:33:38.874	\N	cmj5eca130007jsudvzwt5rjx	cmj5gwzzr001m35udpblpr5c0	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx01e001p35udcjqmly7n	75360603	DEFI NINGTYAS	1970-01-01 00:00:38.431	Jl. Sudirman No. 74	81234567920	definingtyas@cbt.com	AKTIF	2025-12-14 08:33:38.929	2025-12-14 08:33:38.929	\N	cmj5eca0o0005jsud0ambwla7	cmj5gx01a001o35udcz1uye9r	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gwzbe000r35ud3dm0w5mp	57279011	ALDO ILFAN PRATAMA	1970-01-01 00:00:38.431	Jl. Sudirman No. 57	81234567903	aldoilfanpratama@cbt.com	AKTIF	2025-12-14 08:33:37.994	2025-12-16 12:33:14.38	\N	cmj5eca170008jsudb4r1h58n	cmj5gwzb9000q35uds8mmj6bl	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gwz58000j35ud2jgpgotd	86817502	AHMAD RIAN ZUHRI AFANDI	1970-01-01 00:00:38.431	Jl. Sudirman No. 53	81234567899	ahmadrianzuhriafandi@cbt.com	AKTIF	2025-12-14 08:33:37.771	2025-12-16 12:33:17.609	\N	cmj5eca170008jsudb4r1h58n	cmj5gwz53000i35udw6fgqktc	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gwyyw000b35udpo5b2m4t	76544902	ADRIANO DWI PRADHITA	1970-01-01 00:00:38.431	Jl. Sudirman No. 49	81234567895	adrianodwipradhita@cbt.com	AKTIF	2025-12-14 08:33:37.543	2025-12-16 12:33:21.091	\N	cmj5eca170008jsudb4r1h58n	cmj5gwyyq000a35udwqnc8ohp	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gwzcy000t35ud1wibxk47	78367595	ALFA TRI EFENDI	1970-01-01 00:00:38.431	Jl. Sudirman No. 58	81234567904	alfatriefendi@cbt.com	AKTIF	2025-12-14 08:33:38.049	2025-12-16 12:33:11.1	\N	cmj5eca170008jsudb4r1h58n	cmj5gwzct000s35udllh69h8u	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx02w001r35ud6qdfidog	86514583	DENDI BAYU PRATAMA	1970-01-01 00:00:38.431	Jl. Sudirman No. 75	81234567921	dendibayupratama@cbt.com	AKTIF	2025-12-14 08:33:38.983	2025-12-14 08:33:38.983	\N	cmj5eca130007jsudvzwt5rjx	cmj5gx02s001q35udsc32mvtz	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx04g001t35udknq3yqoe	3093967437	DESY MUSTIKA MAYA SARI	1970-01-01 00:00:38.431	Jl. Sudirman No. 76	81234567922	example26@cbt.com	AKTIF	2025-12-14 08:33:39.039	2025-12-14 08:33:39.039	\N	cmj5ec9zf0000jsudgpxci2hf	cmj5gx04c001s35udal7y6kqp	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx05x001v35udwd5nk8nj	71300771	DEWI WAHYUNI	1970-01-01 00:00:38.431	Jl. Sudirman No. 77	81234567923	dewiwahyuni@cbt.com	AKTIF	2025-12-14 08:33:39.093	2025-12-14 08:33:39.093	\N	cmj5eca0o0005jsud0ambwla7	cmj5gx05t001u35ud56w1gpg0	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx07f001x35udj3ispkx8	74612857	DINA RIZA AYU MATUSSHOLEHA	1970-01-01 00:00:38.431	Jl. Sudirman No. 78	81234567924	dinarizaayumatussholeha@cbt.com	AKTIF	2025-12-14 08:33:39.147	2025-12-14 08:33:39.147	\N	cmj5eca050002jsudq5rc3oa3	cmj5gx07b001w35ud6uy774vt	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx08y001z35udsqo698l8	88236354	DINO ABI PRATAMA	1970-01-01 00:00:38.431	Jl. Sudirman No. 79	81234567925	dinoabipratama@cbt.com	AKTIF	2025-12-14 08:33:39.201	2025-12-14 08:33:39.201	\N	cmj5eca0k0004jsuddjewnal1	cmj5gx08u001y35udh95b095v	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx0ag002135ud9fhzdekh	84607003	DIZA YOGA YUDISTIA	1970-01-01 00:00:38.431	Jl. Sudirman No. 80	81234567926	dizayogayudistia@cbt.com	AKTIF	2025-12-14 08:33:39.256	2025-12-14 08:33:39.256	\N	cmj5ec9zx0001jsud5cnf1k74	cmj5gx0ac002035udfnj8z7vm	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx0c0002335udrmwctcnm	108153368	DWI AYU MEI JAYANTI	1970-01-01 00:00:38.431	Jl. Sudirman No. 81	81234567927	example15@cbt.com	AKTIF	2025-12-14 08:33:39.311	2025-12-14 08:33:39.311	\N	cmj5eca0e0003jsud1uxj50o4	cmj5gx0bv002235ud9wy5giy5	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx0di002535ud32uasdbw	85947084	DWI SINTIA PUTRI	1970-01-01 00:00:38.431	Jl. Sudirman No. 82	81234567928	dwisintiaputri@cbt.com	AKTIF	2025-12-14 08:33:39.365	2025-12-14 08:33:39.365	\N	cmj5eca0o0005jsud0ambwla7	cmj5gx0de002435ud24zdsw0s	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx0ez002735ud6aegx8z1	83725353	EKA DEVI AINUROHMA	1970-01-01 00:00:38.431	Jl. Sudirman No. 83	81234567929	ekadeviainurohma@cbt.com	AKTIF	2025-12-14 08:33:39.419	2025-12-14 08:33:39.419	\N	cmj5eca050002jsudq5rc3oa3	cmj5gx0ev002635udvv65yg6g	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx0gi002935udl20nfbog	24142799	ENGGAR DWI PRASETYO	1970-01-01 00:00:38.431	Jl. Sudirman No. 84	81234567930	enggardwiprasetyo@cbt.com	AKTIF	2025-12-14 08:33:39.474	2025-12-14 08:33:39.474	\N	cmj5eca0o0005jsud0ambwla7	cmj5gx0gd002835udbw0sqmi6	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx0i0002b35ud19a6xd7r	76887989	ESA AGIL PUTRA	1970-01-01 00:00:38.431	Jl. Sudirman No. 85	81234567931	esaagilputra@cbt.com	AKTIF	2025-12-14 08:33:39.528	2025-12-14 08:33:39.528	\N	cmj5eca0o0005jsud0ambwla7	cmj5gx0hw002a35udavq9oyfo	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx0jj002d35udjlza7xue	82535073	FAHMI ADLIYANTO	1970-01-01 00:00:38.431	Jl. Sudirman No. 86	81234567932	fahmiadliyanto@cbt.com	AKTIF	2025-12-14 08:33:39.582	2025-12-14 08:33:39.582	\N	cmj5eca130007jsudvzwt5rjx	cmj5gx0jf002c35udq9gtxbg2	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx0l0002f35ud6j2sufzk	3087966253	FAREL ADITYA PUTRA	1970-01-01 00:00:38.431	Jl. Sudirman No. 87	81234567933	fareladityaputra@cbt.com	AKTIF	2025-12-14 08:33:39.635	2025-12-14 08:33:39.635	\N	cmj5eca130007jsudvzwt5rjx	cmj5gx0kw002e35ud03ae2xo1	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx0ml002h35udvjc8yzeb	78956609	FATURROHMAN	1970-01-01 00:00:38.431	Jl. Sudirman No. 88	81234567934	faturrohman@cbt.com	AKTIF	2025-12-14 08:33:39.692	2025-12-14 08:33:39.692	\N	cmj5eca0k0004jsuddjewnal1	cmj5gx0mf002g35udp7fvgdod	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx0o3002j35uda0ok0i4j	108026037	FERDIO PUTRA PRASETYA	1970-01-01 00:00:38.431	Jl. Sudirman No. 89	81234567935	example16@cbt.com	AKTIF	2025-12-14 08:33:39.747	2025-12-14 08:33:39.747	\N	cmj5eca0e0003jsud1uxj50o4	cmj5gx0nz002i35udbi0v5c4g	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx0pm002l35udhnyriry6	83278579	FIOLA SEPTIANA RAMADANI	1970-01-01 00:00:38.431	Jl. Sudirman No. 90	81234567936	fiolaseptianaramadani@cbt.com	AKTIF	2025-12-14 08:33:39.802	2025-12-14 08:33:39.802	\N	cmj5eca050002jsudq5rc3oa3	cmj5gx0pi002k35udwebdytrh	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx0r4002n35ud6i7qxccl	91017410	FIQI ADITIA	1970-01-01 00:00:38.431	Jl. Sudirman No. 91	81234567937	fiqiaditia@cbt.com	AKTIF	2025-12-14 08:33:39.855	2025-12-14 08:33:39.855	\N	cmj5eca0k0004jsuddjewnal1	cmj5gx0r0002m35udzu8e92kf	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx0sm002p35udzxd3mus1	73255473	FITRIANA EKA AMELIA	1970-01-01 00:00:38.431	Jl. Sudirman No. 92	81234567938	fitrianaekaamelia@cbt.com	AKTIF	2025-12-14 08:33:39.91	2025-12-14 08:33:39.91	\N	cmj5eca050002jsudq5rc3oa3	cmj5gx0si002o35ud2jnff2tj	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx0u3002r35udqkenscl3	81943244	HERNANDA WILDAN FIRDAUSI	1970-01-01 00:00:38.431	Jl. Sudirman No. 93	81234567939	hernandawildanfirdausi@cbt.com	AKTIF	2025-12-14 08:33:39.962	2025-12-14 08:33:39.962	\N	cmj5eca130007jsudvzwt5rjx	cmj5gx0tz002q35udykvj7rwf	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx0vl002t35udzzptrcos	91150081	HUMAM FAUZI YANTO	1970-01-01 00:00:38.431	Jl. Sudirman No. 94	81234567940	example7@cbt.com	AKTIF	2025-12-14 08:33:40.017	2025-12-14 08:33:40.017	\N	cmj5eca0w0006jsud9bca11b3	cmj5gx0vh002s35udu1n8yl9k	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx0x4002v35udz7qohe6d	82276835	ICHA JUWITA	1970-01-01 00:00:38.431	Jl. Sudirman No. 95	81234567941	ichajuwita@cbt.com	AKTIF	2025-12-14 08:33:40.072	2025-12-14 08:33:40.072	\N	cmj5eca0k0004jsuddjewnal1	cmj5gx0x0002u35udc7ccpufd	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx0ym002x35udzhcjnau4	83877893	INA AZRIANA DEVI	1970-01-01 00:00:38.431	Jl. Sudirman No. 96	81234567942	inaazrianadevi@cbt.com	AKTIF	2025-12-14 08:33:40.125	2025-12-14 08:33:40.125	\N	cmj5eca050002jsudq5rc3oa3	cmj5gx0yj002w35ud8v9qi589	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx103002z35udn2m30zv3	3083956550	INTAN BALQIS HUMAIRO	1970-01-01 00:00:38.431	Jl. Sudirman No. 97	81234567943	intanbalqishumairo@cbt.com	AKTIF	2025-12-14 08:33:40.178	2025-12-14 08:33:40.178	\N	cmj5eca0k0004jsuddjewnal1	cmj5gx100002y35udilmg1ny8	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx11k003135ud73cds1fi	93398824	JENI EKA NURSABELA	1970-01-01 00:00:38.431	Jl. Sudirman No. 98	81234567944	jeniekanursabela@cbt.com	AKTIF	2025-12-14 08:33:40.232	2025-12-14 08:33:40.232	\N	cmj5ec9zx0001jsud5cnf1k74	cmj5gx11g003035ud3bx82k5d	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx131003335ud6cxmwwir	27420464	JESEN ARDIYANTO	1970-01-01 00:00:38.431	Jl. Sudirman No. 99	81234567945	jesenardiyanto@cbt.com	AKTIF	2025-12-14 08:33:40.285	2025-12-14 08:33:40.285	\N	cmj5eca130007jsudvzwt5rjx	cmj5gx12x003235udw6jxtx4r	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx14k003535udo7rhjcnp	71482878	JESIKA MARTA AL-ZAHRA	1970-01-01 00:00:38.431	Jl. Sudirman No. 100	81234567946	jesikamartaal-zahra@cbt.com	AKTIF	2025-12-14 08:33:40.339	2025-12-14 08:33:40.339	\N	cmj5eca050002jsudq5rc3oa3	cmj5gx14g003435ud6w8b4goi	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx162003735ud5de1cxbc	84405603	JOSHUA BAGUS NUGROHO	1970-01-01 00:00:38.431	Jl. Sudirman No. 101	81234567947	joshuabagusnugroho@cbt.com	AKTIF	2025-12-14 08:33:40.394	2025-12-14 08:33:40.394	\N	cmj5eca0o0005jsud0ambwla7	cmj5gx15y003635udfzfvsnsn	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx17k003935udaewx76ro	98437959	KETUT DIMAS MUHAMAD RISAL	1970-01-01 00:00:38.431	Jl. Sudirman No. 102	81234567948	example17@cbt.com	AKTIF	2025-12-14 08:33:40.447	2025-12-14 08:33:40.447	\N	cmj5eca0e0003jsud1uxj50o4	cmj5gx17g003835uduzmy772u	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx193003b35udn6l73ohj	3102507572	KEVIN MAULANA ISHAQ	1970-01-01 00:00:38.431	Jl. Sudirman No. 103	81234567949	example8@cbt.com	AKTIF	2025-12-14 08:33:40.503	2025-12-14 08:33:40.503	\N	cmj5eca0w0006jsud9bca11b3	cmj5gx18z003a35udlra3qj4l	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx1c3003f35udp6zso1o3	76188634	KHALUD SAIFUL ANWAR	1970-01-01 00:00:38.431	Jl. Sudirman No. 105	81234567951	khaludsaifulanwar@cbt.com	AKTIF	2025-12-14 08:33:40.61	2025-12-14 08:33:40.61	\N	cmj5eca0o0005jsud0ambwla7	cmj5gx1bz003e35udkcmtj455	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx1dj003h35udb14ouf8y	82219934	LIANA RANTIKA PUTRI	1970-01-01 00:00:38.431	Jl. Sudirman No. 106	81234567952	lianarantikaputri@cbt.com	AKTIF	2025-12-14 08:33:40.663	2025-12-14 08:33:40.663	\N	cmj5ec9zx0001jsud5cnf1k74	cmj5gx1dg003g35udnuykpero	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx1f1003j35udutcxv8c7	81662471	LIVIAN AYUNING UTAMI	1970-01-01 00:00:38.431	Jl. Sudirman No. 107	81234567953	livianayuningutami@cbt.com	AKTIF	2025-12-14 08:33:40.717	2025-12-14 08:33:40.717	\N	cmj5eca050002jsudq5rc3oa3	cmj5gx1ex003i35ud2tmr6ezm	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx1gj003l35udh98cts8w	94280655	LUCKY ADITYA PRATAMA	1970-01-01 00:00:38.431	Jl. Sudirman No. 108	81234567954	luckyadityapratama@cbt.com	AKTIF	2025-12-14 08:33:40.77	2025-12-14 08:33:40.77	\N	cmj5eca130007jsudvzwt5rjx	cmj5gx1gf003k35udqn4te1zt	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx1ji003p35udxuz53ke6	3088988176	M. BAGAS SANTOSO	1970-01-01 00:00:38.431	Jl. Sudirman No. 110	81234567956	mbagassantoso@cbt.com	AKTIF	2025-12-14 08:33:40.878	2025-12-14 08:33:40.878	\N	cmj5eca130007jsudvzwt5rjx	cmj5gx1je003o35udc4kp1c2m	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx1l1003r35udz4zykbfo	3088352964	M. BAGUS SATRIO	1970-01-01 00:00:38.431	Jl. Sudirman No. 111	81234567957	mbagussatrio@cbt.com	AKTIF	2025-12-14 08:33:40.933	2025-12-14 08:33:40.933	\N	cmj5eca130007jsudvzwt5rjx	cmj5gx1kx003q35udsvrwk0yg	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx1mi003t35udec1w0c85	97802751	M. SAIFURROSI	1970-01-01 00:00:38.431	Jl. Sudirman No. 112	81234567958	example9@cbt.com	AKTIF	2025-12-14 08:33:40.986	2025-12-14 08:33:40.986	\N	cmj5eca0w0006jsud9bca11b3	cmj5gx1mf003s35udmkcekzi3	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx1o2003v35udzn7dj9ls	93234409	M. YUSRON GINANDA	1970-01-01 00:00:38.431	Jl. Sudirman No. 113	81234567959	example18@cbt.com	AKTIF	2025-12-14 08:33:41.041	2025-12-14 08:33:41.041	\N	cmj5eca0e0003jsud1uxj50o4	cmj5gx1nx003u35udc8a2l13v	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx1pk003x35udstmkp6g7	78252676	MARCEL GALIH GINANJAR	1970-01-01 00:00:38.431	Jl. Sudirman No. 114	81234567960	marcelgalihginanjar@cbt.com	AKTIF	2025-12-14 08:33:41.095	2025-12-14 08:33:41.095	\N	cmj5eca130007jsudvzwt5rjx	cmj5gx1pg003w35ud8n0lxpp8	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx1u3004335udkj267fhr	82560328	MOH. AMAR MA'RUF	1970-01-01 00:00:38.431	Jl. Sudirman No. 117	81234567963	example10000@example.com	AKTIF	2025-12-14 08:33:41.258	2025-12-14 08:33:41.258	\N	cmj5eca0w0006jsud9bca11b3	cmj5gx1tz004235udd1rv3ppx	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx1vm004535udc4l2kzg5	94760422	MOH. BAYU AINURROHMAN	1970-01-01 00:00:38.431	Jl. Sudirman No. 118	81234567964	mohbayuainurrohman@cbt.com	AKTIF	2025-12-14 08:33:41.314	2025-12-14 08:33:41.314	\N	cmj5eca0k0004jsuddjewnal1	cmj5gx1vi004435ud0rdy53xd	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx1x5004735udoeer6a1p	3093129285	MOH. RADITH MUSTOFA	1970-01-01 00:00:38.431	Jl. Sudirman No. 119	81234567965	example10@cbt.com	AKTIF	2025-12-14 08:33:41.368	2025-12-14 08:33:41.368	\N	cmj5eca0w0006jsud9bca11b3	cmj5gx1x1004635udvhadbran	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx206004b35uduf215trn	89145134	MUHAMAD RISKI NEO VALENTINO	1970-01-01 00:00:38.431	Jl. Sudirman No. 121	81234567967	example19@cbt.com	AKTIF	2025-12-14 08:33:41.477	2025-12-14 08:33:41.477	\N	cmj5eca0e0003jsud1uxj50o4	cmj5gx202004a35uditlzqygw	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx21o004d35udxjptvn08	119631620	MUHAMMAD RIZKI	1970-01-01 00:00:38.431	Jl. Sudirman No. 122	81234567968	example20@cbt.com	AKTIF	2025-12-14 08:33:41.532	2025-12-14 08:33:41.532	\N	cmj5eca0e0003jsud1uxj50o4	cmj5gx21k004c35udlo92ywg1	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx234004f35udt3s4ka40	101593710	MUHAMMAD ZAINAL ABIDIN	1970-01-01 00:00:38.431	Jl. Sudirman No. 123	81234567969	example11@cbt.com	AKTIF	2025-12-14 08:33:41.584	2025-12-14 08:33:41.584	\N	cmj5eca0w0006jsud9bca11b3	cmj5gx231004e35udeisgbcya	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx24m004h35udvyljawbl	83159381	NADIATUZZAHROH	1970-01-01 00:00:38.431	Jl. Sudirman No. 124	81234567970	nadiatuzzahroh@cbt.com	AKTIF	2025-12-14 08:33:41.637	2025-12-14 08:33:41.637	\N	cmj5eca050002jsudq5rc3oa3	cmj5gx24i004g35udt6qrnb7l	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx264004j35ud8hnkcdnj	95829771	NAUFAL DZAKI HANIF ABIYYI	1970-01-01 00:00:38.431	Jl. Sudirman No. 125	81234567971	example21@cbt.com	AKTIF	2025-12-14 08:33:41.691	2025-12-14 08:33:41.691	\N	cmj5eca0e0003jsud1uxj50o4	cmj5gx260004i35udriuw72oc	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx27k004l35udp3ylddi4	74347595	NAYSILA NADINE CEYSEANA	1970-01-01 00:00:38.431	Jl. Sudirman No. 126	81234567972	naysilanadineceyseana@cbt.com	AKTIF	2025-12-14 08:33:41.744	2025-12-14 08:33:41.744	\N	cmj5eca050002jsudq5rc3oa3	cmj5gx27h004k35udvdyo2fwy	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx2ak004p35udjg0jhfie	79295893	NUKE KUSUMA WARDANI	1970-01-01 00:00:38.431	Jl. Sudirman No. 128	81234567974	nukekusumawardani@cbt.com	AKTIF	2025-12-14 08:33:41.852	2025-12-14 08:33:41.852	\N	cmj5eca050002jsudq5rc3oa3	cmj5gx2ag004o35udqr0i50ow	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx2c1004r35udtqywx9eq	78151631	NURHASAN	1970-01-01 00:00:38.431	Jl. Sudirman No. 129	81234567975	example27@cbt.com	AKTIF	2025-12-14 08:33:41.905	2025-12-14 08:33:41.905	\N	cmj5ec9zf0000jsudgpxci2hf	cmj5gx2bx004q35udncso3x1e	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx2dj004t35udiz37sd6e	65243793	PHILIPUS JAYA BALAN RAKASIWI	1970-01-01 00:00:38.431	Jl. Sudirman No. 130	81234567976	philipusjayabalanrakasiwi@cbt.com	AKTIF	2025-12-14 08:33:41.958	2025-12-14 08:33:41.958	\N	cmj5eca130007jsudvzwt5rjx	cmj5gx2dg004s35udfhoy10rz	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx2gi004x35ud0wei40by	81034228	RAVADAL ADHA	1970-01-01 00:00:38.431	Jl. Sudirman No. 132	81234567978	ravadaladha@cbt.com	AKTIF	2025-12-14 08:33:42.066	2025-12-14 08:33:42.066	\N	cmj5ec9zx0001jsud5cnf1k74	cmj5gx2gf004w35udlkyaly82	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx2i0004z35udecgz1nlq	99114829	RAZKY GABRIL WAHYUDI	1970-01-01 00:00:38.431	Jl. Sudirman No. 133	81234567979	example22@cbt.com	AKTIF	2025-12-14 08:33:42.119	2025-12-14 08:33:42.119	\N	cmj5eca0e0003jsud1uxj50o4	cmj5gx2hw004y35udh3y17ie4	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx2jh005135udtbcxbtb9	71528590	REZY ANGGARA BAHARI	1970-01-01 00:00:38.431	Jl. Sudirman No. 134	81234567980	rezyanggarabahari@cbt.com	AKTIF	2025-12-14 08:33:42.172	2025-12-14 08:33:42.172	\N	cmj5eca050002jsudq5rc3oa3	cmj5gx2jd005035udyuohrs2j	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx2kx005335udc4757qsp	98069279	RIDHO IRWANSYAH	1970-01-01 00:00:38.431	Jl. Sudirman No. 135	81234567981	ridhoirwansyah@cbt.com	AKTIF	2025-12-14 08:33:42.225	2025-12-14 08:33:42.225	\N	cmj5eca0k0004jsuddjewnal1	cmj5gx2ku005235udqtgs17js	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx2mh005535ud6oic8o1p	82598502	RIVA ADITYA PUTRA	1970-01-01 00:00:38.431	Jl. Sudirman No. 136	81234567982	rivaadityaputra@cbt.com	AKTIF	2025-12-14 08:33:42.28	2025-12-14 08:33:42.28	\N	cmj5eca130007jsudvzwt5rjx	cmj5gx2mc005435udz2z1c0tg	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx1yo004935ud3pslwtt1	78005721	MOHAMMAD ZIDAN MAULANA	1970-01-01 00:00:38.431	Jl. Sudirman No. 120	81234567966	mohammadzidanmaulana@cbt.com	AKTIF	2025-12-14 08:33:41.424	2025-12-16 12:32:56.951	\N	cmj5eca170008jsudb4r1h58n	cmj5gx1yk004835ud9hcuxcvr	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx1i0003n35udv6gnc1l1	67491019	LUKMAN AFANDI	1970-01-01 00:00:38.431	Jl. Sudirman No. 109	81234567955	lukmanafandi@cbt.com	AKTIF	2025-12-14 08:33:40.824	2025-12-16 12:33:00.633	\N	cmj5eca170008jsudb4r1h58n	cmj5gx1hw003m35udhjaaqojj	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx1sk004135udexpydl8s	29537229	MINEL ASARI	1970-01-01 00:00:38.431	Jl. Sudirman No. 116	81234567962	minelasari@cbt.com	AKTIF	2025-12-14 08:33:41.204	2025-12-16 12:33:37.138	\N	cmj5eca0o0005jsud0ambwla7	cmj5gx1sg004035udzqsyoalc	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx1r2003z35udbet34tx1	81962676	MAZELLO ITO AFRIANZIE	1970-01-01 00:00:38.431	Jl. Sudirman No. 115	81234567961	mazelloitoafrianzie@cbt.com	AKTIF	2025-12-14 08:33:41.15	2025-12-16 12:33:40.619	\N	cmj5eca0o0005jsud0ambwla7	cmj5gx1qy003y35udt05qd1id	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx292004n35ud17iskv1j	89544490	NOUVAL YURI SAPUTRA	1970-01-01 00:00:38.431	Jl. Sudirman No. 127	81234567973	nouvalyurisaputra@cbt.com	AKTIF	2025-12-14 08:33:41.796	2025-12-16 12:32:51.295	\N	cmj5eca170008jsudb4r1h58n	cmj5gx28x004m35udws9r11al	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx2ny005735udgqgfno56	109444333	RIZKY WIDODO	1970-01-01 00:00:38.431	Jl. Sudirman No. 137	81234567983	example23@cbt.com	AKTIF	2025-12-14 08:33:42.334	2025-12-14 08:33:42.334	\N	cmj5eca0e0003jsud1uxj50o4	cmj5gx2nv005635udhkikfx5c	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx2qz005b35ud4370ott0	113396361	SUPRIYADI	1970-01-01 00:00:38.431	Jl. Sudirman No. 139	81234567985	example24@cbt.com	AKTIF	2025-12-14 08:33:42.443	2025-12-14 08:33:42.443	\N	cmj5eca0e0003jsud1uxj50o4	cmj5gx2qv005a35ud9ybz7pdt	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx2sg005d35udvqbnlkoz	86217954	TESYA HERLIANA	1970-01-01 00:00:38.431	Jl. Sudirman No. 140	81234567986	tesyaherliana@cbt.com	AKTIF	2025-12-14 08:33:42.496	2025-12-14 08:33:42.496	\N	cmj5eca050002jsudq5rc3oa3	cmj5gx2sd005c35udyl3o8dav	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx2u0005f35udktuxz1uv	75001728	WISNU MAULANA	1970-01-01 00:00:38.431	Jl. Sudirman No. 141	81234567987	wisnumaulana@cbt.com	AKTIF	2025-12-14 08:33:42.551	2025-12-14 08:33:42.551	\N	cmj5eca050002jsudq5rc3oa3	cmj5gx2tv005e35udpkauz4m3	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx2vh005h35udn702xrb0	83757487	WULAN FEBRIYANTI	1970-01-01 00:00:38.431	Jl. Sudirman No. 142	81234567988	wulanfebriyanti@cbt.com	AKTIF	2025-12-14 08:33:42.605	2025-12-14 08:33:42.605	\N	cmj5eca050002jsudq5rc3oa3	cmj5gx2vd005g35udsfcg75mb	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx2zz005n35udbo6v7qv9	97561362	YUDA WIRASA	1970-01-01 00:00:38.431	Jl. Sudirman No. 145	81234567991	example28@cbt.com	AKTIF	2025-12-14 08:33:42.766	2025-12-14 08:33:42.766	\N	cmj5ec9zf0000jsudgpxci2hf	cmj5gx2zv005m35ud2aj2o8s7	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx2yi005l35udcr748bi3	79467322	YOHANES DWI PRAYOGA	1970-01-01 00:00:38.431	Jl. Sudirman No. 144	81234567990	yohanesdwiprayoga@cbt.com	AKTIF	2025-12-14 08:33:42.713	2025-12-16 12:32:37.753	\N	cmj5eca170008jsudb4r1h58n	cmj5gx2ye005k35ud0lbk4bs6	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx2ph005935udv1g8ipeb	77627927	SEPTIA IRFAN RAMADHAN	1970-01-01 00:00:38.431	Jl. Sudirman No. 138	81234567984	septiairfanramadhan@cbt.com	AKTIF	2025-12-14 08:33:42.388	2025-12-16 12:32:41.218	\N	cmj5eca170008jsudb4r1h58n	cmj5gx2pd005835udp1ug0523	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx2f2004v35udq20lwbo0	78440641	RAHMAD FIRMANSYAH	1970-01-01 00:00:38.431	Jl. Sudirman No. 131	81234567977	rahmadfirmansyah@cbt.com	AKTIF	2025-12-14 08:33:42.013	2025-12-16 12:32:46.386	\N	cmj5eca170008jsudb4r1h58n	cmj5gx2ey004u35udtxb4t3ri	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx1al003d35udbg9vhv2a	72745125	KHAIRUL RIZAL FAUZI TUKIMIN	1970-01-01 00:00:38.431	Jl. Sudirman No. 104	81234567950	khairulrizalfauzitukimin@cbt.com	AKTIF	2025-12-14 08:33:40.557	2025-12-16 12:33:03.952	\N	cmj5eca170008jsudb4r1h58n	cmj5gx1ai003c35udrndkgaz9	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gwzyc001l35udnzueuy9e	69853933	DANU BAGUS PRAYOGO	1970-01-01 00:00:38.431	Jl. Sudirman No. 72	81234567918	danubagusprayogo@cbt.com	AKTIF	2025-12-14 08:33:38.819	2025-12-16 12:33:07.513	\N	cmj5eca170008jsudb4r1h58n	cmj5gwzy7001k35udjqgqcye1	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx31i005p35ud17ebh91g	71347347	YULI YATIMAH	1970-01-01 00:00:38.431	Jl. Sudirman No. 146	81234567992	yuliyatimah@cbt.com	AKTIF	2025-12-14 08:33:42.821	2025-12-16 12:33:27.522	\N	cmj5eca050002jsudq5rc3oa3	cmj5gx31d005o35udqv3tt8vd	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx2wz005j35ud2ivwa2j0	88579651	YEHEZKIEL KEVIN RAHARJO	1970-01-01 00:00:38.431	Jl. Sudirman No. 143	81234567989	yehezkielkevinraharjo@cbt.com	AKTIF	2025-12-14 08:33:42.658	2025-12-16 12:33:30.953	\N	cmj5eca0o0005jsud0ambwla7	cmj5gx2ww005i35udmbp9bp8d	cmj5cxv7e00014iudyynxuvmc	\N
+\.
+
+
+--
+-- Data for Name: SiswaKelasHistory; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SiswaKelasHistory" (id, "siswaId", "kelasId", "tahunAjaranId", "tanggalMulai", "tanggalSelesai", status, catatan, "createdAt", "updatedAt") FROM stdin;
 \.
 
 
@@ -400,10 +768,41 @@ cmj4dk0ul00oy7yi0br8t6lop	3093967437	DESY MUSTIKA MAYA SARI	2000-12-13 00:00:00	
 -- Data for Name: TahunAjaran; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public."TahunAjaran" (id, tahun, semester, "tanggalMulai", "tanggalSelesai", status, "createdAt", "updatedAt", "deletedAt") FROM stdin;
-cmj2pp5i40000lvi0ui6qolj5	2024/2025	1	2025-12-01 00:00:00	2025-12-11 00:00:00	SELESAI	2025-12-12 10:16:10.78	2025-12-12 15:23:31.812	\N
-cmj2z2f7y0000qli09lkds1en	2025/2026	1	2025-07-14 00:00:00	2025-12-31 00:00:00	AKTIF	2025-12-12 14:38:26.446	2025-12-13 14:10:59.824	\N
-cmj30obk60000nyi0d2cbh0g0	2025/2026	2	2026-01-01 00:00:00	2026-03-15 00:00:00	AKAN_DATANG	2025-12-12 15:23:27.75	2025-12-13 14:11:15.84	\N
+COPY public."TahunAjaran" (id, tahun, "tanggalMulai", "tanggalSelesai", status, "createdAt", "updatedAt", "deletedAt") FROM stdin;
+cmj5cxv7e00014iudyynxuvmc	2025/2026	2025-12-16 00:00:00	2026-02-19 00:00:00	AKTIF	2025-12-14 06:42:20.858	2025-12-17 07:23:20.52	\N
+cmj9op5l00000etudz0lci1fo	2026/2027	2026-03-31 00:00:00	2027-01-17 00:00:00	AKAN_DATANG	2025-12-17 07:22:34.5	2025-12-17 07:23:20.512	\N
+\.
+
+
+--
+-- Data for Name: Ujian; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Ujian" (id, kode, judul, deskripsi, "mataPelajaranId", "kelasId", durasi, "tanggalMulai", "tanggalSelesai", "nilaiMinimal", "acakSoal", "tampilkanNilai", status, "createdBy", "createdAt", "updatedAt", "deletedAt", "paketSoalId", "guruId") FROM stdin;
+\.
+
+
+--
+-- Data for Name: UjianKelas; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."UjianKelas" (id, "ujianId", "kelasId", "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: UjianSiswa; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."UjianSiswa" (id, "ujianId", "siswaId", "tokenAkses", "waktuMulai", "waktuSelesai", durasi, status, "nilaiTotal", "isPassed", jawaban, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: UjianSoal; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."UjianSoal" (id, "ujianId", "bankSoalId", "nomorUrut", bobot, "createdAt") FROM stdin;
 \.
 
 
@@ -412,110 +811,133 @@ cmj30obk60000nyi0d2cbh0g0	2025/2026	2	2026-01-01 00:00:00	2026-03-15 00:00:00	AK
 --
 
 COPY public."User" (id, email, name, "createdAt", "updatedAt", password, role) FROM stdin;
-cmj4djzkn00n57yi0e60qa8hl	abihartowicaksono@cbt.com	ABI HARTO WICAKSONO	2025-12-13 14:11:46.775	2025-12-13 14:11:46.775	$2b$10$vvmeL4Wou5pJa6LJii/JeOEoiM.ZBE58EiDxNyJCw3f/e4Je7s0q2	SISWA
-cmj4djzm700n77yi0ayhugouo	adamsyahrezagumilang@cbt.com	ADAM SYAHREZA GUMILANG	2025-12-13 14:11:46.831	2025-12-13 14:11:46.831	$2b$10$MODwHsOqu3eF/xW.1JpaOuSarfsg.E1eLgB.WaOkijWMrp0FumqRC	SISWA
-cmj4djzno00n97yi0k6olgvpb	aditiyarizkybayupradika@cbt.com	ADITIYA RIZKY BAYU PRADIKA	2025-12-13 14:11:46.884	2025-12-13 14:11:46.884	$2b$10$nuCL6/UfqeuVoKfOGSd1rux5wHNQkUMfhqPnzaK6u7Lwd.dRHWffC	SISWA
-cmj4djzp400nb7yi0tmitn3ku	adityacaturprayogo@cbt.com	ADITYA CATUR PRAYOGO	2025-12-13 14:11:46.936	2025-12-13 14:11:46.936	$2b$10$VqgWSfhGS4/ITDvpdo/SMe0in7q2hlvkaDhs7IZhs6/opeWC5waXm	SISWA
-cmj4djzqi00nd7yi0oxqzuj2o	example12@cbt.com	ADITYA DAMARA PUTRA KRISTIAWAN	2025-12-13 14:11:46.986	2025-12-13 14:11:46.986	$2b$10$RHPGW/409QAfGbUrECf9BOlcMPbUMQS1eOoOUiDJunnt3ShvMC9l2	SISWA
-cmj4djzrx00nf7yi0gmqosiz1	adrianodwipradhita@cbt.com	ADRIANO DWI PRADHITA	2025-12-13 14:11:47.037	2025-12-13 14:11:47.037	$2b$10$Po4i3IN0SvlNN.ZR/qI8J.Jl8NaFkj3lQPWUWQG7.lUNzwZtcYR52	SISWA
-cmj4djztd00nh7yi0isomfof5	agungtrisnadewi@cbt.com	AGUNG TRISNA DEWI	2025-12-13 14:11:47.089	2025-12-13 14:11:47.089	$2b$10$Mj82/FjGR7mtTWlI2IFEIOfYa8E7unoBJCthQTNZoj2YWNhTGOU5u	SISWA
-cmj4djzut00nj7yi0rkt707d4	aguswiraadipurnomo@cbt.com	AGUS WIRA ADI PURNOMO	2025-12-13 14:11:47.14	2025-12-13 14:11:47.14	$2b$10$AkWuqZBuiZ5cKc2t.QOyRe092HGvlkAJZw7AYaEw4MLOO4tcytl72	SISWA
-cmj2m3f190001lbi0e6fy36uy	rizky@mail.com	Rizky	2025-12-12 08:35:17.853	2025-12-12 13:25:13.311	$2b$10$ekDLYtLhoD9IFH2BQl0tv.t5ZP4TSZprEDbGsXf5n3jZFFzZF9xbW	ADMIN
-cmj4djzw800nl7yi05wzhngwv	example1@cbt.com	AHMAD DIMAS KURNIAWAN	2025-12-13 14:11:47.192	2025-12-13 14:11:47.192	$2b$10$OMlzj56XHfGbMmpVFXuah.6JgHSWrAh7axjyt7omjY3r5QNbf020S	SISWA
-cmj4djzxn00nn7yi0wg4m7o8o	ahmadrianzuhriafandi@cbt.com	AHMAD RIAN ZUHRI AFANDI	2025-12-13 14:11:47.243	2025-12-13 14:11:47.243	$2b$10$1QJf/JhcRftyrlWJxBpCmuvi7grkOX56vsu5duYR66AtVfePrbqY6	SISWA
-cmj4djzz300np7yi0fnjjzv2t	example2@cbt.com	AINO YOEL	2025-12-13 14:11:47.295	2025-12-13 14:11:47.295	$2b$10$NEBchdafNeR4f0L6lOZnxuWwq6Ww2a6wXBigVkZ6HMyLabOZqDfpa	SISWA
-cmj4dk00i00nr7yi0u673k9qt	ainurrohmah@cbt.com	AINUR ROHMAH	2025-12-13 14:11:47.346	2025-12-13 14:11:47.346	$2b$10$UOCZcwUwGLDoIldesUCno.J0C/zRBl2hoj7YEKwjsD0jl65xqM8Sm	SISWA
-cmj4dk01x00nt7yi0qhshefp9	aldiprayatna@cbt.com	ALDI PRAYATNA	2025-12-13 14:11:47.397	2025-12-13 14:11:47.397	$2b$10$iG7NzJJmc5sObGShsI4I6esetfYg/A1Z7p4Zgq17L50uLoEe6Wixu	SISWA
-cmj4dk03e00nv7yi0ztnmk0kp	aldoilfanpratama@cbt.com	ALDO ILFAN PRATAMA	2025-12-13 14:11:47.45	2025-12-13 14:11:47.45	$2b$10$3f3QVXGCEPZj28TWF4.ng.T6usmcoJZ1bK/BuIRcEZgZXYDyn0PeG	SISWA
-cmj4dk04u00nx7yi07hx0b2r1	alfatriefendi@cbt.com	ALFA TRI EFENDI	2025-12-13 14:11:47.502	2025-12-13 14:11:47.502	$2b$10$63B4F1v.YwkM2BEd7pI4Hup5v7bW/mKU9CMXX0jGS5Yl7pztCs4HK	SISWA
-cmj4dk06900nz7yi01b0iakh4	example13@cbt.com	ALFAZA OKTAVINO PRADITIA	2025-12-13 14:11:47.553	2025-12-13 14:11:47.553	$2b$10$XDDMxthWaugLzuk39VIRtOFXzNMHqKX6IAwe1/HUncV3tHUe77hUa	SISWA
-cmj4dk07o00o17yi0o3x3wd3a	alifaturrosikin@cbt.com	ALIFATUR ROSIKIN	2025-12-13 14:11:47.604	2025-12-13 14:11:47.604	$2b$10$jvaQCjiDZBOSSx3TrpXeJeArEGCOZQUNFtNyyjxEowjqwv7nXpEzm	SISWA
-cmj4dk09400o37yi0l8juaxow	ameliadewisinta@cbt.com	AMELIA DEWI SINTA	2025-12-13 14:11:47.656	2025-12-13 14:11:47.656	$2b$10$TMuZeKUV3AP87lxRl.f0YOxXonRZp26cdeBdybJMbnc7R.OVwI53y	SISWA
-cmj4dk0ai00o57yi0ccnr0zl8	example3@cbt.com	ANANDA MAYCKO WIJAYA	2025-12-13 14:11:47.706	2025-12-13 14:11:47.706	$2b$10$r7pShWVaU/1PRHCs8ILKNeRW.XulhTBnu/b9hwrg5FmpXpCQwuljm	SISWA
-cmj4dk0bx00o77yi0imiqs5jg	andhikabayusaputra@cbt.com	ANDHIKA BAYU SAPUTRA	2025-12-13 14:11:47.757	2025-12-13 14:11:47.757	$2b$10$Pgh85wEb.DNbNrm9/PxtAO1E3aD4gJTR.JAkDlGe7tsm2pHfw2jEK	SISWA
-cmj4dk0dc00o97yi02qmupqdg	example4@cbt.com	ANGGA CAHYO PRATAMA	2025-12-13 14:11:47.808	2025-12-13 14:11:47.808	$2b$10$eF1BCswHJGT0OYqAS/kP7.GKu9dMf3PWTYRz4.gWYatWfRenprrFa	SISWA
-cmj4dk0er00ob7yi01e5xt6vq	anggivirnandaputri@cbt.com	ANGGI VIRNANDA PUTRI	2025-12-13 14:11:47.859	2025-12-13 14:11:47.859	$2b$10$chhV9Keic2DHamYSYxIumO8qlxBp2TZkrunUe9eOknE.ut6lUIMlS	SISWA
-cmj4dk0g600od7yi0uj89iia2	awangsetiawan@cbt.com	AWANG SETIAWAN	2025-12-13 14:11:47.91	2025-12-13 14:11:47.91	$2b$10$CJl8FFY5sdRZo2yj.7F9keGFIXPnTf0JTKoOPOSbmpeKxIhkj9.la	SISWA
-cmj4dk0hm00of7yi0bme716h2	example25@cbt.com	AYUNI ARIMBI	2025-12-13 14:11:47.962	2025-12-13 14:11:47.962	$2b$10$PoGHJv8wBSQ068ouQuO6xe2X7fUCLdO0qbSERzPp3Xumlp6GQauu.	SISWA
-cmj4dk0j200oh7yi09es3zb4i	example5@cbt.com	AZAI DENIS SAFARULLAH	2025-12-13 14:11:48.014	2025-12-13 14:11:48.014	$2b$10$eymnC2RKqP/zi0BcWW2A4uUgOp4/3gBpJ1Qh0ltCty/gjDlbBSDyq	SISWA
-cmj4dk0kh00oj7yi0d8m7ge97	example14@cbt.com	BADRIA NUR ANISA	2025-12-13 14:11:48.065	2025-12-13 14:11:48.065	$2b$10$mCl8W53.kM2lmLHvD4TGnOJRgHIxHM53J3TqZbgOeTFryagM.YGtC	SISWA
-cmj4dk0lv00ol7yi0ad1qhv9b	bagussetiawan@cbt.com	BAGUS SETIAWAN	2025-12-13 14:11:48.115	2025-12-13 14:11:48.115	$2b$10$pti907ABAolpOaD0uAJjfOsNSChBxoPL7cYN0QgZEhcT/KZmzZSz.	SISWA
-cmj4dk0nb00on7yi0yql2cgbq	example6@cbt.com	CANDRA PRATAMA	2025-12-13 14:11:48.167	2025-12-13 14:11:48.167	$2b$10$yTs7itgcDDhtv3f6TxkfDuedAO/6cHeO9ZdzM/8SuWLMe/5/75RmW	SISWA
-cmj4dk0os00op7yi04inbamx6	danubagusprayogo@cbt.com	DANU BAGUS PRAYOGO	2025-12-13 14:11:48.22	2025-12-13 14:11:48.22	$2b$10$i1VOtmXW/ZLnICulWL90luVACnxTDiJvoH7qTRW0bMFlTBiQ7zZoS	SISWA
-cmj4dk0q700or7yi0x1terot2	davaputraprasetya@cbt.com	DAVA PUTRA PRASETYA	2025-12-13 14:11:48.271	2025-12-13 14:11:48.271	$2b$10$Raq7POk9ExZ36NRRjI6vB.J510LWz1UKSF.AZL3sXviZkAZiLjaee	SISWA
-cmj4dk0rn00ot7yi0i4jn3114	definingtyas@cbt.com	DEFI NINGTYAS	2025-12-13 14:11:48.323	2025-12-13 14:11:48.323	$2b$10$ueUfwmoFdwu3c8q1CPaBPOxFW1tBkt9Xf9T85m.iS.fOVIHRXJjOa	SISWA
-cmj4dk0t200ov7yi0q47gdokk	dendibayupratama@cbt.com	DENDI BAYU PRATAMA	2025-12-13 14:11:48.374	2025-12-13 14:11:48.374	$2b$10$zZSjN.dkw3nqyUQyBRTMTOspHXvEnzb8sNHDi2QW8phRpLUb.VL/.	SISWA
-cmj4dk0ui00ox7yi09rk9u1ee	example26@cbt.com	DESY MUSTIKA MAYA SARI	2025-12-13 14:11:48.426	2025-12-13 14:11:48.426	$2b$10$JLn23NSJW3pvu0/B/MF9X.Lwq0dx7j6oKp3LrRcLo6.5R8qRfRBOi	SISWA
-cmj4dk0vx00oz7yi0xs9m4h81	dewiwahyuni@cbt.com	DEWI WAHYUNI	2025-12-13 14:11:48.477	2025-12-13 14:11:48.477	$2b$10$s1VEY7Zg1mDfp2VA0nOy3u6FPnzysDLG3ZG38VciElDq2H18i2Qca	SISWA
-cmj4dk0xd00p17yi0twc9q3lb	dinarizaayumatussholeha@cbt.com	DINA RIZA AYU MATUSSHOLEHA	2025-12-13 14:11:48.529	2025-12-13 14:11:48.529	$2b$10$saVlKcmBYsnFpI7ItMuBvuUxxfslxuqI04EqJKITRJBMGcq2tTv6m	SISWA
-cmj4dk0ys00p37yi0j9shau5s	dinoabipratama@cbt.com	DINO ABI PRATAMA	2025-12-13 14:11:48.58	2025-12-13 14:11:48.58	$2b$10$rHq5GF7MGpyOzSnFpEGCjOkPIzOvNtGcSa2lCpOHpdJkJWHDURkEi	SISWA
-cmj4dk10800p57yi01c1b5oha	dizayogayudistia@cbt.com	DIZA YOGA YUDISTIA	2025-12-13 14:11:48.632	2025-12-13 14:11:48.632	$2b$10$T/8MShqDoNIn/FFdl8KiO.X1nDH5.YNzuE2yaoPTtF8YNx64FC1ZW	SISWA
-cmj4dk11q00p77yi0vpm8o1nv	example15@cbt.com	DWI AYU MEI JAYANTI	2025-12-13 14:11:48.686	2025-12-13 14:11:48.686	$2b$10$I7GaUCKK05PYW7Ixa4VwBuXUNLy3eJ2CgrqzEN1DKOB3NFitE4tK6	SISWA
-cmj4dk13500p97yi0vv2qq26m	dwisintiaputri@cbt.com	DWI SINTIA PUTRI	2025-12-13 14:11:48.737	2025-12-13 14:11:48.737	$2b$10$KkZrDP1eXWG3EaEgY6bKXellQWDzVblNccOuN/u/d20dPtRuL0Taq	SISWA
-cmj4dk14k00pb7yi014gld8av	ekadeviainurohma@cbt.com	EKA DEVI AINUROHMA	2025-12-13 14:11:48.788	2025-12-13 14:11:48.788	$2b$10$kNh4Gzq7Cfga9e/e43fyiO0tzFUjuYlp209OQ1nHbfMKWlu21/bEi	SISWA
-cmj4dk16000pd7yi05v191omk	enggardwiprasetyo@cbt.com	ENGGAR DWI PRASETYO	2025-12-13 14:11:48.84	2025-12-13 14:11:48.84	$2b$10$d/wKbKKhLIdn81AOrfb88u6u06r0ysPYObA3wJEq6XsUHPoAvkOKS	SISWA
-cmj4dk17g00pf7yi0ndgwdhog	esaagilputra@cbt.com	ESA AGIL PUTRA	2025-12-13 14:11:48.892	2025-12-13 14:11:48.892	$2b$10$LQKX.sUb7usKRwqjLO6bnuQOkQqRrXx6xGFVxxLQZ6qP.fjWBO9xy	SISWA
-cmj4dk18v00ph7yi0w4r27j4x	fahmiadliyanto@cbt.com	FAHMI ADLIYANTO	2025-12-13 14:11:48.943	2025-12-13 14:11:48.943	$2b$10$Tydl6K7.57me.jAIBfTTru86mC4UFIfNxrGNFPBcF9eAnxt6q7zk2	SISWA
-cmj4dk1aa00pj7yi0zxxpivow	fareladityaputra@cbt.com	FAREL ADITYA PUTRA	2025-12-13 14:11:48.994	2025-12-13 14:11:48.994	$2b$10$gS15o8lYh8VYL41ogm6LduAFOuoEdDXgfcNODky2LMKQUtmmE1OQO	SISWA
-cmj4dk1bp00pl7yi0dtwipyzo	faturrohman@cbt.com	FATURROHMAN	2025-12-13 14:11:49.045	2025-12-13 14:11:49.045	$2b$10$IpvubAIGnfUEXJaWKWA7vuOkuzcpln.Mo1iwiRUjx/vdJMHsoiU7O	SISWA
-cmj4dk1d500pn7yi0ezc4q1c7	example16@cbt.com	FERDIO PUTRA PRASETYA	2025-12-13 14:11:49.097	2025-12-13 14:11:49.097	$2b$10$f7dvB4IgRSbe5PMx2ZXWKeWEfoZE8BiGVmNLx.hVa95ybq2lYNVay	SISWA
-cmj4dk1ek00pp7yi0cqef76n0	fiolaseptianaramadani@cbt.com	FIOLA SEPTIANA RAMADANI	2025-12-13 14:11:49.148	2025-12-13 14:11:49.148	$2b$10$6dGBLNf7EOck.VqFJSDey.kURudLGDxrbk.CyWVbfTJ62QolCncL.	SISWA
-cmj4dk1fz00pr7yi0ig87bx34	fiqiaditia@cbt.com	FIQI ADITIA	2025-12-13 14:11:49.199	2025-12-13 14:11:49.199	$2b$10$Hg1VlwmP84apScLP2TMSUuHwyPRzeWBthmKdMISUmxFWmX/2QP/ne	SISWA
-cmj4dk1he00pt7yi0nw3d3ual	fitrianaekaamelia@cbt.com	FITRIANA EKA AMELIA	2025-12-13 14:11:49.25	2025-12-13 14:11:49.25	$2b$10$OXaeO1P4uwYZXI3.Zmt5BOC0TOj6HOXoiaegWnQ7NHSPCgfioOXLO	SISWA
-cmj4dk1iu00pv7yi0ibq4sw6g	hernandawildanfirdausi@cbt.com	HERNANDA WILDAN FIRDAUSI	2025-12-13 14:11:49.301	2025-12-13 14:11:49.301	$2b$10$RASTxs6ndO3qWVPZS9cTSeUMbU/LSgefAfk8PqVmLiL1wE8qGxUqi	SISWA
-cmj4dk1ka00px7yi0ix965enz	example7@cbt.com	HUMAM FAUZI YANTO	2025-12-13 14:11:49.354	2025-12-13 14:11:49.354	$2b$10$67YH8em/eIlyhMz7zTDkXuNGS6t5dk5ZvAUNg28OwCL00cCyRqns2	SISWA
-cmj4dk1lq00pz7yi0coq9zps5	ichajuwita@cbt.com	ICHA JUWITA	2025-12-13 14:11:49.406	2025-12-13 14:11:49.406	$2b$10$K5dnXBQppECOn600xJj1V.5FBdv0badtBl8gxm4i6Uk1cbO7ehkYe	SISWA
-cmj4dk1n500q17yi01kvip10i	inaazrianadevi@cbt.com	INA AZRIANA DEVI	2025-12-13 14:11:49.457	2025-12-13 14:11:49.457	$2b$10$zRLzqyXHas0vgFXAd/jaPeYRWTRB3btj/BfNupkA4apczn7QBiIKW	SISWA
-cmj4dk1ok00q37yi0yks807qr	intanbalqishumairo@cbt.com	INTAN BALQIS HUMAIRO	2025-12-13 14:11:49.508	2025-12-13 14:11:49.508	$2b$10$x33RzzQolQ9CUxBP3cUs5uSsh/ir/Fye9DPk4Zziy7fhxXmLGNF2O	SISWA
-cmj4dk1pz00q57yi0icqeg1ut	jeniekanursabela@cbt.com	JENI EKA NURSABELA	2025-12-13 14:11:49.559	2025-12-13 14:11:49.559	$2b$10$nPkt.n/3of0A2K3BVPPqXuUi3S2MH30txHcSdZ63Ns7odmbSxYZpO	SISWA
-cmj4dk1rf00q77yi05rgei2pi	jesenardiyanto@cbt.com	JESEN ARDIYANTO	2025-12-13 14:11:49.611	2025-12-13 14:11:49.611	$2b$10$tXzpKRuUJ.pGynGvScdnM.ny/UPqxPqQLOflZqK54CPMyGP1WsbCS	SISWA
-cmj4dk1sv00q97yi028x7jk9g	jesikamartaal-zahra@cbt.com	JESIKA MARTA AL-ZAHRA	2025-12-13 14:11:49.663	2025-12-13 14:11:49.663	$2b$10$BIUHqDYOuHodn0gYOylCQuReZh9.nf5.gqLNbpvM2uuHs0kkuBgka	SISWA
-cmj4dk1ua00qb7yi0af8m3ucv	joshuabagusnugroho@cbt.com	JOSHUA BAGUS NUGROHO	2025-12-13 14:11:49.714	2025-12-13 14:11:49.714	$2b$10$0MOahUKClCiwsFz99Wfjf.SkGOgaRbmGY5nUNXuahPnV1sCc3KttC	SISWA
-cmj4dk1vp00qd7yi0xbby1vhu	example17@cbt.com	KETUT DIMAS MUHAMAD RISAL	2025-12-13 14:11:49.765	2025-12-13 14:11:49.765	$2b$10$YXaAoeFgFs9Uw/Cw.W9bdu2xjKrm1nyACiaYs5BIM2hl4yP2fx9Le	SISWA
-cmj4dk1x400qf7yi0pkz6tzk5	example8@cbt.com	KEVIN MAULANA ISHAQ	2025-12-13 14:11:49.816	2025-12-13 14:11:49.816	$2b$10$8Wvxc6Jdmuccy0v.ggWCs.tDdjo5qDGu3vO1KfjE/K0n3.5XFdRrm	SISWA
-cmj4dk1yk00qh7yi05ai25j5n	khairulrizalfauzitukimin@cbt.com	KHAIRUL RIZAL FAUZI TUKIMIN	2025-12-13 14:11:49.868	2025-12-13 14:11:49.868	$2b$10$ZgRAccNfdVT1Yi2dfHyQa.VddH/4EP11q7dae2PTKlJgdAoeArgEO	SISWA
-cmj4dk1zz00qj7yi0m7cs8yc8	khaludsaifulanwar@cbt.com	KHALUD SAIFUL ANWAR	2025-12-13 14:11:49.919	2025-12-13 14:11:49.919	$2b$10$NEhCYg4IDGADW9bjyd0pouL14MNOI7nO7mAItKuAyUu0EUnUfBV46	SISWA
-cmj4dk21e00ql7yi0x641al2z	lianarantikaputri@cbt.com	LIANA RANTIKA PUTRI	2025-12-13 14:11:49.97	2025-12-13 14:11:49.97	$2b$10$5JIGuGZizEoEICwV978fS.xi.7kTj6cgJgg4j5RJFN./UdxruUWQ6	SISWA
-cmj4dk22v00qn7yi012bf6147	livianayuningutami@cbt.com	LIVIAN AYUNING UTAMI	2025-12-13 14:11:50.023	2025-12-13 14:11:50.023	$2b$10$dpMiUS1ibVBO29f/3YDjzupC8M8JhvAuQ9yZpbvI6tPWTy7usTub.	SISWA
-cmj4dk24a00qp7yi0y43z9oor	luckyadityapratama@cbt.com	LUCKY ADITYA PRATAMA	2025-12-13 14:11:50.074	2025-12-13 14:11:50.074	$2b$10$3McsZrAv6XTxAecHC2m0MeyDmlKlAR34v8HzPrtZ1MuG1AMxCx.2a	SISWA
-cmj4dk25q00qr7yi08ybeyi9y	lukmanafandi@cbt.com	LUKMAN AFANDI	2025-12-13 14:11:50.126	2025-12-13 14:11:50.126	$2b$10$vVgX8jcUNCRAUYtFxk0UOuCDAMESGSyaOquAgNyf6JZ1TPCWnQUBe	SISWA
-cmj4dk27500qt7yi01fryn32t	mbagassantoso@cbt.com	M. BAGAS SANTOSO	2025-12-13 14:11:50.177	2025-12-13 14:11:50.177	$2b$10$DaxDYFenM6y10dwJLhsFmOJG/N8Gv0I9sPPgE8G2Pkvzx8uYeIugy	SISWA
-cmj4dk28j00qv7yi0f14xcybq	mbagussatrio@cbt.com	M. BAGUS SATRIO	2025-12-13 14:11:50.227	2025-12-13 14:11:50.227	$2b$10$vhvdhuRBmszP1XbWes1ODeTfBLkw.ed1MfH5lUx6rU/ypFMKGVSYS	SISWA
-cmj4dk29x00qx7yi0isz0tn8v	example9@cbt.com	M. SAIFURROSI	2025-12-13 14:11:50.276	2025-12-13 14:11:50.276	$2b$10$ehyBwqzfnjxrD8bbffPNFeEbTquQ0cI.uVN2zG95EJX8M9oMZazbO	SISWA
-cmj4dk2bb00qz7yi0hyebqnwo	example18@cbt.com	M. YUSRON GINANDA	2025-12-13 14:11:50.327	2025-12-13 14:11:50.327	$2b$10$OhlpYLg0aC1JQpUxdaT3tu9Cwbwa6SdjE.f773N6Tgjt.3e/eVOCC	SISWA
-cmj4dk2cp00r17yi0puunqm8f	marcelgalihginanjar@cbt.com	MARCEL GALIH GINANJAR	2025-12-13 14:11:50.377	2025-12-13 14:11:50.377	$2b$10$0e2YW7VrgrG11DWVmQ8J2.XbjSf8dxZrDvUwTbJwTwK8OUAyxIw5W	SISWA
-cmj4dk2e400r37yi0dwyfx3nd	mazelloitoafrianzie@cbt.com	MAZELLO ITO AFRIANZIE	2025-12-13 14:11:50.428	2025-12-13 14:11:50.428	$2b$10$oM2kDZW8DuTwMKVahHUt2eRhMbD9Q6TLAUaOIvBjNSdkqv5EYMAgq	SISWA
-cmj4dk2fi00r57yi01ej00y8z	minelasari@cbt.com	MINEL ASARI	2025-12-13 14:11:50.478	2025-12-13 14:11:50.478	$2b$10$GBCwLeayqaG1Zyb6BsLt6.47bGmb2d2.gpYH7ss8IA77hVfSepsfO	SISWA
-cmj4dk2gx00r77yi03vamwzbq	example10000@example.com	MOH. AMAR MA'RUF	2025-12-13 14:11:50.529	2025-12-13 14:11:50.529	$2b$10$u8J8X8O8LVo7Ph8..1nHWu3VQ/RPmvC.4NrA130VKZ0s4thvLAQtu	SISWA
-cmj4dk2id00r97yi012bf69wf	mohbayuainurrohman@cbt.com	MOH. BAYU AINURROHMAN	2025-12-13 14:11:50.581	2025-12-13 14:11:50.581	$2b$10$EmpeRxWM1C/RBcVpFouM6O9.ah6OllLEjxR/UY69ddCXoy9cSu4SK	SISWA
-cmj4dk2jt00rb7yi070nw57xu	example10@cbt.com	MOH. RADITH MUSTOFA	2025-12-13 14:11:50.632	2025-12-13 14:11:50.632	$2b$10$cN97Zc/KH4SDOhcQeCw2.eapYrJZvghqtuILS5pMtJZZJfFivKg5e	SISWA
-cmj4dk2l800rd7yi0nwe3gi05	mohammadzidanmaulana@cbt.com	MOHAMMAD ZIDAN MAULANA	2025-12-13 14:11:50.684	2025-12-13 14:11:50.684	$2b$10$Y6Vd2Cxp5ZwcnIV4Hi8EGeRCNGrMtlePiF821u4f0BfhyTzkAZeHa	SISWA
-cmj4dk2mn00rf7yi007zkp1v4	example19@cbt.com	MUHAMAD RISKI NEO VALENTINO	2025-12-13 14:11:50.735	2025-12-13 14:11:50.735	$2b$10$Zfu7IKL9zwDl7/prNQZxXOvo0xxHw6oc9e2obunjM4TC/NwVYcFKG	SISWA
-cmj4dk2o200rh7yi01nxd0dhk	example20@cbt.com	MUHAMMAD RIZKI	2025-12-13 14:11:50.786	2025-12-13 14:11:50.786	$2b$10$EWZcfGzuW7k0Lc.a96uuru.tyZolBvlkmMI.ADO3IhCdhKVVCJ5.q	SISWA
-cmj4dk2pi00rj7yi0h6pdkcv0	example11@cbt.com	MUHAMMAD ZAINAL ABIDIN	2025-12-13 14:11:50.838	2025-12-13 14:11:50.838	$2b$10$5/vxBn.2fCfa6QE8nt2u1uLxm0uuSSPH9CaaniWB4eSFHzOLjjmZm	SISWA
-cmj4dk2qx00rl7yi0xke4l1d5	nadiatuzzahroh@cbt.com	NADIATUZZAHROH	2025-12-13 14:11:50.889	2025-12-13 14:11:50.889	$2b$10$2qrnYTJJ6xNhy1jSNhprjO1dZZIHYzBbKc8iuGK9lem2YGcaFIdgy	SISWA
-cmj4dk2sc00rn7yi0qz4wqdg1	example21@cbt.com	NAUFAL DZAKI HANIF ABIYYI	2025-12-13 14:11:50.94	2025-12-13 14:11:50.94	$2b$10$1jbgyrCSFIhIE0cTxXNk5.gmuDhvc.DuI/Y9ZZzNMqMjmAL9NRz1S	SISWA
-cmj4dk2ts00rp7yi0fxogonzg	naysilanadineceyseana@cbt.com	NAYSILA NADINE CEYSEANA	2025-12-13 14:11:50.992	2025-12-13 14:11:50.992	$2b$10$HXSXasAIW3oil7GZnXTgpurqoxgFz.O78Pn0MrFi32BRKcguiOUqS	SISWA
-cmj4dk2v600rr7yi0pw6xbbqy	nouvalyurisaputra@cbt.com	NOUVAL YURI SAPUTRA	2025-12-13 14:11:51.042	2025-12-13 14:11:51.042	$2b$10$fgOacRdEbZOmjGrQLDhLCeqLJZEKkVw8rKp.WTHyTg1GuJLUcNDmq	SISWA
-cmj4dk2wl00rt7yi0u9vjetf8	nukekusumawardani@cbt.com	NUKE KUSUMA WARDANI	2025-12-13 14:11:51.093	2025-12-13 14:11:51.093	$2b$10$md9R0K5oM2l8jsooLzFjQuVTFbpMUswtkkteskT82viK5ZaNe1zuK	SISWA
-cmj4dk2y000rv7yi0a5mcde8m	example27@cbt.com	NURHASAN	2025-12-13 14:11:51.144	2025-12-13 14:11:51.144	$2b$10$NCDLDpYumYeXxML35ApM/u1yrT7YJyT.u175M2dc4gloIiwWZ.p56	SISWA
-cmj4dk2zg00rx7yi0305dq46p	philipusjayabalanrakasiwi@cbt.com	PHILIPUS JAYA BALAN RAKASIWI	2025-12-13 14:11:51.196	2025-12-13 14:11:51.196	$2b$10$UQ.psziPGIEH83BNdmulG.Q5jjDVd/VIk7uOxjtibyJuIEzZ57QFq	SISWA
-cmj4dk30u00rz7yi0h5eqo6xx	rahmadfirmansyah@cbt.com	RAHMAD FIRMANSYAH	2025-12-13 14:11:51.246	2025-12-13 14:11:51.246	$2b$10$13ecTqbEtcLjerNq11jFUuiFZqkNk68PTw9rmOs6l47jBjh0Odk3q	SISWA
-cmj4dk32900s17yi0re2uxspj	ravadaladha@cbt.com	RAVADAL ADHA	2025-12-13 14:11:51.296	2025-12-13 14:11:51.296	$2b$10$99snkTTovNNhATAPbL0yQeCtzcDQSKwLy8so/RFY2XcPX7GUIvtQe	SISWA
-cmj4dk33o00s37yi0gn5r7itq	example22@cbt.com	RAZKY GABRIL WAHYUDI	2025-12-13 14:11:51.348	2025-12-13 14:11:51.348	$2b$10$jAxNEEFXLbVrs2ZQSy1C5OKvi1sGITG6x2geREKD.GmujTHyjHh7S	SISWA
-cmj4dk35200s57yi0ndfb8n0a	rezyanggarabahari@cbt.com	REZY ANGGARA BAHARI	2025-12-13 14:11:51.398	2025-12-13 14:11:51.398	$2b$10$adTY30VvawN6/FQgGaV88ObSEd1VmxUfeej3hWwQ/D1P4/T7ey8JS	SISWA
-cmj4dk36h00s77yi04c002oxs	ridhoirwansyah@cbt.com	RIDHO IRWANSYAH	2025-12-13 14:11:51.449	2025-12-13 14:11:51.449	$2b$10$.WBRTnfLhBkR3qqAppeU.OLcCt1pN/KKCE72ByuDxLGa0LDZwSjce	SISWA
-cmj4dk37w00s97yi0gztiabg2	rivaadityaputra@cbt.com	RIVA ADITYA PUTRA	2025-12-13 14:11:51.5	2025-12-13 14:11:51.5	$2b$10$e9cuxsuntgn3PoBlJpLg0eEN1ULgCeCuiwNAhCsNAk7wgleOPeH8S	SISWA
-cmj4dk39a00sb7yi0m59yohqg	example23@cbt.com	RIZKY WIDODO	2025-12-13 14:11:51.55	2025-12-13 14:11:51.55	$2b$10$zHoYoaOqmHkd/PluqLJY2O.Up4qu.2QkElkD6Wl.phpLKManw2Uxa	SISWA
-cmj4dk3aq00sd7yi0t995vuva	septiairfanramadhan@cbt.com	SEPTIA IRFAN RAMADHAN	2025-12-13 14:11:51.602	2025-12-13 14:11:51.602	$2b$10$4KIVF9ICz3YdrF7TrY22P.j4W8X.njGtbPChnlA7E4EUCIJYUToh6	SISWA
-cmj4dk3c400sf7yi0zrkdwv9r	example24@cbt.com	SUPRIYADI	2025-12-13 14:11:51.652	2025-12-13 14:11:51.652	$2b$10$4VGWKHjgmPzpstbCltezweUWmey5uNeLtXec2ZLtfhtNZDLBDKQr2	SISWA
-cmj4dk3dj00sh7yi0gcnqryi1	tesyaherliana@cbt.com	TESYA HERLIANA	2025-12-13 14:11:51.703	2025-12-13 14:11:51.703	$2b$10$6cjjr8kiSnizJw9PB7ygI..n4wh/rE69z4dw/fMBkiXEHWQSwTpQ6	SISWA
-cmj4dk3ez00sj7yi0768vpbxv	wisnumaulana@cbt.com	WISNU MAULANA	2025-12-13 14:11:51.755	2025-12-13 14:11:51.755	$2b$10$rg2Z/C9RdthAac3j0cddVOgvUgjNneznSmlTS1si2EMOGgme8GLNu	SISWA
-cmj4dk3gd00sl7yi0k4zpzult	wulanfebriyanti@cbt.com	WULAN FEBRIYANTI	2025-12-13 14:11:51.805	2025-12-13 14:11:51.805	$2b$10$y4kh8.i/MqSLZKwvCRHkzefLEhr7h2rVqQXX/Q6Uy2t36GOuzGDtG	SISWA
-cmj4dk3hs00sn7yi0u22pnts8	yehezkielkevinraharjo@cbt.com	YEHEZKIEL KEVIN RAHARJO	2025-12-13 14:11:51.856	2025-12-13 14:11:51.856	$2b$10$kThIA.ytgDAGc6/bSEM8K.vWhSEcDQokvyBdn.rORJX8Z1VlJgv.y	SISWA
-cmj4dk3j700sp7yi0hdarbfl7	yohanesdwiprayoga@cbt.com	YOHANES DWI PRAYOGA	2025-12-13 14:11:51.907	2025-12-13 14:11:51.907	$2b$10$fvqWys1pPN99BpMXpgLvfeaoSqdAQHv2iKlaxrDl9yTUML2.2rIN.	SISWA
-cmj4dk3km00sr7yi02jrhvxfe	example28@cbt.com	YUDA WIRASA	2025-12-13 14:11:51.958	2025-12-13 14:11:51.958	$2b$10$s6Ape13FbFU1/DkBvkBV/eMl0BxnDbbH4TswlUJHtv9Bt0CiD0wWC	SISWA
-cmj4dk3m000st7yi0wadpf5aq	yuliyatimah@cbt.com	YULI YATIMAH	2025-12-13 14:11:52.008	2025-12-13 14:11:52.008	$2b$10$1GYCVEAif6YvE1PareRzIuhpk3F4ZQVMe5eRMbFYOpq9.6.oFNu2G	SISWA
+cmj5cw3cn00004iud971p5w0w	rizky@mail.com	Rizky	2025-12-14 06:40:58.103	2025-12-14 06:40:58.103	$2b$10$jYGpzfeTx.IJASjBGxrVE.tf4kuyrdQIV44CRGUcl3rqUQ2F3zQS2	ADMIN
+cmj5gwyql000035udj9kefx0z	abihartowicaksono@cbt.com	ABI HARTO WICAKSONO	2025-12-14 08:33:37.245	2025-12-14 08:33:37.245	$2b$10$5Q7gCiV/cmiDE5o8keIP3O/uyLV3B4aKP8x1iOQNV14fFpJduqXTa	SISWA
+cmj5gwysf000235udeqpf8mo9	adamsyahrezagumilang@cbt.com	ADAM SYAHREZA GUMILANG	2025-12-14 08:33:37.311	2025-12-14 08:33:37.311	$2b$10$/Sm6OIJrU9ieTWaMw9yBrOEl8fMLlOFSu3QfCGHSBjLuFZCd.h2MO	SISWA
+cmj5gwytz000435ud3k5i6zne	aditiyarizkybayupradika@cbt.com	ADITIYA RIZKY BAYU PRADIKA	2025-12-14 08:33:37.367	2025-12-14 08:33:37.367	$2b$10$QU0HMFDX.FKwgGVz79Wz5.awxbG.TgoepLsRkYqUVFr/yMm5vCh/K	SISWA
+cmj5gwyvj000635udzcqos5da	adityacaturprayogo@cbt.com	ADITYA CATUR PRAYOGO	2025-12-14 08:33:37.423	2025-12-14 08:33:37.423	$2b$10$HoWP0zUaDssknhWwopCUO.QkByAqgzf9yIX/KlOugebAbfOandkqq	SISWA
+cmj5gwyx4000835udq2k2tbxp	example12@cbt.com	ADITYA DAMARA PUTRA KRISTIAWAN	2025-12-14 08:33:37.48	2025-12-14 08:33:37.48	$2b$10$e2DEjQBUOuPzLnJ0qHorR.N4wzOUyMkz4SLF36aUJTpUfOzThPbj.	SISWA
+cmj5gwyyq000a35udwqnc8ohp	adrianodwipradhita@cbt.com	ADRIANO DWI PRADHITA	2025-12-14 08:33:37.538	2025-12-14 08:33:37.538	$2b$10$mEYbgViYbC9UjLlHcDHf2.LCtSviCMVWt8SByedsrRop.0Xmew/d.	SISWA
+cmj5gwz0c000c35udn9g3zoan	agungtrisnadewi@cbt.com	AGUNG TRISNA DEWI	2025-12-14 08:33:37.596	2025-12-14 08:33:37.596	$2b$10$2b5zxWGhxAIK9Arue6427OkSZU3is6UO3XHuEFwujAXR/4lZOj7Fm	SISWA
+cmj5gwz1y000e35udzacwpk0x	aguswiraadipurnomo@cbt.com	AGUS WIRA ADI PURNOMO	2025-12-14 08:33:37.654	2025-12-14 08:33:37.654	$2b$10$iA0ZQR0O2ou6i0h/8Uvwjug6oiax6kaoSlq.5tNIxbuRFD6hpF9t.	SISWA
+cmj5gwz3i000g35udydzzmr53	example1@cbt.com	AHMAD DIMAS KURNIAWAN	2025-12-14 08:33:37.71	2025-12-14 08:33:37.71	$2b$10$G0nnig6veHoW2uamT0Ymie512Ddy7NSx0/mXVq8XkyQVlpLlrR10i	SISWA
+cmj5gwz53000i35udw6fgqktc	ahmadrianzuhriafandi@cbt.com	AHMAD RIAN ZUHRI AFANDI	2025-12-14 08:33:37.767	2025-12-14 08:33:37.767	$2b$10$qZ0d2joT83a83Wtm8P6eruxx34oID1RPEcscB0iTPBh38zkm/g5yS	SISWA
+cmj5gwz6p000k35ud68fsf33i	example2@cbt.com	AINO YOEL	2025-12-14 08:33:37.825	2025-12-14 08:33:37.825	$2b$10$o7MJEfM5PhZvP3CYGi/pVOGoVIc5kWzLrfdwniiKjDWaQEuPi/d8y	SISWA
+cmj5gwz88000m35ud5x4ctx7s	ainurrohmah@cbt.com	AINUR ROHMAH	2025-12-14 08:33:37.88	2025-12-14 08:33:37.88	$2b$10$yLDOyWQ0K9.jkzeJ67liu.6FhlSzyY4ePVAtL12xr9/2K6AUNYu82	SISWA
+cmj5gwz9q000o35ud7f7d7ltw	aldiprayatna@cbt.com	ALDI PRAYATNA	2025-12-14 08:33:37.934	2025-12-14 08:33:37.934	$2b$10$NIPFvEd/wlOFP0ex3Aj3tujQxV5A2Vw2o2cFXVJhcxUi5QOuOATS.	SISWA
+cmj5gwzb9000q35uds8mmj6bl	aldoilfanpratama@cbt.com	ALDO ILFAN PRATAMA	2025-12-14 08:33:37.989	2025-12-14 08:33:37.989	$2b$10$sVsk69s8ge38pHvyYTQrUOEKQ7uN5XTR/3NN5ak4AHybO/dwxprKm	SISWA
+cmj5gwzct000s35udllh69h8u	alfatriefendi@cbt.com	ALFA TRI EFENDI	2025-12-14 08:33:38.045	2025-12-14 08:33:38.045	$2b$10$zdiROYH4yUho1R/7imiaHOR9ehhMtQ/a9dH4/4SBgFRZGnqa52dzG	SISWA
+cmj5gwzed000u35udlnddwq47	example13@cbt.com	ALFAZA OKTAVINO PRADITIA	2025-12-14 08:33:38.101	2025-12-14 08:33:38.101	$2b$10$7g2C1XGdos1wVaUCCwIii.yKz2d2EAMQb0BdpMblQgwWPBz98Y3Gq	SISWA
+cmj5gwzfw000w35udzc26ap9b	alifaturrosikin@cbt.com	ALIFATUR ROSIKIN	2025-12-14 08:33:38.156	2025-12-14 08:33:38.156	$2b$10$UeBkuTY2kaZg7J9UJcCvoOOE8A/wCaEocb.fcvpABsgs.ygG//aUu	SISWA
+cmj5gwzhe000y35udg8o4lrsn	ameliadewisinta@cbt.com	AMELIA DEWI SINTA	2025-12-14 08:33:38.21	2025-12-14 08:33:38.21	$2b$10$eNxyiUR7S3f4WtM/ABO.hePWuaOiP1X72yskw/qyWZvK0Ee9C7h0e	SISWA
+cmj5gwziy001035udhbgntn1o	example3@cbt.com	ANANDA MAYCKO WIJAYA	2025-12-14 08:33:38.266	2025-12-14 08:33:38.266	$2b$10$MYx8nhclCk67gfBT8ZUJGerRFwxXJ1ixtYzB88R.IbFSvcWmjPBiS	SISWA
+cmj5gwzkg001235uda1zowq2b	andhikabayusaputra@cbt.com	ANDHIKA BAYU SAPUTRA	2025-12-14 08:33:38.32	2025-12-14 08:33:38.32	$2b$10$zX8SqUy76c/M68Jqvm87e.oMvj2fSea5vqHIekMDuZ3LbrpteVCbW	SISWA
+cmj5gwzlz001435udoar1p1ou	example4@cbt.com	ANGGA CAHYO PRATAMA	2025-12-14 08:33:38.375	2025-12-14 08:33:38.375	$2b$10$gkigz7.ZwvNxDfWJq2tlj.P7pYHj2tdFO.53./zHde097gFqqIIBi	SISWA
+cmj5gwzni001635udt2intkub	anggivirnandaputri@cbt.com	ANGGI VIRNANDA PUTRI	2025-12-14 08:33:38.43	2025-12-14 08:33:38.43	$2b$10$o9i2prpTY.dnXWu1ygFZrObK4x4blfSvG2gtgk/t.UuDixr3MkM4u	SISWA
+cmj5gwzp2001835udtswr5q1s	awangsetiawan@cbt.com	AWANG SETIAWAN	2025-12-14 08:33:38.486	2025-12-14 08:33:38.486	$2b$10$Dd4dvJtA2.dKgDAog2sMue17h/zkuWD/l1dgQ2nkeQZG.eXqtGZx6	SISWA
+cmj5gwzql001a35udfoqzqfcv	example25@cbt.com	AYUNI ARIMBI	2025-12-14 08:33:38.541	2025-12-14 08:33:38.541	$2b$10$bWEqVSCm3XQi9HDhb3bn4uqfQZJz6BFMILYwxaEZe8f6LsAK5eb6u	SISWA
+cmj5gwzs4001c35udaqgx22e1	example5@cbt.com	AZAI DENIS SAFARULLAH	2025-12-14 08:33:38.595	2025-12-14 08:33:38.595	$2b$10$8tlweExCNOq5bqKIz16v/uweuUTsCvsXRQcpob51dNx9ed.48puSC	SISWA
+cmj5gwztn001e35udd3b8c4mg	example14@cbt.com	BADRIA NUR ANISA	2025-12-14 08:33:38.651	2025-12-14 08:33:38.651	$2b$10$5Llm6n1OEzmLVIUF3YoIIeQ2JYfpZlnhfbu60zfR2tcdZ4hn9kkNq	SISWA
+cmj5gwzv5001g35ud5bbn2qzz	bagussetiawan@cbt.com	BAGUS SETIAWAN	2025-12-14 08:33:38.705	2025-12-14 08:33:38.705	$2b$10$KKhYJEACdJ2M2er5QJE7T.JKPBKmvV6KBlVcpmoyP8kIFBcwIxE9C	SISWA
+cmj5gwzwo001i35uduhbzcboi	example6@cbt.com	CANDRA PRATAMA	2025-12-14 08:33:38.76	2025-12-14 08:33:38.76	$2b$10$31QCDyTLa5GrNMUVuP/UF.LxYqke8GbKRM44Lb7z./pmbBy8FUQ66	SISWA
+cmj5gwzy7001k35udjqgqcye1	danubagusprayogo@cbt.com	DANU BAGUS PRAYOGO	2025-12-14 08:33:38.815	2025-12-14 08:33:38.815	$2b$10$gIukZJLlI3dmIimx.J7QU.OLO.7t3SQNAKSWfhAcDAeUWEGVoa8uO	SISWA
+cmj5gwzzr001m35udpblpr5c0	davaputraprasetya@cbt.com	DAVA PUTRA PRASETYA	2025-12-14 08:33:38.871	2025-12-14 08:33:38.871	$2b$10$qh5M4U1WeNtmQ86yvJbk7eCOiMsrfcLduBCgyT7mpIT/vInmGUtU2	SISWA
+cmj5gx01a001o35udcz1uye9r	definingtyas@cbt.com	DEFI NINGTYAS	2025-12-14 08:33:38.926	2025-12-14 08:33:38.926	$2b$10$QvqW3hyijv6G4lX5Tko1a.RYB49oEyz2oUB.YA/TrYJe9xT.SkgQm	SISWA
+cmj5gx02s001q35udsc32mvtz	dendibayupratama@cbt.com	DENDI BAYU PRATAMA	2025-12-14 08:33:38.98	2025-12-14 08:33:38.98	$2b$10$2dqNuMhEz8Db286yFTgC5.4YFTEBXQNxeZKKfTzdB3hWZTZSGBuN.	SISWA
+cmj5gx04c001s35udal7y6kqp	example26@cbt.com	DESY MUSTIKA MAYA SARI	2025-12-14 08:33:39.036	2025-12-14 08:33:39.036	$2b$10$3jQRaSnP98o8PW5gvylwS.jWEtKhUduhoi.mhyGyHB85ps8f.SKYm	SISWA
+cmj5gx05t001u35ud56w1gpg0	dewiwahyuni@cbt.com	DEWI WAHYUNI	2025-12-14 08:33:39.089	2025-12-14 08:33:39.089	$2b$10$TmPC2a4wfh18AxF58kqaAe/XJHtTO4oq9AEM9gvo8dcblKKMOcbiG	SISWA
+cmj5gx07b001w35ud6uy774vt	dinarizaayumatussholeha@cbt.com	DINA RIZA AYU MATUSSHOLEHA	2025-12-14 08:33:39.143	2025-12-14 08:33:39.143	$2b$10$N9CmxnGuK.o.mrQI64mixuWu7ICbZaMv4YK8I7ExYgrQGHnWruzJu	SISWA
+cmj5gx08u001y35udh95b095v	dinoabipratama@cbt.com	DINO ABI PRATAMA	2025-12-14 08:33:39.198	2025-12-14 08:33:39.198	$2b$10$h5YihryfOT0xv40z4Ti27eQRdk04gfJ3qm78v7tjWQUC52ud4z9Y.	SISWA
+cmj5gx0ac002035udfnj8z7vm	dizayogayudistia@cbt.com	DIZA YOGA YUDISTIA	2025-12-14 08:33:39.252	2025-12-14 08:33:39.252	$2b$10$HrD9T8JdIAoDtzEGJcYfWemjQZ3HSb.UzjaXo8cfgNRTYS5Moz/pu	SISWA
+cmj5gx0bv002235ud9wy5giy5	example15@cbt.com	DWI AYU MEI JAYANTI	2025-12-14 08:33:39.307	2025-12-14 08:33:39.307	$2b$10$kQc9TPW0d7vDv4Srm.BkfePozlHyyR.aGBEQALuitUGL.n4KGub0O	SISWA
+cmj5gx0de002435ud24zdsw0s	dwisintiaputri@cbt.com	DWI SINTIA PUTRI	2025-12-14 08:33:39.362	2025-12-14 08:33:39.362	$2b$10$tO1CLLaMLbV2bdXILmNkNu4hWhk1zU207CacVStE0Lq/zGuLtGxrO	SISWA
+cmj5gx0ev002635udvv65yg6g	ekadeviainurohma@cbt.com	EKA DEVI AINUROHMA	2025-12-14 08:33:39.415	2025-12-14 08:33:39.415	$2b$10$8hsHdRGP7WMdt.gnP2FSNeX85PMAp0TShPGJuqlFDT9TjowA/v24m	SISWA
+cmj5gx0gd002835udbw0sqmi6	enggardwiprasetyo@cbt.com	ENGGAR DWI PRASETYO	2025-12-14 08:33:39.469	2025-12-14 08:33:39.469	$2b$10$ubzOUtFm5jvR3fsiPz13Yu4TQl.WR89LrTSA32wcyrICswbv/uAIW	SISWA
+cmj5gx0hw002a35udavq9oyfo	esaagilputra@cbt.com	ESA AGIL PUTRA	2025-12-14 08:33:39.524	2025-12-14 08:33:39.524	$2b$10$OZMrXJv03UocRK1Rkw5HZOl1tpW9E4EMB7IyWURaAB3L6t4ag7zs2	SISWA
+cmj5gx0jf002c35udq9gtxbg2	fahmiadliyanto@cbt.com	FAHMI ADLIYANTO	2025-12-14 08:33:39.579	2025-12-14 08:33:39.579	$2b$10$Yo2M7biLLoCR6.rzzVtT6ej.7dBnWQzb7B9o3GRhYPXGV4AkEJCXW	SISWA
+cmj5gx0kw002e35ud03ae2xo1	fareladityaputra@cbt.com	FAREL ADITYA PUTRA	2025-12-14 08:33:39.632	2025-12-14 08:33:39.632	$2b$10$WoYFgE1Pds8tbQ54nMqCnOGDL.2LpBGJ/6LRFYTn0wq3FSVRkXx.S	SISWA
+cmj5gx0mf002g35udp7fvgdod	faturrohman@cbt.com	FATURROHMAN	2025-12-14 08:33:39.687	2025-12-14 08:33:39.687	$2b$10$mldB2VE9.qQ.mG00C2ztQuY.DyqShydxESrwT0vcYKByO8MigmuBy	SISWA
+cmj5gx0nz002i35udbi0v5c4g	example16@cbt.com	FERDIO PUTRA PRASETYA	2025-12-14 08:33:39.743	2025-12-14 08:33:39.743	$2b$10$yCXsjoQ4JFhCjkZq5TZYbe8pOX51sxaCAGkfbr9SeoS8kpKJfbd/G	SISWA
+cmj5gx0pi002k35udwebdytrh	fiolaseptianaramadani@cbt.com	FIOLA SEPTIANA RAMADANI	2025-12-14 08:33:39.798	2025-12-14 08:33:39.798	$2b$10$ZWz5tUjK07/tMIraoICc9ex6iFfEQ6yD/sH4Nkl4Fs4Q3JnP9X8qO	SISWA
+cmj5gx0r0002m35udzu8e92kf	fiqiaditia@cbt.com	FIQI ADITIA	2025-12-14 08:33:39.852	2025-12-14 08:33:39.852	$2b$10$TXMxkufQzu.srwB1WyJvPuq5egxFcjtObm7520ddY8YdK9uqgStcq	SISWA
+cmj5gx0si002o35ud2jnff2tj	fitrianaekaamelia@cbt.com	FITRIANA EKA AMELIA	2025-12-14 08:33:39.906	2025-12-14 08:33:39.906	$2b$10$ghsNSpYjxMV//x.5AVleSuNPJisSHQ.TEyX7J5G8qrgS9dRq5SZHW	SISWA
+cmj5gx0tz002q35udykvj7rwf	hernandawildanfirdausi@cbt.com	HERNANDA WILDAN FIRDAUSI	2025-12-14 08:33:39.959	2025-12-14 08:33:39.959	$2b$10$Dcpmm3NTQ2Tfi6.COAhcjeGAuySHCrPnmTC2cq5zEwEch0w0Nbxc.	SISWA
+cmj5gx0vh002s35udu1n8yl9k	example7@cbt.com	HUMAM FAUZI YANTO	2025-12-14 08:33:40.013	2025-12-14 08:33:40.013	$2b$10$r8qqYovHDfi8YxylzDBFburR934QAnXHppsFB8b/wDI5c5jSntDfO	SISWA
+cmj5gx0x0002u35udc7ccpufd	ichajuwita@cbt.com	ICHA JUWITA	2025-12-14 08:33:40.068	2025-12-14 08:33:40.068	$2b$10$LyMfvfdzS3BY6JzzvYKL..jNr65MkT3CHst0TVZqpLeeBzcZ78z0K	SISWA
+cmj5gx0yj002w35ud8v9qi589	inaazrianadevi@cbt.com	INA AZRIANA DEVI	2025-12-14 08:33:40.123	2025-12-14 08:33:40.123	$2b$10$uffZ51BM366x9JqaQWdpweTJiDoP7sgUla./YPw9aNv/jc.m7o3zG	SISWA
+cmj5gx100002y35udilmg1ny8	intanbalqishumairo@cbt.com	INTAN BALQIS HUMAIRO	2025-12-14 08:33:40.176	2025-12-14 08:33:40.176	$2b$10$yRtmXtim8gtUMySIb0ltSu2x0xoP6XS9xiSA2zRytbe/.Gi9vIoFu	SISWA
+cmj5gx11g003035ud3bx82k5d	jeniekanursabela@cbt.com	JENI EKA NURSABELA	2025-12-14 08:33:40.228	2025-12-14 08:33:40.228	$2b$10$g5xiOdWBYgyqedNbglhyMejmMoAHsWmfJlgmUW8r4z4JVGbvQxLa2	SISWA
+cmj5gx12x003235udw6jxtx4r	jesenardiyanto@cbt.com	JESEN ARDIYANTO	2025-12-14 08:33:40.281	2025-12-14 08:33:40.281	$2b$10$L1KLICXq3ZaDTkBO17rOwerxL/PjdMPTjMp42BhVqZF/a.Km.0hTe	SISWA
+cmj5gx14g003435ud6w8b4goi	jesikamartaal-zahra@cbt.com	JESIKA MARTA AL-ZAHRA	2025-12-14 08:33:40.336	2025-12-14 08:33:40.336	$2b$10$7qMEekHNAjTJJ499/hp6/uPCKwIZdyJk6d4kRA98hPZKPn7cVHG1.	SISWA
+cmj5gx15y003635udfzfvsnsn	joshuabagusnugroho@cbt.com	JOSHUA BAGUS NUGROHO	2025-12-14 08:33:40.39	2025-12-14 08:33:40.39	$2b$10$cLd/Y6zZfpioG8.JQK7P9emrgU9cIWr2KW3ZeN/94GlMT88mzgZRW	SISWA
+cmj5gx17g003835uduzmy772u	example17@cbt.com	KETUT DIMAS MUHAMAD RISAL	2025-12-14 08:33:40.444	2025-12-14 08:33:40.444	$2b$10$T0ukWPdR.809ccNV/5m7KO6LM1A1k2i/BIFrq/FyYiHSlt01yFz4u	SISWA
+cmj5gx18z003a35udlra3qj4l	example8@cbt.com	KEVIN MAULANA ISHAQ	2025-12-14 08:33:40.499	2025-12-14 08:33:40.499	$2b$10$uBEpt3H35gGkW.hQxwpiZeswyIfQjNzWdtE70xDWtyxhNc.yyn8q.	SISWA
+cmj5gx1ai003c35udrndkgaz9	khairulrizalfauzitukimin@cbt.com	KHAIRUL RIZAL FAUZI TUKIMIN	2025-12-14 08:33:40.554	2025-12-14 08:33:40.554	$2b$10$N3N1Xsj3jQwTlz8j30D1uuyds7TGWMKmeXS04/goiUk4sHQEilYUC	SISWA
+cmj5gx1bz003e35udkcmtj455	khaludsaifulanwar@cbt.com	KHALUD SAIFUL ANWAR	2025-12-14 08:33:40.607	2025-12-14 08:33:40.607	$2b$10$pp2Q.A9uhWotYBb5Bl.bsOsajyaEwWjvt8kcPGdxQizPmthMo4aty	SISWA
+cmj5gx1dg003g35udnuykpero	lianarantikaputri@cbt.com	LIANA RANTIKA PUTRI	2025-12-14 08:33:40.66	2025-12-14 08:33:40.66	$2b$10$omtSpijg6/nqL.QV0F7bMOuhnKswBMwxk5flJb9Hh8/ov27Nya.d.	SISWA
+cmj5gx1ex003i35ud2tmr6ezm	livianayuningutami@cbt.com	LIVIAN AYUNING UTAMI	2025-12-14 08:33:40.713	2025-12-14 08:33:40.713	$2b$10$VLV5/X./8D.qHmC8R04oA.00/ROJj6octo7Iavzq5kph14.jNlzOK	SISWA
+cmj5gx1gf003k35udqn4te1zt	luckyadityapratama@cbt.com	LUCKY ADITYA PRATAMA	2025-12-14 08:33:40.767	2025-12-14 08:33:40.767	$2b$10$uAWsVU.zHR6xaCeLnJL71Oa4yr9RW1o.KgHZX21nOMC8bA6LsZwDK	SISWA
+cmj5gx1hw003m35udhjaaqojj	lukmanafandi@cbt.com	LUKMAN AFANDI	2025-12-14 08:33:40.82	2025-12-14 08:33:40.82	$2b$10$NXpY4ciXWh/zTT4a2MUikOOK3sIqZy0J5IvBhcsgghc7tAr099UhS	SISWA
+cmj5gx1je003o35udc4kp1c2m	mbagassantoso@cbt.com	M. BAGAS SANTOSO	2025-12-14 08:33:40.874	2025-12-14 08:33:40.874	$2b$10$w1M8IJqZarK/H4cTgWOKrep/vxu/uu5EE8s0/u52KdZMswpW16AOS	SISWA
+cmj5gx1kx003q35udsvrwk0yg	mbagussatrio@cbt.com	M. BAGUS SATRIO	2025-12-14 08:33:40.929	2025-12-14 08:33:40.929	$2b$10$.ejnfg5wFafLZs./iiALheXJWajy4.TTc2ck6QEIryBZikG9XgYga	SISWA
+cmj5gx1mf003s35udmkcekzi3	example9@cbt.com	M. SAIFURROSI	2025-12-14 08:33:40.983	2025-12-14 08:33:40.983	$2b$10$jb3UgkRydpRrwD2XyxSjseIGRZkQAhnEvvd4PIIJZBacStlrhKPly	SISWA
+cmj5gx1nx003u35udc8a2l13v	example18@cbt.com	M. YUSRON GINANDA	2025-12-14 08:33:41.037	2025-12-14 08:33:41.037	$2b$10$FIkX1Np6aCMbuZ2ah6gFwea8T.T7OPSTLoOPvpXzQWvdGyvEcg21S	SISWA
+cmj5gx1pg003w35ud8n0lxpp8	marcelgalihginanjar@cbt.com	MARCEL GALIH GINANJAR	2025-12-14 08:33:41.092	2025-12-14 08:33:41.092	$2b$10$t7ldjM39sSAPx0NtzxTDquA4uWING8BwJXs2H8zbIv9Z09PBGiWh6	SISWA
+cmj5gx1qy003y35udt05qd1id	mazelloitoafrianzie@cbt.com	MAZELLO ITO AFRIANZIE	2025-12-14 08:33:41.146	2025-12-14 08:33:41.146	$2b$10$lsg2kiPtwpWxWJJ0zCRJq.wvTyCt8xlX1wgrmOSMDEKVdG6vZ4qui	SISWA
+cmj5gx1sg004035udzqsyoalc	minelasari@cbt.com	MINEL ASARI	2025-12-14 08:33:41.2	2025-12-14 08:33:41.2	$2b$10$5LtAmaVu6JpetOQa5/KiPOG7jTRI8mGZcYURL7pGcYSotqyAPIOQa	SISWA
+cmj5gx1tz004235udd1rv3ppx	example10000@example.com	MOH. AMAR MA'RUF	2025-12-14 08:33:41.255	2025-12-14 08:33:41.255	$2b$10$XZMxr6ZQsd2FROhu0Kt0gOwqDVmvEGW0wO7E1y4EDAhV6.kUiPvOG	SISWA
+cmj5gx1vi004435ud0rdy53xd	mohbayuainurrohman@cbt.com	MOH. BAYU AINURROHMAN	2025-12-14 08:33:41.31	2025-12-14 08:33:41.31	$2b$10$CuJYnK2cWUKcTofGa.DKjeDmVs5q7zxX.HM3ekQlXS064YDJpXCTq	SISWA
+cmj5gx1x1004635udvhadbran	example10@cbt.com	MOH. RADITH MUSTOFA	2025-12-14 08:33:41.365	2025-12-14 08:33:41.365	$2b$10$TpsDqHe1q8NOfcmUUzn8UuEmRrdrpTBuMyRMfGNJvysBQ.F3DBIAK	SISWA
+cmj5gx1yk004835ud9hcuxcvr	mohammadzidanmaulana@cbt.com	MOHAMMAD ZIDAN MAULANA	2025-12-14 08:33:41.42	2025-12-14 08:33:41.42	$2b$10$iQUGDy82Y/9HoevToUKDFeQ1IjjYmfDKTk0oq86dmJPqngA5l5EoO	SISWA
+cmj5gx202004a35uditlzqygw	example19@cbt.com	MUHAMAD RISKI NEO VALENTINO	2025-12-14 08:33:41.474	2025-12-14 08:33:41.474	$2b$10$juj.bqsJNM7RIt1/WzjliOvyTZkS7.JpzbnhmXMfUfWPKz3GY1/X.	SISWA
+cmj5gx21k004c35udlo92ywg1	example20@cbt.com	MUHAMMAD RIZKI	2025-12-14 08:33:41.528	2025-12-14 08:33:41.528	$2b$10$pQIKslwrgauDB.wIrz8Q/.7WkZirqlH/LoeMhvxQN6ySt8/F1m66a	SISWA
+cmj5gx231004e35udeisgbcya	example11@cbt.com	MUHAMMAD ZAINAL ABIDIN	2025-12-14 08:33:41.581	2025-12-14 08:33:41.581	$2b$10$z5OD4jHLPKfZI1fEgTDskebpK4qF5FVJ833sWNlK/Zz1TzK2NN6g2	SISWA
+cmj5gx24i004g35udt6qrnb7l	nadiatuzzahroh@cbt.com	NADIATUZZAHROH	2025-12-14 08:33:41.634	2025-12-14 08:33:41.634	$2b$10$IX/Bgj/B.XProOgGnL34aeIzBSYpF1CXGPa9aMWoysEg0bP7Swawu	SISWA
+cmj5gx260004i35udriuw72oc	example21@cbt.com	NAUFAL DZAKI HANIF ABIYYI	2025-12-14 08:33:41.688	2025-12-14 08:33:41.688	$2b$10$LrNJSdRflPXfcHLqm6bDqe8.ktS4DCp3oqjHvGtUVLHNBEXHc7Gti	SISWA
+cmj5gx27h004k35udvdyo2fwy	naysilanadineceyseana@cbt.com	NAYSILA NADINE CEYSEANA	2025-12-14 08:33:41.741	2025-12-14 08:33:41.741	$2b$10$nmv.pU4DbB48VDjsBn46l.1DDdJjBYX3Q3ETWvlLipyvL8euqaXOy	SISWA
+cmj5gx28x004m35udws9r11al	nouvalyurisaputra@cbt.com	NOUVAL YURI SAPUTRA	2025-12-14 08:33:41.793	2025-12-14 08:33:41.793	$2b$10$F4qE08pklQZztYE92r9Xxuk2znLAAX1.b/VUIH2clsxB31iF9/Pta	SISWA
+cmj5gx2ag004o35udqr0i50ow	nukekusumawardani@cbt.com	NUKE KUSUMA WARDANI	2025-12-14 08:33:41.848	2025-12-14 08:33:41.848	$2b$10$H11ia2GrN8hNWVkJ/cGigu/RHFh.PH6z.7qFfE5SzRinEAjcbZyk2	SISWA
+cmj5gx2bx004q35udncso3x1e	example27@cbt.com	NURHASAN	2025-12-14 08:33:41.901	2025-12-14 08:33:41.901	$2b$10$yWbwzV5pZh2VY5cNKmi8yODVdu2UWKzKRO/JiIaEMtLNs5z9h6jt2	SISWA
+cmj5gx2dg004s35udfhoy10rz	philipusjayabalanrakasiwi@cbt.com	PHILIPUS JAYA BALAN RAKASIWI	2025-12-14 08:33:41.956	2025-12-14 08:33:41.956	$2b$10$rakNiN2VvDPskNw1eZ3wVOlUemfSd3csLPrTv5/iQZEGc0K8J97mi	SISWA
+cmj5gx2ey004u35udtxb4t3ri	rahmadfirmansyah@cbt.com	RAHMAD FIRMANSYAH	2025-12-14 08:33:42.01	2025-12-14 08:33:42.01	$2b$10$gIqO.dpbA2srgntpay6z6uguqeAP3dqYR30B6Sygzvwm2SYbovk4W	SISWA
+cmj5gx2gf004w35udlkyaly82	ravadaladha@cbt.com	RAVADAL ADHA	2025-12-14 08:33:42.063	2025-12-14 08:33:42.063	$2b$10$XV.Pzyw1nc.rYSWR6ZOxMeRjk9av1CR3Q7xEhODf6S6kmz0M.m0rO	SISWA
+cmj5gx2hw004y35udh3y17ie4	example22@cbt.com	RAZKY GABRIL WAHYUDI	2025-12-14 08:33:42.116	2025-12-14 08:33:42.116	$2b$10$5.cyobUBdBAoDYyWsmC.su7bF/5/B8l3kjfQkCOn3LxIxCi28TbOe	SISWA
+cmj5gx2jd005035udyuohrs2j	rezyanggarabahari@cbt.com	REZY ANGGARA BAHARI	2025-12-14 08:33:42.169	2025-12-14 08:33:42.169	$2b$10$Zxa2anNIEPVLnwCXwkusceo2RZ3mMPIKIx3VHs1ethbRuC283r32q	SISWA
+cmj5gx2ku005235udqtgs17js	ridhoirwansyah@cbt.com	RIDHO IRWANSYAH	2025-12-14 08:33:42.222	2025-12-14 08:33:42.222	$2b$10$2PTMmvSYZyB9aB0uVdQV8OgEg/6xEeHAEZr2B0ZZwrmRCKGe5AZHW	SISWA
+cmj5gx2mc005435udz2z1c0tg	rivaadityaputra@cbt.com	RIVA ADITYA PUTRA	2025-12-14 08:33:42.276	2025-12-14 08:33:42.276	$2b$10$a2AJfW7d4.WgMCjnMmoQN.3GaQ6SEeR8rnVLHPfauITNrmUnqNDNq	SISWA
+cmj5gx2nv005635udhkikfx5c	example23@cbt.com	RIZKY WIDODO	2025-12-14 08:33:42.331	2025-12-14 08:33:42.331	$2b$10$DpBpWS3yWRWwolk79ju9aeBvEq5pwx38GPzCyAG3e3Jvt1YnYsTle	SISWA
+cmj5gx2pd005835udp1ug0523	septiairfanramadhan@cbt.com	SEPTIA IRFAN RAMADHAN	2025-12-14 08:33:42.385	2025-12-14 08:33:42.385	$2b$10$fgb96s7bHiJBUAOiPAsGyOdzHP3WRL1BQ3NURlOlnW9QrsxqaxHsm	SISWA
+cmj5gx2qv005a35ud9ybz7pdt	example24@cbt.com	SUPRIYADI	2025-12-14 08:33:42.439	2025-12-14 08:33:42.439	$2b$10$/fHPGgD5ArqnFXg17lk7lOAPV5ArYq5bS0C0GQx8uJH/QMHNlarAG	SISWA
+cmj5gx2sd005c35udyl3o8dav	tesyaherliana@cbt.com	TESYA HERLIANA	2025-12-14 08:33:42.493	2025-12-14 08:33:42.493	$2b$10$XvMktoAKg7/oG.txjwJOxOn1jnZbTvuxIwBo8.qhTCoPvVfW/sSjm	SISWA
+cmj5gx2tv005e35udpkauz4m3	wisnumaulana@cbt.com	WISNU MAULANA	2025-12-14 08:33:42.547	2025-12-14 08:33:42.547	$2b$10$plpLK1tpmf./clc4mPg6DuUn0AqoYQjGa3eeAPRwbylsquFw7EGpi	SISWA
+cmj5gx2vd005g35udsfcg75mb	wulanfebriyanti@cbt.com	WULAN FEBRIYANTI	2025-12-14 08:33:42.601	2025-12-14 08:33:42.601	$2b$10$qJY6kQrkji64LTqKXhlk5u3s2tl2Sr13cxIb82UeFEOu0iObWx2Ea	SISWA
+cmj5gx2ww005i35udmbp9bp8d	yehezkielkevinraharjo@cbt.com	YEHEZKIEL KEVIN RAHARJO	2025-12-14 08:33:42.656	2025-12-14 08:33:42.656	$2b$10$8gdTpZSudlezzOgVk2GLZO7c97Puq3X2FICuk5P08uOdupVqbM6/i	SISWA
+cmj5gx2ye005k35ud0lbk4bs6	yohanesdwiprayoga@cbt.com	YOHANES DWI PRAYOGA	2025-12-14 08:33:42.71	2025-12-14 08:33:42.71	$2b$10$f5ECPVBxrDThgEuRQm7tLeKYyTISCXKsj6CM6Kn1o3a45HNFTggCW	SISWA
+cmj5gx2zv005m35ud2aj2o8s7	example28@cbt.com	YUDA WIRASA	2025-12-14 08:33:42.763	2025-12-14 08:33:42.763	$2b$10$kimndO4msuJnUkkv4BoNDuGNABfPBrpZwz5707TApwOzvbgTs92em	SISWA
+cmj5gx31d005o35udqv3tt8vd	yuliyatimah@cbt.com	YULI YATIMAH	2025-12-14 08:33:42.817	2025-12-15 09:13:52.78	$2b$10$FIJQKJNU8kn4aaD0mXT7WuT/yPTaLglP6BoZspMgbkYB1wjgNa0ya	SISWA
+cmj8hh49m0000oaudjfiw6g8c	petugasabsensi@mail.com	Hari	2025-12-16 11:12:36.058	2025-12-16 11:12:36.058	$2b$10$h24kCkRAeGrmZHveE0r19.dhXDmhVVHcbU7aTifSmWP3jK7rAbCAa	PETUGAS_ABSENSI
+cmj9z8xto00215dudxiyqcr71	ainiabdcholis.73@gmail.com	Aini Abdul Cholis S.Pd.	2025-12-17 12:17:53.724	2025-12-17 12:17:53.724	$2b$10$8d5eRQzqyaHxvTqdaZ0Xb.KMA9t1CccY0MokoaaCeQDO4JUonsm5u	GURU
+cmj9z8xvb00235dudd4xbolii	drasuburhindartin@gmail.com	Dra. Subur Hindartin	2025-12-17 12:17:53.783	2025-12-17 12:17:53.783	$2b$10$zK5uU3Xgn/ac3yU6KKx1a.8rpjn4D1WG.Ou1Tgucb5L4XQR1izT3C	GURU
+cmj9z8xws00255dudbgtsplon	yudiaster1922@gmail.com	Dwi Wahyudi, S.T,	2025-12-17 12:17:53.836	2025-12-17 12:17:53.836	$2b$10$YyJs1CrLRs5.2T8BUluBOe7Tj.wvxs2pLYSiyATFXmSTzXj.yGzVe	GURU
+cmj9z8xy800275dudsv8ypuim	erlinnoviadiana@gmail.com	Erlin Novia Diana, S.E.	2025-12-17 12:17:53.888	2025-12-17 12:17:53.888	$2b$10$/waGiSyB0t9vwLueL9NmFOC0JGkWUtsttc/SQu1V/ASD5ov8y2b3O	GURU
+cmj9z8xzp00295dudiet5g8kd	feramegaharistiana@gmail.com	Fera Mega Haristina, S.Tr.Kom.	2025-12-17 12:17:53.941	2025-12-17 12:17:53.941	$2b$10$O2yNs147SaOWSNADTQw.cOU9NgObwsUIzUy8QqGMZz7zHvAQx1S.q	GURU
+cmj9z8y16002b5dudps21lpfm	franceskoyen16@gmail.com	Frances Laurence Setyo Budi, S.Pd.	2025-12-17 12:17:53.994	2025-12-17 12:17:53.994	$2b$10$qTxhgk048vaLAkehVRUGD.gFHI3grpRamVmY4t0uwscnDAUHl9sWW	GURU
+cmj9z8y2n002d5dudjgj6nzx4	imtianateguh@gmail.com	Imtiana, S.Pd	2025-12-17 12:17:54.047	2025-12-17 12:17:54.047	$2b$10$YAm0kXZlWHCC31rxS2iAL.aNaX6lrF2E56eA5JGY9PClZApF2PX6G	GURU
+cmj9z8y44002f5dudfvho6nza	faizabrahammalik@gmail.com	M. Fais Jainuddin, S.Pd	2025-12-17 12:17:54.1	2025-12-17 12:17:54.1	$2b$10$pG.E6A1wwK8pFBDxijQ9FeAw7fhH.RYsuoceohV1i8yMB9Ywh1KaC	GURU
+cmj9z8y5n002h5dud9vb23462	mohrohim02@gmail.com	Moh. Rohim, S.T.	2025-12-17 12:17:54.155	2025-12-17 12:17:54.155	$2b$10$7HH5bidHf8R60YQ1wSPKZOzuLU/PZfNMG0pPwT1GxNl4cDiNXWmlK	GURU
+cmj9z8y73002j5dud9ooury49	yunuskacer@gmail.com	Moh. Yunus Ansori, S.Pd.	2025-12-17 12:17:54.207	2025-12-17 12:17:54.207	$2b$10$b.XN.kbU9W.rCAo.NtL/4uEYRtWcNjSv23TWqqlJqofhK0Haw4eK.	GURU
+cmj9z8y8l002l5dudo8u4k81t	danzia22@gmail.com	Mulyono, S.Th.	2025-12-17 12:17:54.261	2025-12-17 12:17:54.261	$2b$10$niDbRCJ5f.6DWxmLfDop2ej9J3nXS6natY9K/38fhMo5xLx/iRm.a	GURU
+cmj9z8ya2002n5dudxxrmi27p	nunungindrawati437@gmail.com	Nunung Indrawati, S.Pd.	2025-12-17 12:17:54.314	2025-12-17 12:17:54.314	$2b$10$W95AlE618b7g2R0jxnAtFurczP4G2yNzJGpuzoj9GcGDahmaYSiT2	GURU
+cmj9z8ybk002p5dudp5man22v	nurmalaevayanti2006@gmail.com	Nurmala Evayanti S.Pd.	2025-12-17 12:17:54.368	2025-12-17 12:17:54.368	$2b$10$JuD9MrSjTnn9JjGXK8s8I.s5gFTVjGYCU/Jl/Sg4A8ZDByCBZSvUa	GURU
+cmj9z8ycz002r5duda3p9ojun	nurulhidayahse485@gmail.com	Nurul Hidayah, S.E.	2025-12-17 12:17:54.419	2025-12-17 12:17:54.419	$2b$10$WCSq4rLN4ICBmTocXomrGOeQeRo2wHcv.9VXzzYb4ms0V561eMzuu	GURU
+cmj9z8yej002t5dudlb0wn4mh	rizkielutfi@gmail.com	Rizky Lutfi Romadona, S.Kom	2025-12-17 12:17:54.475	2025-12-17 12:17:54.475	$2b$10$gGHGtaTIIc86eCW856dfMOa1O9Y6l8TAUuLWAMGy8gCerLv.Q5VS6	GURU
+cmj9z8yfy002v5dudvf51yqq4	purwantisiska25@gmail.com	Siska Purwanti, S.E.	2025-12-17 12:17:54.526	2025-12-17 12:17:54.526	$2b$10$sWRMxFzGkLPqKZWFTV5p5.F9yNbQrpSMpBIn4k/ZWipc2GK1oDQpG	GURU
+cmj9z8yhh002x5dud9my7ci8i	rizalpecintaseni@gmail.com	Syamsul Rizal, S.Pd.I.	2025-12-17 12:17:54.581	2025-12-17 12:17:54.581	$2b$10$CNuEXEu7LJVQRmA.BgEMG.bGjlD36JsK4DkKLfbBV1T/j0XgPIigq	GURU
+cmj9z8yix002z5dudbc4lk8nv	udayaniprayuda@gmail.com	Udayani, S.Pd.	2025-12-17 12:17:54.633	2025-12-17 12:17:54.633	$2b$10$mx2VrBuCGVqaCRIlMCl6kOpaX2BG3iAbUMUB2dijH3rZGl9bMySye	GURU
+cmj9z8ykf00315duda3u6niqb	wahyumirnawati30@gmail.com	Wahyu Mirnawati, S.Ak.	2025-12-17 12:17:54.687	2025-12-17 12:17:54.687	$2b$10$dRmoisOlOqhHY5ZTr7ErMeNDuO9E0nIEqWcVVf0qvP30LafIf42r6	GURU
+cmj9z8ylv00335dudr8tet2na	zulfiamaliyah1306@gmail.com	Zulfi Amaliyah, S.Kom	2025-12-17 12:17:54.739	2025-12-17 12:17:54.739	$2b$10$omDJgN/uuRUALC8q7tkF3u2wsOfixVBy2EL4lORTiM7GO3yLU6Kci	GURU
+cmj9z8ynd00355dudycn1e6hi	pa717885@gmail.com	Maulida Putri Lesmana	2025-12-17 12:17:54.793	2025-12-17 12:17:54.793	$2b$10$tYhChWCpdqZ/5A1bzHFtcu9LZpKS2bIDhETwVIwgDSN0yRbWdggTG	GURU
+cmj9z8you00375dudrf1e71qe	ilafebtisherly@gmail.com	Ila Febti Sherly M., S.E	2025-12-17 12:17:54.846	2025-12-17 12:17:54.846	$2b$10$UB2xcYNx90qbDQQ3LlMkHOCSfQj.XWLldNJ9bmn4LW59GLZvbrYkm	GURU
 \.
 
 
@@ -524,6 +946,10 @@ cmj4dk3m000st7yi0wadpf5aq	yuliyatimah@cbt.com	YULI YATIMAH	2025-12-13 14:11:52.0
 --
 
 COPY public."_GuruMataPelajaran" ("A", "B") FROM stdin;
+cmj9z8yox00385dudt5p2uvo1	cmj9z7q9i001r5dudnscpl8q0
+cmj9z8yly00345dudadjrqvfh	cmj9z7q8c001f5dudtoyt49tx
+cmj9z8yly00345dudadjrqvfh	cmj9z7q90001m5dud5q6cvaku
+cmj9z8yly00345dudadjrqvfh	cmj9z7qa0001w5dudmau1sngf
 \.
 
 
@@ -532,15 +958,45 @@ COPY public."_GuruMataPelajaran" ("A", "B") FROM stdin;
 --
 
 COPY public._prisma_migrations (id, checksum, finished_at, migration_name, logs, rolled_back_at, started_at, applied_steps_count) FROM stdin;
-88bfddba-4940-44e3-9a6b-38f59395b54d	609cb3817046359fc62b69f293e3903cd198aae0f3510bf462c59f9ad4035ff7	2025-12-12 08:12:10.278856+00	20251211102828_init	\N	\N	2025-12-12 08:12:10.274022+00	1
-eaf7973c-a82e-4a48-94e6-e55942e7218f	2640bf707564a1056f78c31ab21927c3e2ba43ac93d47d3f1ef832ccced34bc8	2025-12-12 08:12:10.283878+00	20251211151758_npm_run_prisma_generate	\N	\N	2025-12-12 08:12:10.279866+00	1
-959075bb-bc61-4c0e-992d-06e9deb2645e	0c7e0d4e778e1cc415cbfd0b3fbe7fdc91ffeb05229bf7599a2ebb8ceb9ffb3e	2025-12-12 09:58:57.592251+00	20251212095857_add_lms_entities	\N	\N	2025-12-12 09:58:57.575077+00	1
-82c2dbd4-259c-4fd5-ade3-2b62903dc938	750d8a254ceaaf152f260f65242d25249ecaaf9678faa3f041f061007f1ee44d	2025-12-12 11:26:39.746689+00	20251212112639_add_jurusan_and_update_kelas	\N	\N	2025-12-12 11:26:39.735503+00	1
-eab3bcb5-fdec-48c9-a578-0b7b7f2c8547	998edaffc3e7e33bda76f385a440e3df4dbf0428564a2a15763cd5aa26535719	2025-12-12 12:26:10.479048+00	20251212122610_add_many_to_many_guru_mata_pelajaran	\N	\N	2025-12-12 12:26:10.471051+00	1
-dfd1bc6f-c4c7-4a49-83e5-0db46eed2fa3	92f08fc24273bbcd87412a6494250a94461f6da2ba78cc5cc67527b74e451431	2025-12-12 12:59:23.731389+00	20251212125923_add_user_integration_to_siswa_guru	\N	\N	2025-12-12 12:59:23.722637+00	1
-eb2988d5-49bc-46ec-b1e7-b9be9e7f2bf2	2af40a7de13d912e0dc5428dfaad47807ad86bb19d9b998236759c7c6779f568	2025-12-12 15:00:20.329854+00	20251212145913_make_tahun_ajaran_required_in_kelas	\N	\N	2025-12-12 15:00:20.324502+00	1
-f55e14ff-f083-4fd9-a827-075449847174	90480c68541aad550a5a12bc2e8485029efc1fb1fa25a9940a1323042c4385e2	2025-12-13 11:06:30.603123+00	20251213110630	\N	\N	2025-12-13 11:06:30.594106+00	1
+25cbcde4-da2f-4cc8-83c4-c53957adbea6	609cb3817046359fc62b69f293e3903cd198aae0f3510bf462c59f9ad4035ff7	2025-12-14 06:31:18.835747+00	20251211102828_init	\N	\N	2025-12-14 06:31:18.83016+00	1
+ea77ed3b-4da4-4635-a3e3-00089ab07944	2640bf707564a1056f78c31ab21927c3e2ba43ac93d47d3f1ef832ccced34bc8	2025-12-14 06:31:18.841561+00	20251211151758_npm_run_prisma_generate	\N	\N	2025-12-14 06:31:18.83679+00	1
+e6de99b5-8b05-486a-80ac-b1ef7bbc8737	0c7e0d4e778e1cc415cbfd0b3fbe7fdc91ffeb05229bf7599a2ebb8ceb9ffb3e	2025-12-14 06:31:18.859358+00	20251212095857_add_lms_entities	\N	\N	2025-12-14 06:31:18.842709+00	1
+9e68f37c-b5f2-4de7-a907-203165ec1522	750d8a254ceaaf152f260f65242d25249ecaaf9678faa3f041f061007f1ee44d	2025-12-14 06:31:18.87073+00	20251212112639_add_jurusan_and_update_kelas	\N	\N	2025-12-14 06:31:18.860547+00	1
+d86908ec-eee3-43fa-b177-e3322609e9a5	998edaffc3e7e33bda76f385a440e3df4dbf0428564a2a15763cd5aa26535719	2025-12-14 06:31:18.88245+00	20251212122610_add_many_to_many_guru_mata_pelajaran	\N	\N	2025-12-14 06:31:18.872583+00	1
+1850ccde-a2ab-4d64-8c26-3aeced7cf999	92f08fc24273bbcd87412a6494250a94461f6da2ba78cc5cc67527b74e451431	2025-12-14 06:31:18.89181+00	20251212125923_add_user_integration_to_siswa_guru	\N	\N	2025-12-14 06:31:18.883597+00	1
+f9f16ffd-9012-464f-bddd-ea50ad209c61	2af40a7de13d912e0dc5428dfaad47807ad86bb19d9b998236759c7c6779f568	2025-12-14 06:31:18.900475+00	20251212145913_make_tahun_ajaran_required_in_kelas	\N	\N	2025-12-14 06:31:18.893029+00	1
+4916feba-0f6f-481c-a33e-899d714f14be	90480c68541aad550a5a12bc2e8485029efc1fb1fa25a9940a1323042c4385e2	2025-12-14 06:31:18.907562+00	20251214051132	\N	\N	2025-12-14 06:31:18.901757+00	1
+dc09486e-9aa8-4911-b3fc-76eaceea3b5f	f4eb6ab1a9e0366ad782133ad765d973cb1b2ab0a48a1f7e9034e305b6634ff0	2025-12-14 06:31:32.238868+00	20251214063132_refactor_tahun_ajaran_to_siswa	\N	\N	2025-12-14 06:31:32.226902+00	1
+73a86823-e8fa-4920-9f59-a21a009f557c	25d03367cc79cdbff0ec8e1c2d3c33a3b806c75a4e4b1fecd1932f16e476b4e5	2025-12-14 08:42:12.558915+00	20251214084212_add_attendance_model	\N	\N	2025-12-14 08:42:12.543587+00	1
+d13dd0a1-8778-48be-a0e3-4b2fcad3f1f9	9c5dce6d4875f6332cacf7463b5274add07688e63ce466bb55322ca48798db91	2025-12-16 11:06:39.688214+00	20251216110639_add_petugas_absensi_role	\N	\N	2025-12-16 11:06:39.684805+00	1
+839fd3f6-6fec-4885-b81a-3abbd1be9a37	8334127d9f47b107a04a7d4f45e7b1a9f28120a32076d8418b80a0fbdd0d7fd3	2025-12-17 02:31:06.839154+00	20251217022933_remove_semester_from_tahun_ajaran	\N	\N	2025-12-17 02:31:06.831379+00	1
+d68e8bfa-48fb-4ed7-9e1c-50c63cd34bce	750d3916e193e86a376975d2c2776442d2927c8c75e0e51903d350dd990c2f6b	2025-12-16 11:51:14.343646+00	20251216115114_add_magang_status	\N	\N	2025-12-16 11:51:14.340335+00	1
+5a4576c2-a0a8-43b4-8a45-d3886f792273	da85a17d1e1e9d2f1e72621609dbf630c551db1a7cb10b87199cd81e646623ef	2025-12-16 11:52:39.628246+00	20251216115239_rename_magang_to_pkl	\N	\N	2025-12-16 11:52:39.612393+00	1
+ac9c6256-0a4f-45bc-b207-4bbbc330c309	39e302b56339b64f0b94a36c409a5271427d4159a7bda50059e41db697152c50	2025-12-17 11:47:42.425417+00	20251217114742_add_multi_class_student_selection	\N	\N	2025-12-17 11:47:42.41209+00	1
+e7714767-02e4-4cba-9ef6-1cda99cc360b	0156d098f4db91ff3bbadcc1b79aadb5d97c09871b71938fd4dc6e53391a1532	2025-12-16 12:49:05.605477+00	20251216124905_add_settings_model	\N	\N	2025-12-16 12:49:05.599174+00	1
+a1d4c89c-449e-4995-a8bd-e4937f0a4a90	ca56657a42dc94fe3aa791065e17521b02eadc0abb8a196bd6d74998eaca7b18	2025-12-17 07:42:27.654699+00	20251217074227_remove_tingkat_kesulitan	\N	\N	2025-12-17 07:42:27.631133+00	1
+f0e7af81-4a04-42f9-8b3f-5addddbb6f59	8334127d9f47b107a04a7d4f45e7b1a9f28120a32076d8418b80a0fbdd0d7fd3	\N	20251217022933_remove_semester_from_tahun_ajaran	A migration failed to apply. New migrations cannot be applied before the error is recovered from. Read more about how to resolve migration issues in a production database: https://pris.ly/d/migrate-resolve\n\nMigration name: 20251217022933_remove_semester_from_tahun_ajaran\n\nDatabase error code: 23505\n\nDatabase error:\nERROR: could not create unique index "TahunAjaran_tahun_key"\nDETAIL: Key (tahun)=(2025/2026) is duplicated.\n\nDbError { severity: "ERROR", parsed_severity: Some(Error), code: SqlState(E23505), message: "could not create unique index \\"TahunAjaran_tahun_key\\"", detail: Some("Key (tahun)=(2025/2026) is duplicated."), hint: None, position: None, where_: None, schema: Some("public"), table: Some("TahunAjaran"), column: None, datatype: None, constraint: Some("TahunAjaran_tahun_key"), file: Some("tuplesortvariants.c"), line: Some(1550), routine: Some("comparetup_index_btree_tiebreak") }\n\n   0: sql_schema_connector::apply_migration::apply_script\n           with migration_name="20251217022933_remove_semester_from_tahun_ajaran"\n             at schema-engine/connectors/sql-schema-connector/src/apply_migration.rs:113\n   1: schema_commands::commands::apply_migrations::Applying migration\n           with migration_name="20251217022933_remove_semester_from_tahun_ajaran"\n             at schema-engine/commands/src/commands/apply_migrations.rs:95\n   2: schema_core::state::ApplyMigrations\n             at schema-engine/core/src/state.rs:246	2025-12-17 02:30:58.550928+00	2025-12-17 02:29:33.997981+00	0
+2c9885b9-dc02-4e46-b931-5ececfe61b01	b49d31efb8891a0baa5b7c1c11b5468cc50c80552ec5a7b78852605d377c5bef	2025-12-17 09:10:02.049316+00	20251217091002_add_paket_soal	\N	\N	2025-12-17 09:10:02.037045+00	1
+9225bb4c-2c73-464b-8cf2-06eaead37bee	c709d568b3e9f35bfae33784143ab1dc0f924ed7188d7682fe83a2230a1ee496	2025-12-17 09:22:51.963536+00	20251217092251_remove_tingkat_kesulitan	\N	\N	2025-12-17 09:22:51.959643+00	1
+fa77163e-c8cd-476c-a2de-9e69baa13618	1e2dc8a2aa1a8521d2ffe0b9e6dc3039cea60c545ec602bdfe0492285e12afd8	2025-12-17 12:00:58.944202+00	20251217120042_add_guru_to_ujian	\N	\N	2025-12-17 12:00:58.937467+00	1
+bafc30c0-6d52-4cd4-bd40-5ce1a2ff5610	c8a78ac8421e0546ebf611754745d56f60ef00986d8fbaec0ea700f0b022c21e	2025-12-17 09:27:12.124423+00	20251217092712_add_guru_to_paket_soal	\N	\N	2025-12-17 09:27:12.116295+00	1
 \.
+
+
+--
+-- Name: Attendance Attendance_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Attendance"
+    ADD CONSTRAINT "Attendance_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: BankSoal BankSoal_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."BankSoal"
+    ADD CONSTRAINT "BankSoal_pkey" PRIMARY KEY (id);
 
 
 --
@@ -576,6 +1032,38 @@ ALTER TABLE ONLY public."MataPelajaran"
 
 
 --
+-- Name: PaketSoalItem PaketSoalItem_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."PaketSoalItem"
+    ADD CONSTRAINT "PaketSoalItem_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: PaketSoal PaketSoal_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."PaketSoal"
+    ADD CONSTRAINT "PaketSoal_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: Settings Settings_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Settings"
+    ADD CONSTRAINT "Settings_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: SiswaKelasHistory SiswaKelasHistory_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SiswaKelasHistory"
+    ADD CONSTRAINT "SiswaKelasHistory_pkey" PRIMARY KEY (id);
+
+
+--
 -- Name: Siswa Siswa_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -589,6 +1077,38 @@ ALTER TABLE ONLY public."Siswa"
 
 ALTER TABLE ONLY public."TahunAjaran"
     ADD CONSTRAINT "TahunAjaran_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: UjianKelas UjianKelas_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."UjianKelas"
+    ADD CONSTRAINT "UjianKelas_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: UjianSiswa UjianSiswa_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."UjianSiswa"
+    ADD CONSTRAINT "UjianSiswa_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: UjianSoal UjianSoal_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."UjianSoal"
+    ADD CONSTRAINT "UjianSoal_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: Ujian Ujian_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Ujian"
+    ADD CONSTRAINT "Ujian_pkey" PRIMARY KEY (id);
 
 
 --
@@ -613,6 +1133,41 @@ ALTER TABLE ONLY public."_GuruMataPelajaran"
 
 ALTER TABLE ONLY public._prisma_migrations
     ADD CONSTRAINT _prisma_migrations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: Attendance_siswaId_tanggal_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Attendance_siswaId_tanggal_idx" ON public."Attendance" USING btree ("siswaId", tanggal);
+
+
+--
+-- Name: Attendance_siswaId_tanggal_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "Attendance_siswaId_tanggal_key" ON public."Attendance" USING btree ("siswaId", tanggal);
+
+
+--
+-- Name: Attendance_tanggal_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Attendance_tanggal_idx" ON public."Attendance" USING btree (tanggal);
+
+
+--
+-- Name: BankSoal_kode_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "BankSoal_kode_key" ON public."BankSoal" USING btree (kode);
+
+
+--
+-- Name: BankSoal_mataPelajaranId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "BankSoal_mataPelajaranId_idx" ON public."BankSoal" USING btree ("mataPelajaranId");
 
 
 --
@@ -644,17 +1199,66 @@ CREATE UNIQUE INDEX "Jurusan_kode_key" ON public."Jurusan" USING btree (kode);
 
 
 --
--- Name: Kelas_nama_jurusanId_key; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE UNIQUE INDEX "Kelas_nama_jurusanId_key" ON public."Kelas" USING btree (nama, "jurusanId");
-
-
---
 -- Name: MataPelajaran_kode_key; Type: INDEX; Schema: public; Owner: postgres
 --
 
 CREATE UNIQUE INDEX "MataPelajaran_kode_key" ON public."MataPelajaran" USING btree (kode);
+
+
+--
+-- Name: PaketSoalItem_paketSoalId_bankSoalId_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "PaketSoalItem_paketSoalId_bankSoalId_key" ON public."PaketSoalItem" USING btree ("paketSoalId", "bankSoalId");
+
+
+--
+-- Name: PaketSoalItem_paketSoalId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "PaketSoalItem_paketSoalId_idx" ON public."PaketSoalItem" USING btree ("paketSoalId");
+
+
+--
+-- Name: PaketSoal_guruId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "PaketSoal_guruId_idx" ON public."PaketSoal" USING btree ("guruId");
+
+
+--
+-- Name: PaketSoal_kode_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "PaketSoal_kode_key" ON public."PaketSoal" USING btree (kode);
+
+
+--
+-- Name: PaketSoal_mataPelajaranId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "PaketSoal_mataPelajaranId_idx" ON public."PaketSoal" USING btree ("mataPelajaranId");
+
+
+--
+-- Name: Settings_key_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "Settings_key_key" ON public."Settings" USING btree (key);
+
+
+--
+-- Name: SiswaKelasHistory_kelasId_tahunAjaranId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SiswaKelasHistory_kelasId_tahunAjaranId_idx" ON public."SiswaKelasHistory" USING btree ("kelasId", "tahunAjaranId");
+
+
+--
+-- Name: SiswaKelasHistory_siswaId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "SiswaKelasHistory_siswaId_idx" ON public."SiswaKelasHistory" USING btree ("siswaId");
 
 
 --
@@ -672,10 +1276,108 @@ CREATE UNIQUE INDEX "Siswa_userId_key" ON public."Siswa" USING btree ("userId");
 
 
 --
--- Name: TahunAjaran_tahun_semester_key; Type: INDEX; Schema: public; Owner: postgres
+-- Name: TahunAjaran_tahun_key; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE UNIQUE INDEX "TahunAjaran_tahun_semester_key" ON public."TahunAjaran" USING btree (tahun, semester);
+CREATE UNIQUE INDEX "TahunAjaran_tahun_key" ON public."TahunAjaran" USING btree (tahun);
+
+
+--
+-- Name: UjianKelas_kelasId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "UjianKelas_kelasId_idx" ON public."UjianKelas" USING btree ("kelasId");
+
+
+--
+-- Name: UjianKelas_ujianId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "UjianKelas_ujianId_idx" ON public."UjianKelas" USING btree ("ujianId");
+
+
+--
+-- Name: UjianKelas_ujianId_kelasId_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "UjianKelas_ujianId_kelasId_key" ON public."UjianKelas" USING btree ("ujianId", "kelasId");
+
+
+--
+-- Name: UjianSiswa_siswaId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "UjianSiswa_siswaId_idx" ON public."UjianSiswa" USING btree ("siswaId");
+
+
+--
+-- Name: UjianSiswa_tokenAkses_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "UjianSiswa_tokenAkses_key" ON public."UjianSiswa" USING btree ("tokenAkses");
+
+
+--
+-- Name: UjianSiswa_ujianId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "UjianSiswa_ujianId_idx" ON public."UjianSiswa" USING btree ("ujianId");
+
+
+--
+-- Name: UjianSiswa_ujianId_siswaId_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "UjianSiswa_ujianId_siswaId_key" ON public."UjianSiswa" USING btree ("ujianId", "siswaId");
+
+
+--
+-- Name: UjianSoal_ujianId_bankSoalId_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "UjianSoal_ujianId_bankSoalId_key" ON public."UjianSoal" USING btree ("ujianId", "bankSoalId");
+
+
+--
+-- Name: UjianSoal_ujianId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "UjianSoal_ujianId_idx" ON public."UjianSoal" USING btree ("ujianId");
+
+
+--
+-- Name: Ujian_guruId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Ujian_guruId_idx" ON public."Ujian" USING btree ("guruId");
+
+
+--
+-- Name: Ujian_kelasId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Ujian_kelasId_idx" ON public."Ujian" USING btree ("kelasId");
+
+
+--
+-- Name: Ujian_kode_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "Ujian_kode_key" ON public."Ujian" USING btree (kode);
+
+
+--
+-- Name: Ujian_mataPelajaranId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Ujian_mataPelajaranId_idx" ON public."Ujian" USING btree ("mataPelajaranId");
+
+
+--
+-- Name: Ujian_tanggalMulai_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Ujian_tanggalMulai_idx" ON public."Ujian" USING btree ("tanggalMulai");
 
 
 --
@@ -690,6 +1392,22 @@ CREATE UNIQUE INDEX "User_email_key" ON public."User" USING btree (email);
 --
 
 CREATE INDEX "_GuruMataPelajaran_B_index" ON public."_GuruMataPelajaran" USING btree ("B");
+
+
+--
+-- Name: Attendance Attendance_siswaId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Attendance"
+    ADD CONSTRAINT "Attendance_siswaId_fkey" FOREIGN KEY ("siswaId") REFERENCES public."Siswa"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: BankSoal BankSoal_mataPelajaranId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."BankSoal"
+    ADD CONSTRAINT "BankSoal_mataPelajaranId_fkey" FOREIGN KEY ("mataPelajaranId") REFERENCES public."MataPelajaran"(id) ON UPDATE CASCADE ON DELETE SET NULL;
 
 
 --
@@ -709,19 +1427,67 @@ ALTER TABLE ONLY public."Kelas"
 
 
 --
--- Name: Kelas Kelas_tahunAjaranId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public."Kelas"
-    ADD CONSTRAINT "Kelas_tahunAjaranId_fkey" FOREIGN KEY ("tahunAjaranId") REFERENCES public."TahunAjaran"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
-
-
---
 -- Name: Kelas Kelas_waliKelasId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public."Kelas"
     ADD CONSTRAINT "Kelas_waliKelasId_fkey" FOREIGN KEY ("waliKelasId") REFERENCES public."Guru"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: PaketSoalItem PaketSoalItem_bankSoalId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."PaketSoalItem"
+    ADD CONSTRAINT "PaketSoalItem_bankSoalId_fkey" FOREIGN KEY ("bankSoalId") REFERENCES public."BankSoal"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: PaketSoalItem PaketSoalItem_paketSoalId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."PaketSoalItem"
+    ADD CONSTRAINT "PaketSoalItem_paketSoalId_fkey" FOREIGN KEY ("paketSoalId") REFERENCES public."PaketSoal"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: PaketSoal PaketSoal_guruId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."PaketSoal"
+    ADD CONSTRAINT "PaketSoal_guruId_fkey" FOREIGN KEY ("guruId") REFERENCES public."Guru"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: PaketSoal PaketSoal_mataPelajaranId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."PaketSoal"
+    ADD CONSTRAINT "PaketSoal_mataPelajaranId_fkey" FOREIGN KEY ("mataPelajaranId") REFERENCES public."MataPelajaran"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: SiswaKelasHistory SiswaKelasHistory_kelasId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SiswaKelasHistory"
+    ADD CONSTRAINT "SiswaKelasHistory_kelasId_fkey" FOREIGN KEY ("kelasId") REFERENCES public."Kelas"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: SiswaKelasHistory SiswaKelasHistory_siswaId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SiswaKelasHistory"
+    ADD CONSTRAINT "SiswaKelasHistory_siswaId_fkey" FOREIGN KEY ("siswaId") REFERENCES public."Siswa"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: SiswaKelasHistory SiswaKelasHistory_tahunAjaranId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SiswaKelasHistory"
+    ADD CONSTRAINT "SiswaKelasHistory_tahunAjaranId_fkey" FOREIGN KEY ("tahunAjaranId") REFERENCES public."TahunAjaran"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
 --
@@ -733,11 +1499,99 @@ ALTER TABLE ONLY public."Siswa"
 
 
 --
+-- Name: Siswa Siswa_tahunAjaranId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Siswa"
+    ADD CONSTRAINT "Siswa_tahunAjaranId_fkey" FOREIGN KEY ("tahunAjaranId") REFERENCES public."TahunAjaran"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
 -- Name: Siswa Siswa_userId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public."Siswa"
     ADD CONSTRAINT "Siswa_userId_fkey" FOREIGN KEY ("userId") REFERENCES public."User"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: UjianKelas UjianKelas_kelasId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."UjianKelas"
+    ADD CONSTRAINT "UjianKelas_kelasId_fkey" FOREIGN KEY ("kelasId") REFERENCES public."Kelas"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: UjianKelas UjianKelas_ujianId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."UjianKelas"
+    ADD CONSTRAINT "UjianKelas_ujianId_fkey" FOREIGN KEY ("ujianId") REFERENCES public."Ujian"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: UjianSiswa UjianSiswa_siswaId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."UjianSiswa"
+    ADD CONSTRAINT "UjianSiswa_siswaId_fkey" FOREIGN KEY ("siswaId") REFERENCES public."Siswa"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: UjianSiswa UjianSiswa_ujianId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."UjianSiswa"
+    ADD CONSTRAINT "UjianSiswa_ujianId_fkey" FOREIGN KEY ("ujianId") REFERENCES public."Ujian"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: UjianSoal UjianSoal_bankSoalId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."UjianSoal"
+    ADD CONSTRAINT "UjianSoal_bankSoalId_fkey" FOREIGN KEY ("bankSoalId") REFERENCES public."BankSoal"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: UjianSoal UjianSoal_ujianId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."UjianSoal"
+    ADD CONSTRAINT "UjianSoal_ujianId_fkey" FOREIGN KEY ("ujianId") REFERENCES public."Ujian"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: Ujian Ujian_guruId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Ujian"
+    ADD CONSTRAINT "Ujian_guruId_fkey" FOREIGN KEY ("guruId") REFERENCES public."Guru"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: Ujian Ujian_kelasId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Ujian"
+    ADD CONSTRAINT "Ujian_kelasId_fkey" FOREIGN KEY ("kelasId") REFERENCES public."Kelas"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: Ujian Ujian_mataPelajaranId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Ujian"
+    ADD CONSTRAINT "Ujian_mataPelajaranId_fkey" FOREIGN KEY ("mataPelajaranId") REFERENCES public."MataPelajaran"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: Ujian Ujian_paketSoalId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Ujian"
+    ADD CONSTRAINT "Ujian_paketSoalId_fkey" FOREIGN KEY ("paketSoalId") REFERENCES public."PaketSoal"(id) ON UPDATE CASCADE ON DELETE SET NULL;
 
 
 --
@@ -757,8 +1611,16 @@ ALTER TABLE ONLY public."_GuruMataPelajaran"
 
 
 --
+-- Name: SCHEMA public; Type: ACL; Schema: -; Owner: postgres
+--
+
+REVOKE USAGE ON SCHEMA public FROM PUBLIC;
+GRANT CREATE ON SCHEMA public TO PUBLIC;
+
+
+--
 -- PostgreSQL database dump complete
 --
 
-\unrestrict p0fI5nPa3f8Q5zjAdf02sWjM6cE0KD960ZXllDTZFR322SP36rUPGdkTIFdfbcT
+\unrestrict O3XJja99m3iMRLiH6iylEBKybqPP6sF2kytj3qjAbkxgCA4j6vXqciB2Y8bnwSn
 

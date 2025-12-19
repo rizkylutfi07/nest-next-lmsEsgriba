@@ -92,14 +92,24 @@ export default function MonitoringPage() {
             const matchesSearch = s.siswa?.nama?.toLowerCase().includes(search.toLowerCase()) ||
                 s.siswa?.nisn?.includes(search);
             const matchesClass = filterClass === "ALL" || s.siswa?.kelas?.nama === filterClass;
-            const matchesStatus = filterStatus === "ALL" ||
-                (filterStatus === "BLOCKED" ? false : s.status === filterStatus); // Implement BLOCKED logic if needed
+            const matchesStatus =
+                filterStatus === "ALL"
+                    ? true
+                    : filterStatus === "BLOCKED"
+                        ? s.status === "DIBLOKIR"
+                        : s.status === filterStatus;
 
             return matchesSearch && matchesClass && matchesStatus;
         });
     };
 
     const filteredStudents = getFilteredStudents();
+    const getAnsweredCount = (jawaban: any) => {
+        if (!jawaban) return 0;
+        if (Array.isArray(jawaban)) return jawaban.length;
+        if (typeof jawaban === "object") return Object.keys(jawaban).length;
+        return 0;
+    };
 
     const stats = {
         total: students?.length || 0,
@@ -268,12 +278,12 @@ export default function MonitoringPage() {
                                 <option key={c} value={c}>{c}</option>
                             ))}
                         </select>
-                        <div className="flex bg-muted/50 rounded-lg border border-input p-1 gap-1">
+                        <div className="flex bg-muted/30 rounded-full border border-input p-1 gap-1">
                             <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setFilterStatus("ALL")}
-                                className={`h-8 px-3 text-xs ${filterStatus === "ALL" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                                className={`h-8 px-3 text-xs rounded-full ${filterStatus === "ALL" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                             >
                                 Semua
                             </Button>
@@ -281,7 +291,7 @@ export default function MonitoringPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setFilterStatus("BLOCKED")}
-                                className={`h-8 px-3 text-xs ${filterStatus === "BLOCKED" ? "bg-red-500/10 text-red-600 dark:text-red-400" : "text-muted-foreground hover:text-foreground"}`}
+                                className={`h-8 px-3 text-xs rounded-full ${filterStatus === "BLOCKED" ? "bg-red-500/10 text-red-600 dark:text-red-400" : "text-muted-foreground hover:text-foreground"}`}
                             >
                                 <ShieldAlert size={12} className="mr-1" />
                                 Diblokir
@@ -304,11 +314,14 @@ export default function MonitoringPage() {
                             <tbody className="divide-y divide-border">
                                 {filteredStudents.map((student: any) => {
                                     const totalQuestions = student.ujian?._count?.ujianSoal || 0;
-                                    const answeredCount = student.jawaban ? Object.keys(student.jawaban).length : 0;
+                                    const answeredCount = student.answeredCount ?? getAnsweredCount(student.jawaban);
                                     const progressPercent = totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
 
                                     return (
-                                        <tr key={student.id} className="group hover:bg-muted/50 transition-colors">
+                                        <tr
+                                            key={student.id}
+                                            className={`group transition-colors ${student.status === "DIBLOKIR" ? "bg-red-50/80 dark:bg-red-950/30" : "hover:bg-muted/50"}`}
+                                        >
                                             <td className="px-4 py-4">
                                                 <div>
                                                     <div className="font-bold text-foreground mb-1 group-hover:text-primary transition-colors">
@@ -354,39 +367,40 @@ export default function MonitoringPage() {
                                                 <div className="flex justify-end gap-2">
                                                     {student.status === "SEDANG_MENGERJAKAN" && (
                                                         <Button
-                                                            variant="ghost"
+                                                            variant="outline"
                                                             size="sm"
-                                                            className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                                                            className="text-red-600 border-red-200 hover:bg-red-50 dark:border-red-900 dark:text-red-300"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 handleBlockStudent(student.id);
                                                             }}
-                                                            title="Blokir Siswa"
                                                         >
-                                                            <Lock size={16} />
+                                                            <Lock size={14} className="mr-1" />
+                                                            Blokir
                                                         </Button>
                                                     )}
                                                     {student.status === "DIBLOKIR" && (
                                                         <Button
-                                                            variant="ghost"
+                                                            variant="outline"
                                                             size="sm"
-                                                            className="text-green-500 hover:text-green-600 hover:bg-green-500/10"
+                                                            className="text-green-600 border-green-200 hover:bg-green-50 dark:border-green-900 dark:text-green-300"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 handleUnblockStudent(student.id);
                                                             }}
-                                                            title="Buka Blokir"
                                                         >
-                                                            <Unlock size={16} />
+                                                            <Unlock size={14} className="mr-1" />
+                                                            Buka blokir
                                                         </Button>
                                                     )}
                                                     <Button
                                                         variant="ghost"
-                                                        size="sm"
+                                                        size="icon"
                                                         className="text-muted-foreground hover:text-foreground hover:bg-muted"
                                                         onClick={() => setSelectedStudent(student)}
+                                                        title="Detail"
                                                     >
-                                                        Detail
+                                                        <Eye size={16} />
                                                     </Button>
                                                 </div>
                                             </td>

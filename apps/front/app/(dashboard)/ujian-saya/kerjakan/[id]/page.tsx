@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRouter, useParams } from "next/navigation";
-import { Loader2, Clock, AlertTriangle, Send, AlertCircle, Ban } from "lucide-react";
+import { Loader2, Clock, AlertTriangle, Send, AlertCircle, Ban, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -67,6 +67,11 @@ export default function KerjakanUjianPage() {
     const [activeSoalId, setActiveSoalId] = useState<string | null>(null);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [hasLoadedSavedAnswers, setHasLoadedSavedAnswers] = useState(false);
+    const saveProgressTimer = useRef<NodeJS.Timeout | null>(null);
+    const [saveError, setSaveError] = useState<string | null>(null);
+    const fullscreenRequested = useRef(false);
+    const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
+    const [unansweredList, setUnansweredList] = useState<{ idx: number; key: string }[]>([]);
 
     // Load saved answers from localStorage (if any)
     useEffect(() => {
@@ -91,6 +96,15 @@ export default function KerjakanUjianPage() {
         if (!hasLoadedSavedAnswers) return; // avoid overwriting before load
         localStorage.setItem(STORAGE_KEY, JSON.stringify(jawaban));
     }, [jawaban, ujianSiswaId, hasLoadedSavedAnswers]);
+
+    // Push existing saved answers to server once after load
+    useEffect(() => {
+        if (!hasLoadedSavedAnswers) return;
+        if (!token || !ujianSiswaId) return;
+        if (Object.keys(jawaban).length === 0) return;
+        queueSaveProgress(jawaban);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [hasLoadedSavedAnswers]);
 
     // Fetch exam session
     const { data: session, isLoading } = useQuery({
@@ -178,16 +192,69 @@ export default function KerjakanUjianPage() {
                     body: JSON.stringify({ jawaban: jawabanArray }),
                 }
             );
-            if (!res.ok) throw new Error("Failed to submit");
+            if (!res.ok) {
+                const message = await res.text();
+                throw new Error(message || "Failed to submit");
+            }
             return res.json();
         },
         onSuccess: () => {
             if (typeof window !== "undefined") {
                 localStorage.removeItem(STORAGE_KEY);
             }
-            router.push(`/ujian-saya/hasil/${ujianSiswaId}`);
+            const shouldShowResult = Boolean(session?.ujian?.tampilkanNilai);
+            router.replace(shouldShowResult ? `/ujian-saya/hasil/${ujianSiswaId}` : "/");
+        },
+        onError: (err: any) => {
+            alert(err?.message || "Gagal submit ujian");
         },
     });
+
+    // Persist progress to server (for monitoring) with debounce
+    const saveProgressMutation = useMutation({
+        mutationFn: async (jawabanPayload: { soalId: string; jawaban: string }[]) => {
+            const res = await fetch(
+                `http://localhost:3001/ujian-siswa/progress/${ujianSiswaId}`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({ jawaban: jawabanPayload }),
+                }
+            );
+            if (!res.ok) throw new Error("Failed to save progress");
+            return res.json();
+        },
+        onSuccess: () => setSaveError(null),
+        onError: (err: any) => setSaveError(err?.message || "Gagal menyimpan progres"),
+    });
+
+    const queueSaveProgress = (nextJawaban: Record<string, string>) => {
+        if (!token || !ujianSiswaId || !hasLoadedSavedAnswers) return;
+
+        if (saveProgressTimer.current) {
+            clearTimeout(saveProgressTimer.current);
+        }
+
+        const jawabanArray = Object.entries(nextJawaban).map(([soalId, answer]) => ({
+            soalId,
+            jawaban: answer,
+        }));
+
+        saveProgressTimer.current = setTimeout(() => {
+            saveProgressMutation.mutate(jawabanArray);
+        }, 600);
+    };
+
+    useEffect(() => {
+        return () => {
+            if (saveProgressTimer.current) {
+                clearTimeout(saveProgressTimer.current);
+            }
+        };
+    }, []);
 
     // Timer
     useEffect(() => {
@@ -254,6 +321,14 @@ export default function KerjakanUjianPage() {
         };
     }, []);
 
+    // Auto-request fullscreen when session is ready
+    useEffect(() => {
+        if (!session) return;
+        if (fullscreenRequested.current) return;
+        fullscreenRequested.current = true;
+        requestFullscreen();
+    }, [session]);
+
     // Anti-cheat: Tab visibility
     useEffect(() => {
         const handleVisibilityChange = () => {
@@ -304,10 +379,12 @@ export default function KerjakanUjianPage() {
     };
 
     const handleSubmit = () => {
-        if (confirm("Apakah Anda yakin ingin submit ujian?")) {
-            setIsSubmitting(true);
-            submitMutation.mutate();
-        }
+        const unanswered = soalList
+            .map((soal: any, idx: number) => ({ key: soal.bankSoalId ?? soal.id, idx }))
+            .filter(({ key }) => !jawaban[key]);
+
+        setUnansweredList(unanswered);
+        setShowSubmitConfirm(true);
     };
 
     const soalList = session?.ujian?.ujianSoal ?? [];
@@ -359,7 +436,7 @@ export default function KerjakanUjianPage() {
     };
 
     return (
-        <div className="min-h-screen bg-background p-4">
+        <div className="min-h-screen bg-background p-1">
             {/* Blocking Modal */}
             {isBlocked && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/95 backdrop-blur-md p-4">
@@ -390,14 +467,7 @@ export default function KerjakanUjianPage() {
 
             {/* Header - Fixed */}
             <div className="fixed top-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-b z-50 p-4">
-                <div className="max-w-4xl mx-auto flex items-center justify-between">
-                    <div>
-                        <h1 className="text-xl font-bold">{session.ujian.judul}</h1>
-                        <p className="text-sm text-muted-foreground">
-                            {session.ujian.mataPelajaran?.nama}
-                        </p>
-                    </div>
-
+                <div className="max-w-4xl mx-auto flex items-center justify-center">
                     <div className="flex items-center gap-4">
                         {violations > 0 && (
                             <div className="flex items-center gap-2 text-red-600">
@@ -425,38 +495,17 @@ export default function KerjakanUjianPage() {
                         >
                             {isFullscreen ? "Keluar Fullscreen" : "Fullscreen"}
                         </Button>
-
-                        <Button
-                            onClick={handleSubmit}
-                            disabled={isSubmitting || submitMutation.isPending}
-                            size="sm"
-                        >
-                            {isSubmitting || submitMutation.isPending ? (
-                                <>
-                                    <Loader2 className="animate-spin mr-2" size={16} />
-                                    Submitting...
-                                </>
-                            ) : (
-                                <>
-                                    <Send size={16} className="mr-2" />
-                                    Submit
-                                </>
-                            )}
-                        </Button>
                     </div>
                 </div>
             </div>
 
             {/* Content */}
-            <div className="max-w-4xl mx-auto pt-24 pb-8 space-y-6">
+            <div className="max-w-4xl mx-auto pt-2 pb-2 space-y-6">
                 <Card>
                     <CardContent className="p-4 space-y-3">
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-semibold">Navigasi Soal</p>
-                                <p className="text-xs text-muted-foreground">
-                                    Klik nomor untuk lompat ke soal
-                                </p>
                             </div>
                             <div className="flex gap-3 text-xs text-muted-foreground">
                                 <span>
@@ -506,14 +555,6 @@ export default function KerjakanUjianPage() {
                                 <CardContent className="p-6 space-y-6">
                                     <div className="flex items-start gap-3">
                                         <Badge className="bg-muted text-muted-foreground border border-border">Soal {currentIndex + 1}</Badge>
-                                        {tipeSoal && (
-                                            <Badge className="bg-blue-500/15 text-blue-600">
-                                                {tipeSoal.replace("_", " ")}
-                                            </Badge>
-                                        )}
-                                        <span className="text-sm text-muted-foreground ml-auto">
-                                            Bobot: {currentSoal.bobot}
-                                        </span>
                                     </div>
 
                                     {typeof pertanyaan === "string" && pertanyaan.includes("<") ? (
@@ -541,9 +582,11 @@ export default function KerjakanUjianPage() {
                                                             name={`soal-${soalKey}`}
                                                             value={optionValue}
                                                             checked={jawaban[soalKey] === optionValue}
-                                                            onChange={(e) =>
-                                                                setJawaban({ ...jawaban, [soalKey]: e.target.value })
-                                                            }
+                                                            onChange={(e) => {
+                                                                const next = { ...jawaban, [soalKey]: e.target.value };
+                                                                setJawaban(next);
+                                                                queueSaveProgress(next);
+                                                            }}
                                                             className="mt-1"
                                                         />
                                                         <span className="flex-1">{optionLabel}</span>
@@ -561,9 +604,11 @@ export default function KerjakanUjianPage() {
                                                     name={`soal-${soalKey}`}
                                                     value="BENAR"
                                                     checked={jawaban[soalKey] === "BENAR"}
-                                                    onChange={(e) =>
-                                                        setJawaban({ ...jawaban, [soalKey]: e.target.value })
-                                                    }
+                                                    onChange={(e) => {
+                                                        const next = { ...jawaban, [soalKey]: e.target.value };
+                                                        setJawaban(next);
+                                                        queueSaveProgress(next);
+                                                    }}
                                                 />
                                                 <span>Benar</span>
                                             </label>
@@ -573,9 +618,11 @@ export default function KerjakanUjianPage() {
                                                     name={`soal-${soalKey}`}
                                                     value="SALAH"
                                                     checked={jawaban[soalKey] === "SALAH"}
-                                                    onChange={(e) =>
-                                                        setJawaban({ ...jawaban, [soalKey]: e.target.value })
-                                                    }
+                                                    onChange={(e) => {
+                                                        const next = { ...jawaban, [soalKey]: e.target.value };
+                                                        setJawaban(next);
+                                                        queueSaveProgress(next);
+                                                    }}
                                                 />
                                                 <span>Salah</span>
                                             </label>
@@ -585,9 +632,11 @@ export default function KerjakanUjianPage() {
                                     {(tipeSoal === "ESSAY" || tipeSoal === "ISIAN_SINGKAT") && (
                                         <textarea
                                             value={jawaban[soalKey] || ""}
-                                            onChange={(e) =>
-                                                setJawaban({ ...jawaban, [soalKey]: e.target.value })
-                                            }
+                                            onChange={(e) => {
+                                                const next = { ...jawaban, [soalKey]: e.target.value };
+                                                setJawaban(next);
+                                                queueSaveProgress(next);
+                                            }}
                                             placeholder="Tulis jawaban Anda di sini..."
                                             className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 outline-none transition focus:border-primary/60 focus:bg-white/10"
                                             rows={tipeSoal === "ESSAY" ? 6 : 2}
@@ -602,9 +651,7 @@ export default function KerjakanUjianPage() {
                                         >
                                             Soal Sebelumnya
                                         </Button>
-                                        <span className="text-sm text-muted-foreground">
-                                            Soal {currentIndex + 1} dari {soalList.length}
-                                        </span>
+                                        
                                         <Button
                                             variant="outline"
                                             onClick={() => goToIndex(currentIndex + 1)}
@@ -612,6 +659,11 @@ export default function KerjakanUjianPage() {
                                         >
                                             Soal Berikutnya
                                         </Button>
+                                    </div>
+                                    <div className="flex items-center justify-left">
+                                        <span className="text-sm text-muted-foreground">
+                                            Soal {currentIndex + 1} dari {soalList.length}
+                                        </span>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -624,16 +676,27 @@ export default function KerjakanUjianPage() {
                 )}
 
                 {/* Submit button at bottom */}
-                <Card className="sticky bottom-4">
+                <Card className="sticky bottom-4 shadow-lg border-border">
                     <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                            <div className="text-sm text-muted-foreground">
-                                Terjawab: {answeredCount} / {soalList.length}
+                        <div className="flex items-center justify-between gap-4">
+                            <div className="text-sm text-muted-foreground space-y-1">
+                                <div>Terjawab: {answeredCount} / {soalList.length}</div>
+                                {saveProgressMutation.isPending ? (
+                                    <div className="text-xs text-primary flex items-center gap-1">
+                                        <Loader2 className="h-3 w-3 animate-spin" />
+                                        Menyimpan progres...
+                                    </div>
+                                ) : saveError ? (
+                                    <div className="text-xs text-destructive">Gagal simpan progres: {saveError}</div>
+                                ) : (
+                                    <div className="text-xs text-muted-foreground">Progres otomatis tersimpan</div>
+                                )}
                             </div>
                             <Button
                                 onClick={handleSubmit}
                                 disabled={isSubmitting || submitMutation.isPending}
                                 size="lg"
+                                className="gap-2 px-5"
                             >
                                 {isSubmitting || submitMutation.isPending ? (
                                     <>
@@ -642,8 +705,8 @@ export default function KerjakanUjianPage() {
                                     </>
                                 ) : (
                                     <>
-                                        <Send size={20} className="mr-2" />
-                                        Submit Ujian
+                                        <ShieldCheck size={18} />
+                                        Kirim Jawaban
                                     </>
                                 )}
                             </Button>
@@ -651,6 +714,81 @@ export default function KerjakanUjianPage() {
                     </CardContent>
                 </Card>
             </div>
+            {/* Submit confirmation modal */}
+            {showSubmitConfirm && (
+                <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                    <div className="w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="p-5 border-b border-border bg-muted/30">
+                            <div className="flex items-center gap-3">
+                                <ShieldCheck className="text-primary" size={20} />
+                                <div>
+                                    <div className="font-semibold text-foreground">Kirim Jawaban</div>
+                                    <div className="text-xs text-muted-foreground">Pastikan semua jawaban sudah benar.</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-5 space-y-3">
+                            {unansweredList.length > 0 ? (
+                                <>
+                                    <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
+                                        <AlertTriangle size={16} />
+                                        {unansweredList.length} soal belum terjawab.
+                                    </div>
+                                    <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                                        {unansweredList.slice(0, 6).map((item) => (
+                                            <span
+                                                key={item.idx}
+                                                className="inline-flex items-center px-2 py-1 rounded-full bg-muted text-foreground border border-border cursor-pointer hover:border-primary/50"
+                                                onClick={() => {
+                                                    setShowSubmitConfirm(false);
+                                                    goToIndex(item.idx);
+                                                }}
+                                            >
+                                                Soal {item.idx + 1}
+                                            </span>
+                                        ))}
+                                        {unansweredList.length > 6 && (
+                                            <span className="text-xs text-muted-foreground">+{unansweredList.length - 6} lainnya</span>
+                                        )}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                        Anda bisa melompat ke soal yang belum dijawab atau tetap kirim.
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                                    <ShieldCheck size={16} />
+                                    Semua soal sudah terjawab.
+                                </div>
+                            )}
+                        </div>
+                        <div className="p-4 border-t border-border bg-muted/30 flex gap-2 justify-end">
+                            <Button
+                                variant="ghost"
+                                className="flex-1"
+                                onClick={() => setShowSubmitConfirm(false)}
+                                disabled={isSubmitting || submitMutation.isPending}
+                            >
+                                Batal
+                            </Button>
+                            <Button
+                                className="flex-1"
+                                onClick={() => {
+                                    setShowSubmitConfirm(false);
+                                    setIsSubmitting(true);
+                                    submitMutation.mutate();
+                                }}
+                                disabled={isSubmitting || submitMutation.isPending}
+                            >
+                                {isSubmitting || submitMutation.isPending ? (
+                                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                ) : null}
+                                Kirim Sekarang
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
