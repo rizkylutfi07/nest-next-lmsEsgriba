@@ -70,6 +70,16 @@ export class PaketSoalController {
         return this.paketSoalService.addSoal(id, addSoalDto);
     }
 
+    @Post(':id/preview')
+    @Roles(Role.ADMIN, Role.GURU)
+    @UseInterceptors(FileInterceptor('file'))
+    async previewImport(
+        @Param('id') id: string,
+        @UploadedFile() file: Express.Multer.File,
+    ) {
+        return this.paketSoalService.previewImport(id, file);
+    }
+
     @Post(':id/import')
     @Roles(Role.ADMIN, Role.GURU)
     @UseInterceptors(FileInterceptor('file'))

@@ -201,6 +201,175 @@ export class PaketSoalService {
         return { message: 'Soal berhasil dihapus dari paket' };
     }
 
+    /**
+     * Preview import - parse Word file and return validation results without saving
+     */
+    async previewImport(paketSoalId: string, file: Express.Multer.File) {
+        if (!file) {
+            throw new BadRequestException('File is required');
+        }
+
+        // Verify paket exists
+        await this.findOne(paketSoalId);
+
+        // Parse Word file - get both raw text and HTML (for image detection)
+        const textResult = await mammoth.extractRawText({ buffer: file.buffer });
+        const htmlResult = await mammoth.convertToHtml({ buffer: file.buffer });
+
+        // Parse questions from raw text
+        const soalBlocks = textResult.value.split(/\[NOMOR \d+\]/i).filter(block => block.trim());
+
+        const validSoal: any[] = [];
+        const invalidSoal: any[] = [];
+        let totalBobot = 0;
+
+        // Pre-compute all NOMOR marker positions in HTML (handles duplicate markers)
+        const htmlMarkerPositions: { marker: string, index: number }[] = [];
+        const markerRegex = /\[NOMOR\s+\d+\]/gi;
+        let markerMatch;
+        while ((markerMatch = markerRegex.exec(htmlResult.value)) !== null) {
+            htmlMarkerPositions.push({ marker: markerMatch[0], index: markerMatch.index });
+        }
+
+        for (let blockIndex = 0; blockIndex < soalBlocks.length; blockIndex++) {
+            const block = soalBlocks[blockIndex];
+            const nomorSoal = blockIndex + 1;
+            const issues: string[] = [];
+
+            try {
+                const lines = block.split('\n').map(line => line.trim()).filter(line => line);
+
+                let jenisSoal = '';
+                let nilai = 0;
+                let pertanyaan = '';
+                let jawaban: string[] = [];
+                let kunciJawaban = '';
+                let hasImageInSoal = false;
+                let hasImageInJawaban = false;
+
+                // Find HTML section using index position (handles duplicate NOMOR markers)
+                // htmlMarkerPositions is computed once outside the loop
+                if (htmlMarkerPositions[blockIndex]) {
+                    const start = htmlMarkerPositions[blockIndex].index;
+                    const end = htmlMarkerPositions[blockIndex + 1]
+                        ? htmlMarkerPositions[blockIndex + 1].index
+                        : htmlResult.value.length;
+                    const htmlSection = htmlResult.value.substring(start, end);
+
+                    // Check for images in this section
+                    if (htmlSection.includes('<img')) {
+                        // Check if image is in SOAL section (before JAWABAN)
+                        const jawabanIndex = htmlSection.search(/JAWABAN:/i);
+                        const imgIndex = htmlSection.indexOf('<img');
+                        if (jawabanIndex === -1 || imgIndex < jawabanIndex) {
+                            hasImageInSoal = true;
+                        }
+                        if (jawabanIndex !== -1 && htmlSection.indexOf('<img', jawabanIndex) !== -1) {
+                            hasImageInJawaban = true;
+                        }
+                    }
+                }
+
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+
+                    if (line.match(/^JENIS SOAL:/i)) {
+                        const match = line.match(/JENIS SOAL:\s*(.+)/i);
+                        if (match) {
+                            const jenis = match[1].trim().toUpperCase();
+                            if (jenis.includes('PILIHAN GANDA') || jenis.includes('PG')) {
+                                jenisSoal = 'PILIHAN_GANDA';
+                            } else if (jenis.includes('ESSAY')) {
+                                jenisSoal = 'ESSAY';
+                            } else if (jenis.includes('BENAR') || jenis.includes('SALAH')) {
+                                jenisSoal = 'BENAR_SALAH';
+                            } else if (jenis.includes('ISIAN')) {
+                                jenisSoal = 'ISIAN_SINGKAT';
+                            }
+                        }
+                    } else if (line.match(/^NILAI:/i)) {
+                        const match = line.match(/NILAI:\s*(\d+)/i);
+                        if (match) nilai = parseInt(match[1]);
+                    } else if (line.match(/^SOAL:/i)) {
+                        pertanyaan = line.replace(/^SOAL:/i, '').trim();
+                        while (i + 1 < lines.length && !lines[i + 1].match(/^(JAWABAN|KUNCI JAWABAN):/i)) {
+                            i++;
+                            pertanyaan += '\n' + lines[i];
+                        }
+                    } else if (line.match(/^JAWABAN:/i)) {
+                        while (i + 1 < lines.length && !lines[i + 1].match(/^KUNCI JAWABAN:/i)) {
+                            i++;
+                            if (lines[i]) jawaban.push(lines[i]);
+                        }
+                    } else if (line.match(/^KUNCI JAWABAN:/i)) {
+                        const match = line.match(/KUNCI JAWABAN:\s*([A-E])/i);
+                        if (match) kunciJawaban = match[1].toUpperCase();
+                    }
+                }
+
+                // Validate
+                if (!jenisSoal) issues.push('Jenis soal tidak ditemukan');
+                if (nilai <= 0) issues.push('Nilai/bobot tidak valid');
+
+                // Check pertanyaan - but allow if there's an image
+                if (!pertanyaan || pertanyaan.length < 5) {
+                    if (!hasImageInSoal) {
+                        issues.push('Pertanyaan kosong atau terlalu pendek');
+                    }
+                }
+
+                if (jenisSoal === 'PILIHAN_GANDA') {
+                    // Allow fewer text options if there are images in jawaban
+                    if (jawaban.length < 2 && !hasImageInJawaban) {
+                        issues.push('Pilihan jawaban kurang dari 2');
+                    }
+                    if (!kunciJawaban) issues.push('Kunci jawaban tidak ditemukan');
+                }
+
+                const soalData = {
+                    nomor: nomorSoal,
+                    jenisSoal: jenisSoal || 'TIDAK DIKETAHUI',
+                    bobot: nilai,
+                    pertanyaanPreview: hasImageInSoal
+                        ? (pertanyaan ? pertanyaan.substring(0, 80) + ' [+ GAMBAR]' : '[GAMBAR]')
+                        : (pertanyaan.substring(0, 100) + (pertanyaan.length > 100 ? '...' : '')),
+                    jumlahPilihan: jawaban.length,
+                    kunciJawaban: kunciJawaban || '-',
+                    hasImage: hasImageInSoal || hasImageInJawaban,
+                    issues,
+                };
+
+                if (issues.length === 0) {
+                    validSoal.push(soalData);
+                    totalBobot += nilai;
+                } else {
+                    invalidSoal.push(soalData);
+                }
+            } catch (error) {
+                invalidSoal.push({
+                    nomor: nomorSoal,
+                    jenisSoal: 'ERROR',
+                    bobot: 0,
+                    pertanyaanPreview: 'Error parsing soal',
+                    jumlahPilihan: 0,
+                    kunciJawaban: '-',
+                    hasImage: false,
+                    issues: ['Error parsing: ' + (error as Error).message],
+                });
+            }
+        }
+
+        return {
+            totalSoal: soalBlocks.length,
+            validCount: validSoal.length,
+            invalidCount: invalidSoal.length,
+            totalBobot,
+            validSoal,
+            invalidSoal,
+            nomorBermasalah: invalidSoal.map(s => s.nomor),
+        };
+    }
+
     async importSoal(paketSoalId: string, file: Express.Multer.File, mataPelajaranId?: string) {
         if (!file) {
             throw new BadRequestException('File is required');
@@ -209,12 +378,23 @@ export class PaketSoalService {
         // Verify paket exists
         await this.findOne(paketSoalId);
 
-        // Parse Word file
-        const result = await mammoth.extractRawText({ buffer: file.buffer });
-        const text = result.value;
+        // Parse Word file with HTML and custom image handler (embeds images as base64)
+        const imageHandler = mammoth.images.imgElement(function (image) {
+            return image.read("base64").then(function (imageBuffer) {
+                return {
+                    src: "data:" + image.contentType + ";base64," + imageBuffer
+                };
+            });
+        });
 
-        // Parse questions using same format as bank-soal
-        const soalList = this.parseWordContent(text);
+        const htmlResult = await mammoth.convertToHtml(
+            { buffer: file.buffer },
+            { convertImage: imageHandler }
+        );
+        const html = htmlResult.value;
+
+        // Parse questions from HTML (with images)
+        const soalList = this.parseHtmlContent(html);
 
         const results: {
             success: any[];
@@ -279,6 +459,169 @@ export class PaketSoalService {
             ...results,
             addedToPackage: bankSoalIds.length,
         };
+    }
+
+    /**
+     * Parse HTML content from mammoth to extract questions with images
+     */
+    private parseHtmlContent(html: string): any[] {
+        const soalList: any[] = [];
+
+        // Split by [NOMOR x] pattern and filter out blocks without question content
+        const blocks = html.split(/\[NOMOR\s+\d+\]/i)
+            .filter(block => block.trim())
+            .filter(block => /JENIS SOAL:/i.test(block)); // Only blocks with actual questions
+
+        for (const block of blocks) {
+            try {
+                // Strip HTML tags but preserve img tags
+                let workingBlock = block;
+
+                // Extract and parse sections from HTML
+                let jenisSoal = 'PILIHAN_GANDA';
+                let nilai = 10;
+                let pertanyaan = '';
+                let jawaban: any[] = [];
+                let kunciJawaban = '';
+
+                // Parse JENIS SOAL
+                const jenisMatch = workingBlock.match(/JENIS SOAL:\s*([^<\n]+)/i);
+                if (jenisMatch) {
+                    const jenis = jenisMatch[1].trim().toUpperCase();
+                    if (jenis.includes('PILIHAN GANDA') || jenis.includes('PG')) {
+                        jenisSoal = 'PILIHAN_GANDA';
+                    } else if (jenis.includes('ESSAY')) {
+                        jenisSoal = 'ESSAY';
+                    } else if (jenis.includes('BENAR') || jenis.includes('SALAH')) {
+                        jenisSoal = 'BENAR_SALAH';
+                    } else if (jenis.includes('ISIAN')) {
+                        jenisSoal = 'ISIAN_SINGKAT';
+                    }
+                }
+
+                // Parse NILAI
+                const nilaiMatch = workingBlock.match(/NILAI:\s*(\d+)/i);
+                if (nilaiMatch) {
+                    nilai = parseInt(nilaiMatch[1]);
+                }
+
+                // Extract SOAL section (between SOAL: and JAWABAN:)
+                const soalMatch = workingBlock.match(/SOAL:([\s\S]*?)(?:JAWABAN:|KUNCI JAWABAN:|$)/i);
+                if (soalMatch) {
+                    pertanyaan = this.cleanHtmlContent(soalMatch[1]);
+                }
+
+                // Extract JAWABAN section
+                const jawabanMatch = workingBlock.match(/JAWABAN:([\s\S]*?)(?:KUNCI JAWABAN:|$)/i);
+                if (jawabanMatch) {
+                    const jawabanHtml = jawabanMatch[1];
+                    jawaban = this.parseAnswerOptions(jawabanHtml);
+                }
+
+                // Extract KUNCI JAWABAN
+                const kunciMatch = workingBlock.match(/KUNCI JAWABAN:\s*([A-E])/i);
+                if (kunciMatch) {
+                    kunciJawaban = kunciMatch[1].toUpperCase();
+                }
+
+                // Mark correct answer
+                if (kunciJawaban && jawaban.length > 0) {
+                    const correctAnswer = jawaban.find(j => j.id === kunciJawaban);
+                    if (correctAnswer) {
+                        correctAnswer.isCorrect = true;
+                    }
+                }
+
+                // Always add the soal
+                soalList.push({
+                    pertanyaan: pertanyaan || '[Soal dengan gambar]',
+                    tipe: jenisSoal,
+                    bobot: nilai,
+                    pilihanJawaban: jawaban.length > 0 ? jawaban : null,
+                    jawabanBenar: kunciJawaban || null,
+                });
+            } catch (error) {
+                console.error('Error parsing HTML soal block:', error);
+            }
+        }
+
+        return soalList;
+    }
+
+    /**
+     * Clean HTML content - preserve img tags, strip other HTML
+     */
+    private cleanHtmlContent(html: string): string {
+        if (!html) return '';
+
+        // Preserve img tags by replacing them with placeholders
+        const imgPlaceholders: string[] = [];
+        let cleaned = html.replace(/<img[^>]+>/gi, (match) => {
+            imgPlaceholders.push(match);
+            return `__IMG_${imgPlaceholders.length - 1}__`;
+        });
+
+        // Strip other HTML tags
+        cleaned = cleaned.replace(/<[^>]+>/g, ' ');
+
+        // Restore img tags
+        imgPlaceholders.forEach((img, i) => {
+            cleaned = cleaned.replace(`__IMG_${i}__`, img);
+        });
+
+        // Clean up whitespace
+        cleaned = cleaned.replace(/\s+/g, ' ').trim();
+
+        return cleaned;
+    }
+
+    /**
+     * Parse answer options from HTML, preserving images
+     */
+    private parseAnswerOptions(html: string): any[] {
+        const options: any[] = [];
+        const optionLabels = ['A', 'B', 'C', 'D', 'E'];
+
+        // Split by option labels (A., B., etc. or A), B), etc.)
+        const parts = html.split(/(?=<[^>]*>[A-E][\.\)\s])|(?=[A-E][\.\)\s])/i);
+
+        for (const part of parts) {
+            const trimmed = part.trim();
+            if (!trimmed) continue;
+
+            // Try to match option label at start
+            const optionMatch = trimmed.match(/^(?:<[^>]*>)?([A-E])[\.\)\s]+(.+)/is);
+            if (optionMatch) {
+                const label = optionMatch[1].toUpperCase();
+                let text = this.cleanHtmlContent(optionMatch[2]);
+
+                options.push({
+                    id: label,
+                    text: text || '[Jawaban dengan gambar]',
+                    isCorrect: false,
+                });
+            }
+        }
+
+        // If no options found by pattern, try alternative parsing
+        if (options.length === 0) {
+            // Split by li tags if present
+            const liMatches = html.match(/<li[^>]*>([\s\S]*?)<\/li>/gi);
+            if (liMatches) {
+                liMatches.forEach((li, i) => {
+                    if (i < optionLabels.length) {
+                        const text = this.cleanHtmlContent(li.replace(/<\/?li[^>]*>/gi, ''));
+                        options.push({
+                            id: optionLabels[i],
+                            text: text || '[Jawaban dengan gambar]',
+                            isCorrect: false,
+                        });
+                    }
+                });
+            }
+        }
+
+        return options;
     }
 
     private async generateBankSoalKode(): Promise<string> {
@@ -375,15 +718,15 @@ export class PaketSoalService {
                     }
                 }
 
-                if (pertanyaan) {
-                    soalList.push({
-                        pertanyaan,
-                        tipe: jenisSoal,
-                        bobot: nilai,
-                        pilihanJawaban: jawaban.length > 0 ? jawaban : null,
-                        jawabanBenar: kunciJawaban || null,
-                    });
-                }
+                // Always add the soal, even if pertanyaan is empty (may contain images)
+                // Use placeholder if pertanyaan is empty
+                soalList.push({
+                    pertanyaan: pertanyaan || '[Soal dengan gambar]',
+                    tipe: jenisSoal,
+                    bobot: nilai,
+                    pilihanJawaban: jawaban.length > 0 ? jawaban : null,
+                    jawabanBenar: kunciJawaban || null,
+                });
             } catch (error) {
                 console.error('Error parsing soal block:', error);
             }

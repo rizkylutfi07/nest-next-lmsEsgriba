@@ -83,7 +83,7 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm outline-none transition focus:border-primary/60 focus:bg-white/10"
+                  className="w-full rounded-lg border border-primary/20 bg-white/5 px-3 py-2 text-sm outline-none transition focus:border-primary/60 focus:bg-white/10"
                   placeholder="admin@sekolah.id"
                 />
               </label>
@@ -97,7 +97,7 @@ export default function LoginPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm outline-none transition focus:border-primary/60 focus:bg-white/10"
+                  className="w-full rounded-lg border border-primary/20 bg-white/5 px-3 py-2 text-sm outline-none transition focus:border-primary/60 focus:bg-white/10"
                   placeholder="********"
                   minLength={6}
                 />

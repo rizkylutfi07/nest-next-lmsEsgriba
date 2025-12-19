@@ -237,7 +237,14 @@ export default function PaketSoalDetailPage({ params }: { params: Promise<{ id: 
                                                     Bobot: {item.bankSoal.bobot}
                                                 </Badge>
                                             </div>
-                                            <p className="text-sm">{item.bankSoal.pertanyaan}</p>
+                                            {item.bankSoal.pertanyaan.includes('<img') ? (
+                                                <div
+                                                    className="text-sm whitespace-pre-wrap prose prose-sm max-w-none"
+                                                    dangerouslySetInnerHTML={{ __html: item.bankSoal.pertanyaan }}
+                                                />
+                                            ) : (
+                                                <p className="text-sm whitespace-pre-wrap">{item.bankSoal.pertanyaan}</p>
+                                            )}
                                         </div>
                                         <Button
                                             variant="ghost"
@@ -379,7 +386,14 @@ function AddFromBankModal({ paketSoalId, token, onClose, onSuccess }: any) {
                                                 className="mt-1"
                                             />
                                             <div className="flex-1">
-                                                <p className="text-sm">{soal.pertanyaan}</p>
+                                                {soal.pertanyaan.includes('<img') ? (
+                                                    <div
+                                                        className="text-sm whitespace-pre-wrap prose prose-sm max-w-none"
+                                                        dangerouslySetInnerHTML={{ __html: soal.pertanyaan }}
+                                                    />
+                                                ) : (
+                                                    <p className="text-sm whitespace-pre-wrap">{soal.pertanyaan}</p>
+                                                )}
                                                 <div className="flex gap-2 mt-1">
                                                     <Badge className="text-xs">{soal.tipe}</Badge>
                                                     <Badge variant="outline" className="text-xs">
@@ -421,12 +435,43 @@ function AddFromBankModal({ paketSoalId, token, onClose, onSuccess }: any) {
 function ImportSoalModal({ paketSoalId, token, onClose, onSuccess }: any) {
     const [file, setFile] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
+    const [previewing, setPreviewing] = useState(false);
+    const [preview, setPreview] = useState<any>(null);
     const [result, setResult] = useState<any>(null);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             setFile(e.target.files[0]);
+            setPreview(null);
             setResult(null);
+        }
+    };
+
+    const handlePreview = async () => {
+        if (!file) return;
+
+        setPreviewing(true);
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const res = await fetch(`http://localhost:3001/paket-soal/${paketSoalId}/preview`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+                body: formData,
+            });
+
+            if (!res.ok) throw new Error("Preview failed");
+
+            const data = await res.json();
+            setPreview(data);
+        } catch (error) {
+            console.error("Preview error:", error);
+            alert("Gagal memproses file");
+        } finally {
+            setPreviewing(false);
         }
     };
 
@@ -464,47 +509,141 @@ function ImportSoalModal({ paketSoalId, token, onClose, onSuccess }: any) {
         }
     };
 
+    const resetPreview = () => {
+        setPreview(null);
+        setFile(null);
+    };
+
     return (
         <ModalPortal>
             <div className="fixed inset-0 z-[99999] overflow-y-auto">
                 <div className="flex min-h-full items-center justify-center p-4 text-center">
                     <div className="fixed inset-0 bg-black/60 backdrop-blur-md transition-opacity" onClick={onClose} />
-                    <Card className="relative z-50 w-full max-w-2xl transform overflow-hidden shadow-xl text-left">
+                    <Card className="relative z-50 w-full max-w-3xl transform overflow-hidden shadow-xl text-left max-h-[90vh] overflow-y-auto">
                         <CardHeader>
                             <CardTitle>Import Soal ke Paket</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div>
-                                <p className="text-sm text-muted-foreground mb-4">
-                                    Upload file Word (.docx) dengan format yang sama seperti Bank Soal.
-                                    Soal akan otomatis ditambahkan ke Bank Soal dan paket ini.
-                                </p>
+                            {/* Step 1: File Selection */}
+                            {!preview && !result && (
+                                <div>
+                                    <p className="text-sm text-muted-foreground mb-4">
+                                        Upload file Word (.docx) dengan format yang sama seperti Bank Soal.
+                                        Soal akan divalidasi terlebih dahulu sebelum diimport.
+                                    </p>
 
-                                <div className="border-2 border-dashed border-white/10 rounded-lg p-6 text-center">
-                                    <input
-                                        type="file"
-                                        accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                                        onChange={handleFileChange}
-                                        className="hidden"
-                                        id="file-upload"
-                                    />
-                                    <label
-                                        htmlFor="file-upload"
-                                        className="cursor-pointer flex flex-col items-center gap-2"
-                                    >
-                                        <Upload size={32} className="text-muted-foreground" />
-                                        <div>
-                                            <p className="font-medium">
-                                                {file ? file.name : "Pilih file Word"}
-                                            </p>
-                                            <p className="text-sm text-muted-foreground">
-                                                Format: .doc atau .docx
-                                            </p>
-                                        </div>
-                                    </label>
+                                    <div className="border-2 border-dashed border-white/10 rounded-lg p-6 text-center">
+                                        <input
+                                            type="file"
+                                            accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                            onChange={handleFileChange}
+                                            className="hidden"
+                                            id="file-upload"
+                                        />
+                                        <label
+                                            htmlFor="file-upload"
+                                            className="cursor-pointer flex flex-col items-center gap-2"
+                                        >
+                                            <Upload size={32} className="text-muted-foreground" />
+                                            <div>
+                                                <p className="font-medium">
+                                                    {file ? file.name : "Pilih file Word"}
+                                                </p>
+                                                <p className="text-sm text-muted-foreground">
+                                                    Format: .doc atau .docx
+                                                </p>
+                                            </div>
+                                        </label>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
 
+                            {/* Step 2: Preview Results */}
+                            {preview && !result && (
+                                <div className="space-y-4">
+                                    {/* Summary */}
+                                    <div className="grid grid-cols-3 gap-3">
+                                        <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-center">
+                                            <p className="text-2xl font-bold text-blue-600">{preview.totalSoal}</p>
+                                            <p className="text-xs text-muted-foreground">Total Soal</p>
+                                        </div>
+                                        <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-center">
+                                            <p className="text-2xl font-bold text-green-600">{preview.validCount}</p>
+                                            <p className="text-xs text-muted-foreground">Valid</p>
+                                        </div>
+                                        <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-center">
+                                            <p className="text-2xl font-bold text-red-600">{preview.invalidCount}</p>
+                                            <p className="text-xs text-muted-foreground">Bermasalah</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-3 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                                        <p className="text-sm font-medium text-purple-600">
+                                            Total Bobot: {preview.totalBobot} poin
+                                        </p>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            (Hanya dari soal yang valid)
+                                        </p>
+                                    </div>
+
+                                    {/* Invalid Soal List */}
+                                    {preview.invalidSoal.length > 0 && (
+                                        <div className="space-y-2">
+                                            <p className="text-sm font-medium text-red-600">
+                                                ⚠ Soal Bermasalah (Nomor: {preview.nomorBermasalah.join(", ")}):
+                                            </p>
+                                            <div className="max-h-48 overflow-y-auto space-y-2">
+                                                {preview.invalidSoal.map((soal: any) => (
+                                                    <div key={soal.nomor} className="p-2 rounded bg-red-500/5 border border-red-500/10 text-sm">
+                                                        <div className="flex justify-between items-start">
+                                                            <span className="font-medium">Nomor {soal.nomor}</span>
+                                                            <span className="text-xs text-muted-foreground">{soal.jenisSoal}</span>
+                                                        </div>
+                                                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                                            {soal.pertanyaanPreview}
+                                                        </p>
+                                                        <ul className="mt-1 text-xs text-red-500">
+                                                            {soal.issues.map((issue: string, i: number) => (
+                                                                <li key={i}>• {issue}</li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Valid Soal List */}
+                                    {preview.validSoal.length > 0 && (
+                                        <div className="space-y-2">
+                                            <p className="text-sm font-medium text-green-600">
+                                                ✓ Soal Valid ({preview.validCount}):
+                                            </p>
+                                            <div className="max-h-48 overflow-y-auto space-y-2">
+                                                {preview.validSoal.map((soal: any) => (
+                                                    <div key={soal.nomor} className="p-2 rounded bg-green-500/5 border border-green-500/10 text-sm">
+                                                        <div className="flex justify-between items-start">
+                                                            <span className="font-medium">
+                                                                Nomor {soal.nomor}
+                                                                {soal.hasImage && <span className="ml-1 text-cyan-500">🖼️</span>}
+                                                            </span>
+                                                            <div className="flex gap-2 text-xs">
+                                                                <span className="text-muted-foreground">{soal.jenisSoal}</span>
+                                                                <span className="text-purple-500">Bobot: {soal.bobot}</span>
+                                                            </div>
+                                                        </div>
+                                                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                                            {soal.pertanyaanPreview}
+                                                        </p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Step 3: Import Results */}
                             {result && (
                                 <div className="space-y-2">
                                     <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
@@ -525,24 +664,55 @@ function ImportSoalModal({ paketSoalId, token, onClose, onSuccess }: any) {
                                 </div>
                             )}
 
+                            {/* Action Buttons */}
                             <div className="flex gap-2 pt-4">
-                                <Button variant="outline" onClick={onClose} className="flex-1">
-                                    {result ? "Tutup" : "Batal"}
-                                </Button>
-                                {!result && (
-                                    <Button
-                                        onClick={handleUpload}
-                                        disabled={!file || uploading}
-                                        className="flex-1"
-                                    >
-                                        {uploading ? (
-                                            <>
-                                                <Loader2 className="animate-spin mr-2" size={16} />
-                                                Mengupload...
-                                            </>
-                                        ) : (
-                                            "Upload & Import"
-                                        )}
+                                {!preview && !result && (
+                                    <>
+                                        <Button variant="outline" onClick={onClose} className="flex-1">
+                                            Batal
+                                        </Button>
+                                        <Button
+                                            onClick={handlePreview}
+                                            disabled={!file || previewing}
+                                            className="flex-1"
+                                        >
+                                            {previewing ? (
+                                                <>
+                                                    <Loader2 className="animate-spin mr-2" size={16} />
+                                                    Memvalidasi...
+                                                </>
+                                            ) : (
+                                                "Validasi File"
+                                            )}
+                                        </Button>
+                                    </>
+                                )}
+
+                                {preview && !result && (
+                                    <>
+                                        <Button variant="outline" onClick={resetPreview} className="flex-1">
+                                            Pilih File Lain
+                                        </Button>
+                                        <Button
+                                            onClick={handleUpload}
+                                            disabled={preview.validCount === 0 || uploading}
+                                            className="flex-1"
+                                        >
+                                            {uploading ? (
+                                                <>
+                                                    <Loader2 className="animate-spin mr-2" size={16} />
+                                                    Mengimport...
+                                                </>
+                                            ) : (
+                                                `Import ${preview.validCount} Soal`
+                                            )}
+                                        </Button>
+                                    </>
+                                )}
+
+                                {result && (
+                                    <Button onClick={onClose} className="flex-1">
+                                        Tutup
                                     </Button>
                                 )}
                             </div>
@@ -553,6 +723,7 @@ function ImportSoalModal({ paketSoalId, token, onClose, onSuccess }: any) {
         </ModalPortal>
     );
 }
+
 
 function PreviewModal({ paketSoal, index, setIndex, answers, setAnswers, onClose }: any) {
     const soalItems = paketSoal?.soalItems || [];
@@ -622,7 +793,14 @@ function PreviewModal({ paketSoal, index, setIndex, answers, setAnswers, onClose
                                         )}
                                         <Badge variant="outline">Bobot: {current.bankSoal?.bobot ?? 1}</Badge>
                                     </div>
-                                    <p className="text-base whitespace-pre-wrap">{pertanyaan}</p>
+                                    {pertanyaan.includes('<img') ? (
+                                        <div
+                                            className="text-base whitespace-pre-wrap prose prose-sm max-w-none"
+                                            dangerouslySetInnerHTML={{ __html: pertanyaan }}
+                                        />
+                                    ) : (
+                                        <p className="text-base whitespace-pre-wrap">{pertanyaan}</p>
+                                    )}
 
                                     {tipe === "PILIHAN_GANDA" && pilihanJawaban.length > 0 && (
                                         <div className="space-y-2">
@@ -630,6 +808,7 @@ function PreviewModal({ paketSoal, index, setIndex, answers, setAnswers, onClose
                                                 const optionKey = `${pilihan.id ?? "opt"}-${idx}`;
                                                 const optionValue = pilihan.id ?? pilihan.value ?? `${idx}`;
                                                 const optionLabel = pilihan.text || optionValue;
+                                                const optionImageUrl = pilihan.imageUrl;
                                                 const soalKey = current.bankSoalId ?? current.id;
                                                 return (
                                                     <label
@@ -646,7 +825,16 @@ function PreviewModal({ paketSoal, index, setIndex, answers, setAnswers, onClose
                                                             }
                                                             className="mt-1"
                                                         />
-                                                        <span className="flex-1">{optionLabel}</span>
+                                                        <div className="flex-1">
+                                                            <span>{optionLabel}</span>
+                                                            {optionImageUrl && (
+                                                                <img
+                                                                    src={optionImageUrl.startsWith('/') ? `${process.env.NEXT_PUBLIC_API_URL || ''}${optionImageUrl}` : optionImageUrl}
+                                                                    alt={`Option ${optionValue}`}
+                                                                    className="mt-2 max-w-full max-h-48 object-contain rounded"
+                                                                />
+                                                            )}
+                                                        </div>
                                                     </label>
                                                 );
                                             })}

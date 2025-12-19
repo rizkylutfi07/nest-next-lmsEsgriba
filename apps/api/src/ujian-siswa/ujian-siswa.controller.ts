@@ -11,6 +11,7 @@ import { UjianSiswaService } from './ujian-siswa.service';
 import { StartUjianDto } from './dto/start-ujian.dto';
 import { SubmitJawabanDto } from './dto/submit-jawaban.dto';
 import { LogActivityDto } from './dto/log-activity.dto';
+import { GradeExamDto } from './dto/grade-exam.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -70,6 +71,18 @@ export class UjianSiswaController {
     @Roles(Role.SISWA)
     getResult(@Param('id') id: string, @Request() req) {
         return this.ujianSiswaService.getResult(id, req.user.siswaId);
+    }
+
+    @Get('review/:id')
+    @Roles(Role.ADMIN, Role.GURU)
+    getReview(@Param('id') id: string) {
+        return this.ujianSiswaService.getReview(id);
+    }
+
+    @Post(':id/grade')
+    @Roles(Role.ADMIN, Role.GURU)
+    gradeExam(@Param('id') id: string, @Body() gradeDto: GradeExamDto) {
+        return this.ujianSiswaService.gradeExam(id, gradeDto);
     }
 
     @Get('activity-logs/:id')

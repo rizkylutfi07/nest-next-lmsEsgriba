@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { StartUjianDto } from './dto/start-ujian.dto';
 import { SubmitJawabanDto } from './dto/submit-jawaban.dto';
 import { LogActivityDto } from './dto/log-activity.dto';
+import { GradeExamDto } from './dto/grade-exam.dto';
 import { StatusUjian, StatusPengerjaan, TipeSoal } from '@prisma/client';
 
 @Injectable()
@@ -11,6 +12,68 @@ export class UjianSiswaService {
     private readonly MAX_VIOLATIONS = 1; // Auto-block after 1 violation
 
     constructor(private prisma: PrismaService) { }
+    private normalizeText(text: string) {
+        return text
+            .toLowerCase()
+            .replace(/[^a-z0-9\u00C0-\u024f\s]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    private isEssayCorrect(kunci: string | null | undefined, jawabanSiswa: string | null | undefined) {
+        if (!kunci || !jawabanSiswa) return false;
+        const keyNorm = this.normalizeText(kunci);
+        const ansNorm = this.normalizeText(jawabanSiswa);
+        if (!keyNorm || !ansNorm) return false;
+        if (keyNorm === ansNorm) return true;
+        if (ansNorm.includes(keyNorm) || keyNorm.includes(ansNorm)) return true;
+
+        const keyTokens = new Set(keyNorm.split(' '));
+        const ansTokens = new Set(ansNorm.split(' '));
+        const intersect = [...keyTokens].filter((t) => ansTokens.has(t)).length;
+        const union = new Set([...keyTokens, ...ansTokens]).size || 1;
+        const jaccard = intersect / union;
+        return jaccard >= 0.5;
+    }
+
+    private computeScore(ujianSoal: any[], jawaban: any[], overrides?: Record<string, number | null>) {
+        let totalScore = 0;
+        let maxScore = 0;
+
+        for (const soal of ujianSoal) {
+            const bobot = soal?.bankSoal?.bobot ?? soal?.bobot ?? 1;
+            maxScore += bobot;
+
+            const jawabanSiswa = jawaban.find((j) => j.soalId === soal.bankSoalId);
+            if (!jawabanSiswa) continue;
+
+            if (overrides && overrides.hasOwnProperty(soal.bankSoalId)) {
+                const overrideScore = overrides[soal.bankSoalId];
+                if (overrideScore !== null && overrideScore !== undefined) {
+                    totalScore += Math.min(Math.max(overrideScore, 0), bobot);
+                }
+                continue;
+            }
+
+            if (soal.bankSoal.tipe === TipeSoal.PILIHAN_GANDA || soal.bankSoal.tipe === TipeSoal.BENAR_SALAH) {
+                const pilihanJawaban = soal.bankSoal.pilihanJawaban as any[];
+                const correctAnswer = pilihanJawaban?.find((p) => p.isCorrect);
+                if (correctAnswer && jawabanSiswa.jawaban === correctAnswer.id) {
+                    totalScore += bobot;
+                }
+            } else if (soal.bankSoal.tipe === TipeSoal.ESSAY || soal.bankSoal.tipe === TipeSoal.ISIAN_SINGKAT) {
+                if (this.isEssayCorrect(soal.bankSoal.jawabanBenar, jawabanSiswa.jawaban)) {
+                    totalScore += bobot;
+                }
+            }
+        }
+
+        return {
+            score: maxScore > 0 ? (totalScore / maxScore) * 100 : 0,
+            totalScore,
+            maxScore,
+        };
+    }
 
     async getAvailableExams(siswaId: string) {
         const now = new Date();
@@ -224,7 +287,7 @@ export class UjianSiswaService {
         }
 
         // Calculate score
-        const score = await this.calculateScore(ujianSiswa.ujian.ujianSoal, submitDto.jawaban);
+        const { score } = this.computeScore(ujianSiswa.ujian.ujianSoal, submitDto.jawaban);
 
         // Calculate duration
         const waktuMulaiDate = new Date(waktuMulai);
@@ -421,58 +484,8 @@ export class UjianSiswaService {
     }
 
     private async calculateScore(ujianSoal: any[], jawaban: any[]): Promise<number> {
-        let totalScore = 0;
-        let maxScore = 0;
-
-        const normalizeText = (text: string) =>
-            text
-                .toLowerCase()
-                .replace(/[^a-z0-9\u00C0-\u024f\s]/g, ' ')
-                .replace(/\s+/g, ' ')
-                .trim();
-
-        const isEssayCorrect = (kunci: string | null | undefined, jawabanSiswa: string | null | undefined) => {
-            if (!kunci || !jawabanSiswa) return false;
-            const keyNorm = normalizeText(kunci);
-            const ansNorm = normalizeText(jawabanSiswa);
-            if (!keyNorm || !ansNorm) return false;
-            if (keyNorm === ansNorm) return true;
-            if (ansNorm.includes(keyNorm) || keyNorm.includes(ansNorm)) return true;
-
-            // Simple token overlap
-            const keyTokens = new Set(keyNorm.split(' '));
-            const ansTokens = new Set(ansNorm.split(' '));
-            const intersect = [...keyTokens].filter(t => ansTokens.has(t)).length;
-            const union = new Set([...keyTokens, ...ansTokens]).size || 1;
-            const jaccard = intersect / union;
-            return jaccard >= 0.5;
-        };
-
-        for (const soal of ujianSoal) {
-            maxScore += soal.bobot;
-
-            const jawabanSiswa = jawaban.find((j) => j.soalId === soal.bankSoalId);
-            if (!jawabanSiswa) continue;
-
-            // Only auto-grade multiple choice and true/false
-            if (soal.bankSoal.tipe === TipeSoal.PILIHAN_GANDA || soal.bankSoal.tipe === TipeSoal.BENAR_SALAH) {
-                const pilihanJawaban = soal.bankSoal.pilihanJawaban as any[];
-                const correctAnswer = pilihanJawaban?.find((p) => p.isCorrect);
-
-                if (correctAnswer && jawabanSiswa.jawaban === correctAnswer.id) {
-                    totalScore += soal.bobot;
-                }
-            }
-            // Essay and short answer: auto-grade if kunci ada
-            if (soal.bankSoal.tipe === TipeSoal.ESSAY || soal.bankSoal.tipe === TipeSoal.ISIAN_SINGKAT) {
-                if (isEssayCorrect(soal.bankSoal.jawabanBenar, jawabanSiswa.jawaban)) {
-                    totalScore += soal.bobot;
-                }
-            }
-        }
-
-        // Return percentage score
-        return maxScore > 0 ? (totalScore / maxScore) * 100 : 0;
+        const { score } = this.computeScore(ujianSoal, jawaban);
+        return score;
     }
 
     async getMonitoringData(ujianId: string) {
@@ -569,6 +582,76 @@ export class UjianSiswaService {
             t = Math.imul(t ^ (t >>> 15), t | 1);
             t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
             return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+    }
+
+    async getReview(ujianSiswaId: string) {
+        const ujianSiswa = await this.prisma.ujianSiswa.findUnique({
+            where: { id: ujianSiswaId },
+            include: {
+                ujian: {
+                    include: {
+                        ujianSoal: {
+                            include: {
+                                bankSoal: true,
+                            },
+                            orderBy: { nomorUrut: 'asc' },
+                        },
+                    },
+                },
+            },
+        });
+
+        if (!ujianSiswa) {
+            throw new NotFoundException('Sesi ujian tidak ditemukan');
+        }
+
+        return ujianSiswa;
+    }
+
+    async gradeExam(ujianSiswaId: string, gradeDto: GradeExamDto) {
+        const ujianSiswa = await this.prisma.ujianSiswa.findUnique({
+            where: { id: ujianSiswaId },
+            include: {
+                ujian: {
+                    include: {
+                        ujianSoal: {
+                            include: {
+                                bankSoal: true,
+                            },
+                            orderBy: { nomorUrut: 'asc' },
+                        },
+                    },
+                },
+            },
+        });
+
+        if (!ujianSiswa) {
+            throw new NotFoundException('Sesi ujian tidak ditemukan');
+        }
+
+        const overrides: Record<string, number | null> = {};
+        gradeDto.grades.forEach((g) => {
+            overrides[g.soalId] = g.score;
+        });
+
+        const jawabanArr = Array.isArray(ujianSiswa.jawaban) ? ujianSiswa.jawaban as any[] : [];
+        const { score, totalScore, maxScore } = this.computeScore(ujianSiswa.ujian.ujianSoal, jawabanArr, overrides);
+
+        const updated = await this.prisma.ujianSiswa.update({
+            where: { id: ujianSiswaId },
+            data: {
+                nilaiTotal: score,
+                isPassed: ujianSiswa.ujian.nilaiMinimal ? score >= ujianSiswa.ujian.nilaiMinimal : null,
+                updatedAt: new Date(),
+            },
+        });
+
+        return {
+            ...updated,
+            manualOverride: true,
+            totalScore,
+            maxScore,
         };
     }
 }

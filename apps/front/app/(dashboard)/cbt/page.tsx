@@ -1,6 +1,9 @@
 "use client";
 
-import { Activity, ClipboardCheck, FileCheck, Layers, Sparkles, Timer } from "lucide-react";
+import Link from "next/link";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Activity, ClipboardCheck, FileCheck, Layers, Package, ShieldCheck, Sparkles, Timer } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,46 +14,114 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useRole } from "../role-context";
 
-const cbtItems = [
-  {
-    title: "Data Soal",
-    detail: "Bank soal adaptif dengan tagging kompetensi dan tingkat kesulitan.",
-    stat: "1.240 soal aktif",
-    icon: Layers,
-    badge: "Bank Soal",
-  },
-  {
-    title: "Data Ujian",
-    detail: "Template ujian, mata pelajaran, dan aturan kelulusan.",
-    stat: "32 jadwal minggu ini",
-    icon: FileCheck,
-    badge: "Ujian",
-  },
-  {
-    title: "Data Sesi",
-    detail: "Kelola slot, durasi, token akses, dan perangkat yang diizinkan.",
-    stat: "14 sesi berjalan",
-    icon: Timer,
-    badge: "Sesi",
-  },
-  {
-    title: "Data Monitoring Ujian",
-    detail: "Pantau live, perangkat ganda, dan status submit siswa.",
-    stat: "Stabil - 0 insiden",
-    icon: Activity,
-    badge: "Monitoring",
-  },
-  {
-    title: "Penilaian",
-    detail: "Auto-scoring, essay rubric, dan publish nilai ke portal.",
-    stat: "78% sudah dinilai",
-    icon: Sparkles,
-    badge: "Nilai",
-  },
-];
+type Summary = {
+  bankSoalTotal?: number;
+  paketSoalTotal?: number;
+  ujianTotal?: number;
+  ujianPublished?: number;
+  ujianOngoing?: number;
+  ujianSelesai?: number;
+};
+
+const numberFormat = new Intl.NumberFormat("id-ID");
+
+const buildStat = (value: number | undefined, suffix: string, loading: boolean) => {
+  if (loading) return "Memuat...";
+  if (value === undefined) return "-";
+  return `${numberFormat.format(value)} ${suffix}`;
+};
 
 export default function CBTPage() {
+  const { token, role } = useRole();
+  const isAdminOrGuru = role === "ADMIN" || role === "GURU";
+
+  const { data: summary, isLoading } = useQuery<Summary>({
+    queryKey: ["cbt-summary"],
+    enabled: Boolean(token) && isAdminOrGuru,
+    queryFn: async () => {
+      const headers = { Authorization: `Bearer ${token}` };
+
+      const fetchJson = async (url: string) => {
+        const res = await fetch(url, { headers });
+        if (!res.ok) throw new Error("Failed to load data");
+        return res.json();
+      };
+
+      const getTotal = (payload: any) => {
+        if (payload?.meta?.total !== undefined) return payload.meta.total;
+        if (Array.isArray(payload?.data)) return payload.data.length;
+        if (Array.isArray(payload)) return payload.length;
+        return 0;
+      };
+
+      const [bankSoal, paketSoal, ujianAll, ujianPublished, ujianOngoing, ujianSelesai] = await Promise.all([
+        fetchJson("http://localhost:3001/bank-soal?limit=1"),
+        fetchJson("http://localhost:3001/paket-soal?limit=1"),
+        fetchJson("http://localhost:3001/ujian?limit=1"),
+        fetchJson("http://localhost:3001/ujian?status=PUBLISHED&limit=1"),
+        fetchJson("http://localhost:3001/ujian?status=ONGOING&limit=1"),
+        fetchJson("http://localhost:3001/ujian?status=SELESAI&limit=1"),
+      ]);
+
+      return {
+        bankSoalTotal: getTotal(bankSoal),
+        paketSoalTotal: getTotal(paketSoal),
+        ujianTotal: getTotal(ujianAll),
+        ujianPublished: getTotal(ujianPublished),
+        ujianOngoing: getTotal(ujianOngoing),
+        ujianSelesai: getTotal(ujianSelesai),
+      };
+    },
+  });
+
+  const cbtItems = useMemo(() => {
+    const loading = isLoading || !isAdminOrGuru;
+    return [
+      {
+        title: "Bank Soal",
+        detail: "Kelola pertanyaan, bobot, dan kunci jawaban.",
+        stat: buildStat(summary?.bankSoalTotal, "soal", loading),
+        icon: Layers,
+        badge: "Bank Soal",
+        href: "/bank-soal",
+      },
+      {
+        title: "Paket Soal",
+        detail: "Susun paket dengan urutan soal siap pakai.",
+        stat: buildStat(summary?.paketSoalTotal, "paket", loading),
+        icon: Package,
+        badge: "Paket Soal",
+        href: "/paket-soal",
+      },
+      {
+        title: "Ujian Terbit",
+        detail: "Ujian yang siap dijadwalkan ke siswa.",
+        stat: buildStat(summary?.ujianPublished, "ujian", loading),
+        icon: FileCheck,
+        badge: "Ujian",
+        href: "/ujian",
+      },
+      {
+        title: "Sesi Berjalan",
+        detail: "Ujian yang sedang aktif untuk dipantau.",
+        stat: buildStat(summary?.ujianOngoing, "aktif", loading),
+        icon: Timer,
+        badge: "Monitoring",
+        href: "/ujian",
+      },
+      {
+        title: "Siap Dinilai",
+        detail: "Ujian selesai untuk proses penilaian.",
+        stat: buildStat(summary?.ujianSelesai, "ujian", loading),
+        icon: ShieldCheck,
+        badge: "Penilaian",
+        href: "/penilaian",
+      },
+    ];
+  }, [summary, isLoading, isAdminOrGuru]);
+
   return (
     <div className="space-y-6">
       <Card className="border-primary/40 bg-gradient-to-br from-primary/10 via-card/60 to-background/80">
@@ -71,12 +142,17 @@ export default function CBTPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-center gap-3">
-          <Button size="sm">Buat ujian</Button>
-          <Button size="sm" variant="outline">
-            Lihat bank soal
+          <Button size="sm" asChild>
+            <Link href="/ujian/create">Buat ujian</Link>
           </Button>
-          <Button size="sm" variant="ghost" className="text-muted-foreground">
-            Panduan proktor
+          <Button size="sm" variant="outline" asChild>
+            <Link href="/bank-soal">Lihat bank soal</Link>
+          </Button>
+          <Button size="sm" variant="ghost" className="text-muted-foreground" asChild>
+            <Link href="/ujian">Kelola jadwal</Link>
+          </Button>
+          <Button size="sm" variant="ghost" className="text-muted-foreground" asChild>
+            <Link href="/penilaian">Penilaian ujian</Link>
           </Button>
         </CardContent>
       </Card>
@@ -87,7 +163,7 @@ export default function CBTPage() {
             <CardTitle>Menu CBT</CardTitle>
             <CardDescription>Data Soal, Data Ujian, Data Sesi, Monitoring, Penilaian.</CardDescription>
           </div>
-          <Badge tone="info">Terintegrasi</Badge>
+          <Badge tone="info">{isAdminOrGuru ? "Data real-time" : "Ringkasan"}</Badge>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {cbtItems.map((item) => {
@@ -110,6 +186,9 @@ export default function CBTPage() {
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">{item.detail}</p>
+                <Button variant="ghost" size="sm" className="justify-start px-0 text-primary" asChild>
+                  <Link href={item.href}>Buka {item.badge}</Link>
+                </Button>
               </div>
             );
           })}

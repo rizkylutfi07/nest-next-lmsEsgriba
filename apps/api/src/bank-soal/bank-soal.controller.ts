@@ -93,8 +93,11 @@ export class BankSoalController {
         ) {
             // Word file - parse using mammoth
             const mammoth = require('mammoth');
-            const result = await mammoth.extractRawText({ buffer: file.buffer });
-            const text = result.value;
+            const resultText = await mammoth.extractRawText({ buffer: file.buffer });
+            const resultHtml = await mammoth.convertToHtml({ buffer: file.buffer });
+
+            const text = resultText.value;
+            const html = resultHtml.value;
 
             // Parse text format based on user's template:
             // [NOMOR X]
@@ -108,10 +111,13 @@ export class BankSoalController {
 
             // Split by [NOMOR X] markers
             const soalBlocks = text.split(/\[NOMOR\s+\d+\]/).filter(block => block.trim());
+            const htmlBlocks = html.split(/\[NOMOR\s+\d+\]/).filter((block: string) => block.trim());
 
-            for (const block of soalBlocks) {
+            soalBlocks.forEach((block, blockIndex) => {
                 const lines = block.split('\n').map(l => l.trim()).filter(l => l);
-                if (lines.length === 0) continue;
+                if (lines.length === 0) {
+                    return;
+                }
 
                 const soal: any = {
                     tipe: 'PILIHAN_GANDA',
@@ -120,6 +126,7 @@ export class BankSoalController {
 
                 let currentSection = '';
                 let pertanyaan = '';
+                let pertanyaanHtml = '';
                 let jawaban: string[] = [];
                 let kunciJawaban = '';
 
@@ -159,7 +166,7 @@ export class BankSoalController {
 
                     // Collect content based on current section
                     if (currentSection === 'SOAL') {
-                        pertanyaan += (pertanyaan ? ' ' : '') + line;
+                        pertanyaan += (pertanyaan ? '\n' : '') + line;
                     } else if (currentSection === 'JAWABAN') {
                         if (line) {
                             jawaban.push(line);
@@ -167,8 +174,23 @@ export class BankSoalController {
                     }
                 }
 
-                // Set pertanyaan
-                if (pertanyaan) {
+                // Extract formatted question HTML (keeps bold/paragraph from Word) if available
+                if (htmlBlocks.length === soalBlocks.length) {
+                    const htmlBlock = htmlBlocks[blockIndex] || '';
+                    const afterSoalMarker = htmlBlock.split(/SOAL:/i)[1];
+                    if (afterSoalMarker) {
+                        const soalSection = afterSoalMarker.split(/JAWABAN:/i)[0] || afterSoalMarker.split(/KUNCI JAWABAN:/i)[0];
+                        if (soalSection) {
+                            // Convert HTML lists to numbered text format
+                            pertanyaanHtml = this.processHtmlToText(soalSection);
+                        }
+                    }
+                }
+
+                // Set pertanyaan - prefer processed HTML which preserves list numbers
+                if (pertanyaanHtml) {
+                    soal.pertanyaan = pertanyaanHtml;
+                } else if (pertanyaan) {
                     soal.pertanyaan = pertanyaan.trim();
                 }
 
@@ -195,7 +217,7 @@ export class BankSoalController {
                 if (soal.pertanyaan) {
                     soalList.push(soal);
                 }
-            }
+            });
         } else {
             throw new BadRequestException('Unsupported file type. Please upload JSON or Word (.docx) file.');
         }
@@ -298,5 +320,62 @@ CATATAN PENTING:
             buffer: buffer.toString('base64'),
             contentType: 'text/plain',
         };
+    }
+
+    /**
+     * Convert HTML to plain text while preserving list numbering
+     * Word auto-numbered lists are converted to (1), (2), etc. format
+     */
+    private processHtmlToText(html: string): string {
+        if (!html) return '';
+
+        let result = html;
+
+        // Convert ordered lists <ol> to numbered format (1), (2), etc.
+        result = result.replace(/<ol[^>]*>([\s\S]*?)<\/ol>/gi, (match, content) => {
+            let num = 1;
+            return content.replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, (liMatch: string, liContent: string) => {
+                const text = this.stripHtmlTags(liContent).trim();
+                return `(${num++})${text}\n`;
+            });
+        });
+
+        // Convert unordered lists <ul> to bullet format
+        result = result.replace(/<ul[^>]*>([\s\S]*?)<\/ul>/gi, (match, content) => {
+            return content.replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, (liMatch: string, liContent: string) => {
+                const text = this.stripHtmlTags(liContent).trim();
+                return `• ${text}\n`;
+            });
+        });
+
+        // Convert paragraphs to lines
+        result = result.replace(/<p[^>]*>/gi, '');
+        result = result.replace(/<\/p>/gi, '\n');
+
+        // Convert <br> to newlines
+        result = result.replace(/<br\s*\/?>/gi, '\n');
+
+        // Strip remaining HTML tags
+        result = this.stripHtmlTags(result);
+
+        // Decode HTML entities
+        result = result.replace(/&nbsp;/g, ' ');
+        result = result.replace(/&amp;/g, '&');
+        result = result.replace(/&lt;/g, '<');
+        result = result.replace(/&gt;/g, '>');
+        result = result.replace(/&quot;/g, '"');
+        result = result.replace(/&#39;/g, "'");
+
+        // Clean up multiple newlines
+        result = result.replace(/\n{3,}/g, '\n\n');
+
+        return result.trim();
+    }
+
+    /**
+     * Remove all HTML tags from a string
+     */
+    private stripHtmlTags(html: string): string {
+        return html.replace(/<[^>]*>/g, '');
     }
 }

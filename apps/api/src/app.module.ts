@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -18,12 +20,18 @@ import { BankSoalModule } from './bank-soal/bank-soal.module';
 import { PaketSoalModule } from './paket-soal/paket-soal.module';
 import { UjianModule } from './ujian/ujian.module';
 import { UjianSiswaModule } from './ujian-siswa/ujian-siswa.module';
+import { UploadModule } from './upload/upload.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env', '../../.env'],
+    }),
+    // Serve static files from uploads directory
+    ServeStaticModule.forRoot({
+      rootPath: join(process.cwd(), 'uploads'),
+      serveRoot: '/uploads',
     }),
     PrismaModule,
     AuthModule,
@@ -41,6 +49,7 @@ import { UjianSiswaModule } from './ujian-siswa/ujian-siswa.module';
     PaketSoalModule,
     UjianModule,
     UjianSiswaModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [AppService],

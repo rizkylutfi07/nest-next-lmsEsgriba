@@ -99,6 +99,7 @@ const navByRole: Record<Role, NavGroup[]> = {
         { label: "Bank Soal", icon: BookOpen, href: "/bank-soal", note: "Kelola soal" },
         { label: "Paket Soal", icon: Package, href: "/paket-soal", note: "Kelola paket" },
         { label: "Kelola Ujian", icon: ClipboardList, href: "/ujian", note: "Buat & publish" },
+        { label: "Penilaian Ujian", icon: ShieldCheck, href: "/penilaian", note: "Review & nilai" },
       ],
     },
     {
@@ -146,6 +147,7 @@ const navByRole: Record<Role, NavGroup[]> = {
         { label: "Bank Soal", icon: BookOpen, href: "/bank-soal", note: "Kelola soal" },
         { label: "Paket Soal", icon: Package, href: "/paket-soal", note: "Kelola paket" },
         { label: "Kelola Ujian", icon: ClipboardList, href: "/ujian", note: "Buat & publish" },
+        { label: "Penilaian Ujian", icon: ShieldCheck, href: "/penilaian", note: "Review & nilai" },
       ],
     },
   ],

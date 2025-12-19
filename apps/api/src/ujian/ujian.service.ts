@@ -146,7 +146,7 @@ export class UjianService {
                             create: paketSoal.soalItems.map((item, index) => ({
                                 bankSoalId: item.bankSoalId,
                                 nomorUrut: item.urutan || index + 1,
-                                bobot: 1, // Default bobot, can be customized later
+                                bobot: item.bankSoal?.bobot ?? 1,
                             })),
                         },
                         // Create UjianKelas records for multi-class support

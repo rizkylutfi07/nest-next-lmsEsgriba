@@ -572,6 +572,7 @@ export default function KerjakanUjianPage() {
                                                 const optionKey = `${pilihan.id ?? "opt"}-${idx}`;
                                                 const optionValue = pilihan.id ?? pilihan.value ?? `${idx}`;
                                                 const optionLabel = pilihan.text || optionValue;
+                                                const optionImageUrl = pilihan.imageUrl;
                                                 return (
                                                     <label
                                                         key={optionKey}
@@ -589,7 +590,16 @@ export default function KerjakanUjianPage() {
                                                             }}
                                                             className="mt-1"
                                                         />
-                                                        <span className="flex-1">{optionLabel}</span>
+                                                        <div className="flex-1">
+                                                            <span>{optionLabel}</span>
+                                                            {optionImageUrl && (
+                                                                <img
+                                                                    src={optionImageUrl.startsWith('/') ? `${process.env.NEXT_PUBLIC_API_URL || ''}${optionImageUrl}` : optionImageUrl}
+                                                                    alt={`Option ${optionValue}`}
+                                                                    className="mt-2 max-w-full max-h-48 object-contain rounded"
+                                                                />
+                                                            )}
+                                                        </div>
                                                     </label>
                                                 );
                                             })}
@@ -651,7 +661,7 @@ export default function KerjakanUjianPage() {
                                         >
                                             Soal Sebelumnya
                                         </Button>
-                                        
+
                                         <Button
                                             variant="outline"
                                             onClick={() => goToIndex(currentIndex + 1)}
