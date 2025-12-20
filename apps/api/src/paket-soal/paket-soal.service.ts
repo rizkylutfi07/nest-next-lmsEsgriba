@@ -59,6 +59,13 @@ export class PaketSoalService {
                 include: {
                     mataPelajaran: true,
                     guru: true,
+                    soalItems: {
+                        include: {
+                            bankSoal: {
+                                select: { bobot: true },
+                            },
+                        },
+                    },
                     _count: {
                         select: { soalItems: true },
                     },
@@ -68,8 +75,14 @@ export class PaketSoalService {
             this.prisma.paketSoal.count({ where }),
         ]);
 
+        // Calculate total point for each paket
+        const dataWithTotalPoint = data.map((paket) => ({
+            ...paket,
+            totalPoint: paket.soalItems.reduce((sum, item) => sum + (item.bankSoal?.bobot || 0), 0),
+        }));
+
         return {
-            data,
+            data: dataWithTotalPoint,
             meta: {
                 total,
                 page,

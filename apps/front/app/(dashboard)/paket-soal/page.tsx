@@ -147,8 +147,8 @@ export default function PaketSoalPage() {
                                                 </p>
                                             )}
                                             <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
-                                                <span>📝 {item._count?.soalItems || 0} soal</span>
-                                                <span>📊 Total: {item.totalSoal} soal</span>
+                                                <span>📝 {item._count?.soalItems || item.totalSoal || 0} soal</span>
+                                                <span>⭐ {item.totalPoint || 0} point</span>
                                             </div>
                                         </div>
 

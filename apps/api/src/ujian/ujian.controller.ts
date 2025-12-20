@@ -105,4 +105,10 @@ export class UjianController {
     assignToStudents(@Param('id') id: string, @Body() body?: { siswaIds?: string[] }) {
         return this.ujianService.assignToStudents(id, body?.siswaIds);
     }
+
+    @Post(':id/status')
+    @Roles(Role.ADMIN, Role.GURU)
+    updateStatus(@Param('id') id: string, @Body() body: { status: string }) {
+        return this.ujianService.updateStatus(id, body.status as any);
+    }
 }

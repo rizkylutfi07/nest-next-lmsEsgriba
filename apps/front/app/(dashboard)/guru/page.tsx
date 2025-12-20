@@ -112,11 +112,11 @@ export default function GuruPage() {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
+        <CardHeader className="p-3 md:p-6">
           <div className="md:flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold">Data Guru</h1>
-              <p className="text-sm text-muted-foreground">Kelola data data guru</p>
+              <CardDescription>Total {total} data</CardDescription>
             </div>
             <div className="flex gap-2 mt-4 md:mt-0">
               <Button onClick={() => setIsImportModalOpen(true)} variant="outline">
@@ -148,10 +148,6 @@ export default function GuruPage() {
           </div>
 
           <div className="mt-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <CardTitle>Daftar Data Guru</CardTitle>
-              <CardDescription>Total {total} data</CardDescription>
-            </div>
             <div className="relative flex-1 md:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
               <input
@@ -164,7 +160,7 @@ export default function GuruPage() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="p-2 md:p-4">
+        <CardContent className="p-3 md:p-6">
           {isInitialLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="animate-spin text-muted-foreground" size={32} />
@@ -458,18 +454,18 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
   // Filter and sort mata pelajaran
   const filteredAndSortedMataPelajaran = mataPelajaranList?.data
     ? [...mataPelajaranList.data]
-        .filter((mp: any) => {
-          if (!searchMataPelajaran) return true;
-          const searchLower = searchMataPelajaran.toLowerCase();
-          return (
-            mp.nama.toLowerCase().includes(searchLower) ||
-            mp.kode.toLowerCase().includes(searchLower)
-          );
-        })
-        .sort((a: any, b: any) => {
-          // Sort by nama A-Z
-          return a.nama.localeCompare(b.nama, 'id', { sensitivity: 'base' });
-        })
+      .filter((mp: any) => {
+        if (!searchMataPelajaran) return true;
+        const searchLower = searchMataPelajaran.toLowerCase();
+        return (
+          mp.nama.toLowerCase().includes(searchLower) ||
+          mp.kode.toLowerCase().includes(searchLower)
+        );
+      })
+      .sort((a: any, b: any) => {
+        // Sort by nama A-Z
+        return a.nama.localeCompare(b.nama, 'id', { sensitivity: 'base' });
+      })
     : [];
 
   return (
@@ -553,7 +549,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium">Mata Pelajaran</label>
-              
+
               {/* Search Input */}
               <div className="mb-2 relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />

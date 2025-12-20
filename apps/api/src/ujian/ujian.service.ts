@@ -293,6 +293,7 @@ export class UjianService {
                 guru: true,
                 paketSoal: true,
                 kelas: true,
+                ujianKelas: true,
                 ujianSoal: {
                     include: {
                         bankSoal: true,
@@ -463,6 +464,41 @@ export class UjianService {
             where: { id },
             data: {
                 status: StatusUjian.PUBLISHED,
+            },
+        });
+    }
+
+    async updateStatus(id: string, newStatus: StatusUjian) {
+        const ujian = await this.findOne(id);
+        const currentStatus = ujian.status;
+
+        // Define allowed status transitions
+        const allowedTransitions: Record<StatusUjian, StatusUjian[]> = {
+            [StatusUjian.DRAFT]: [StatusUjian.PUBLISHED, StatusUjian.DIBATALKAN],
+            [StatusUjian.PUBLISHED]: [StatusUjian.ONGOING, StatusUjian.DRAFT, StatusUjian.DIBATALKAN],
+            [StatusUjian.ONGOING]: [StatusUjian.SELESAI, StatusUjian.DIBATALKAN],
+            [StatusUjian.SELESAI]: [], // Cannot change from SELESAI
+            [StatusUjian.DIBATALKAN]: [StatusUjian.DRAFT], // Can only revert to DRAFT
+        };
+
+        const allowed = allowedTransitions[currentStatus] || [];
+        if (!allowed.includes(newStatus)) {
+            throw new BadRequestException(
+                `Tidak dapat mengubah status dari ${currentStatus} ke ${newStatus}. ` +
+                `Status yang diperbolehkan: ${allowed.length > 0 ? allowed.join(', ') : 'tidak ada'}`
+            );
+        }
+
+        return this.prisma.ujian.update({
+            where: { id },
+            data: {
+                status: newStatus,
+            },
+            include: {
+                mataPelajaran: true,
+                guru: true,
+                paketSoal: true,
+                kelas: true,
             },
         });
     }

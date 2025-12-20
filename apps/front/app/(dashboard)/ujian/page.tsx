@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Pencil, Trash2, Plus, X, FileCheck, Eye, Send } from "lucide-react";
+import { Loader2, Pencil, Trash2, Plus, X, FileCheck, Eye, Send, Activity } from "lucide-react";
+
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -80,6 +82,31 @@ export default function UjianPage() {
             queryClient.invalidateQueries({ queryKey: ["ujian"] });
             setDeletingItem(null);
         },
+    });
+
+    const updateStatusMutation = useMutation({
+        mutationFn: async ({ id, status }: { id: string; status: string }) => {
+            const res = await fetch(`http://localhost:3001/ujian/${id}/status`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ status }),
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.message || "Failed to update status");
+            }
+            return res.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["ujian"] });
+            setEditingItem(null);
+        },
+        onError: (err) => {
+            alert(err.message);
+        }
     });
 
     const getStatusBadge = (status: string) => {
@@ -232,6 +259,14 @@ export default function UjianPage() {
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
+                                                onClick={() => setEditingItem(item)}
+                                            >
+                                                <Activity size={14} />
+                                                Status
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
                                                 onClick={() => router.push(`/ujian/edit/${item.id}`)}
                                             >
                                                 <Pencil size={14} />
@@ -291,6 +326,15 @@ export default function UjianPage() {
                     isLoading={deleteMutation.isPending}
                 />
             )}
+
+            {editingItem && (
+                <StatusModal
+                    item={editingItem}
+                    onClose={() => setEditingItem(null)}
+                    onConfirm={(id: string, status: string) => updateStatusMutation.mutate({ id, status })}
+                    isLoading={updateStatusMutation.isPending}
+                />
+            )}
         </div>
     );
 }
@@ -315,6 +359,86 @@ function DeleteModal({ item, onClose, onConfirm, isLoading }: any) {
                                 <Loader2 className="animate-spin" size={16} />
                             ) : (
                                 "Hapus"
+                            )}
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
+
+function StatusModal({ item, onClose, onConfirm, isLoading }: any) {
+    const [status, setStatus] = useState(item.status);
+
+    const allowedTransitions: any = {
+        DRAFT: ["PUBLISHED", "DIBATALKAN"],
+        PUBLISHED: ["ONGOING", "DRAFT", "DIBATALKAN"],
+        ONGOING: ["SELESAI", "DIBATALKAN"],
+        SELESAI: [],
+        DIBATALKAN: ["DRAFT"],
+    };
+
+    const options = allowedTransitions[item.status] || [];
+
+    const getLabel = (s: string) => {
+        switch (s) {
+            case "DRAFT": return "Draft";
+            case "PUBLISHED": return "Published";
+            case "ONGOING": return "Ongoing";
+            case "SELESAI": return "Selesai";
+            case "DIBATALKAN": return "Dibatalkan";
+            default: return s;
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-md">
+            <Card className="w-full max-w-md">
+                <CardHeader>
+                    <CardTitle>Update Status Ujian</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div>
+                        <p className="text-sm text-muted-foreground mb-2">Status Saat Ini</p>
+                        <Badge variant="outline">{getLabel(item.status)}</Badge>
+                    </div>
+
+                    <div className="space-y-2">
+                        <p className="text-sm font-medium">Pilih Status Baru</p>
+                        {options.length === 0 ? (
+                            <p className="text-sm text-yellow-500">
+                                Tidak ada perubahan status yang tersedia dari status saat ini.
+                            </p>
+                        ) : (
+                            <div className="grid grid-cols-2 gap-2">
+                                {options.map((opt: string) => (
+                                    <Button
+                                        key={opt}
+                                        variant={status === opt ? "default" : "outline"}
+                                        onClick={() => setStatus(opt)}
+                                        className={status === opt ? "bg-primary text-primary-foreground" : ""}
+                                    >
+                                        {getLabel(opt)}
+                                    </Button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="flex gap-2 pt-4">
+                        <Button variant="ghost" onClick={onClose} className="flex-1 bg-red-500 text-white-500">
+                            Batal
+                        </Button>
+                        <Button
+                            onClick={() => onConfirm(item.id, status)}
+                            disabled={isLoading || status === item.status}
+                            className="flex-1"
+                        >
+                            {isLoading ? (
+                                <Loader2 className="animate-spin" size={16} />
+                            ) : (
+                                "Simpan"
                             )}
                         </Button>
                     </div>
