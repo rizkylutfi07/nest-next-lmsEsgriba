@@ -25,6 +25,8 @@ type MonitoringItem = {
   nilaiTotal?: number | null;
   violationCount?: number;
   jawaban?: any;
+  pgBenar?: number;
+  pgSalah?: number;
 };
 
 export default function PenilaianPage() {
@@ -73,18 +75,21 @@ export default function PenilaianPage() {
 
   const selectedUjianObj = ujianList?.find((u) => u.id === selectedUjian);
   const [gradingId, setGradingId] = useState<string | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
+
+  const activeId = gradingId || detailId;
 
   const { data: reviewData, isLoading: reviewLoading, refetch: refetchReview } = useQuery<any>({
-    queryKey: ["penilaian-review", gradingId],
+    queryKey: ["penilaian-review", activeId],
     queryFn: async () => {
-      if (!gradingId) return null;
-      const res = await fetch(`http://localhost:3001/ujian-siswa/review/${gradingId}`, {
+      if (!activeId) return null;
+      const res = await fetch(`http://localhost:3001/ujian-siswa/review/${activeId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed to load review data");
       return res.json();
     },
-    enabled: !!gradingId && !!token,
+    enabled: !!activeId && !!token,
   });
 
   return (
@@ -141,7 +146,7 @@ export default function PenilaianPage() {
               <ClipboardList size={14} />
               <span>{selectedUjianObj.judul}</span>
               {selectedUjianObj.mataPelajaran?.nama && (
-                <Badge variant="outline" className="text-xs">
+                <Badge className="text-xs">
                   {selectedUjianObj.mataPelajaran.nama}
                 </Badge>
               )}
@@ -166,6 +171,7 @@ export default function PenilaianPage() {
                     <th className="px-4 py-3 text-left">Kelas</th>
                     <th className="px-4 py-3 text-left">Status</th>
                     <th className="px-4 py-3 text-left">Progres</th>
+                    <th className="px-4 py-3 text-left">PG B/S</th>
                     <th className="px-4 py-3 text-left">Nilai</th>
                     <th className="px-4 py-3 text-left">Pelanggaran</th>
                     <th className="px-4 py-3 text-left">Aksi</th>
@@ -196,12 +202,18 @@ export default function PenilaianPage() {
                             </span>
                           </div>
                         </td>
+                        <td className="px-4 py-3 text-sm">
+                          <span className="text-green-600 font-medium">{s.pgBenar ?? 0}</span> / <span className="text-red-600 font-medium">{s.pgSalah ?? 0}</span>
+                        </td>
                         <td className="px-4 py-3 font-semibold">
                           {s.nilaiTotal !== null && s.nilaiTotal !== undefined ? s.nilaiTotal.toFixed(1) : "-"}
                         </td>
                         <td className="px-4 py-3 text-muted-foreground">{s.violationCount ?? 0}</td>
                         <td className="px-4 py-3">
                           <div className="flex gap-2">
+                            <Button size="sm" variant="outline" onClick={() => setDetailId(s.id)}>
+                              Detail
+                            </Button>
                             <Button size="sm" variant="outline" onClick={() => setGradingId(s.id)}>
                               Koreksi
                             </Button>
@@ -229,9 +241,143 @@ export default function PenilaianPage() {
           token={token}
         />
       )}
+
+      {detailId && reviewData && (
+        <AnswerDetailModal
+          data={reviewData}
+          onClose={() => setDetailId(null)}
+        />
+      )}
     </div>
   );
 }
+
+// ... StatusPill ...
+
+function AnswerDetailModal({ data, onClose }: { data: any; onClose: () => void }) {
+  const soalList = data?.ujian?.ujianSoal ?? [];
+  const jawabanMap = Array.isArray(data?.jawaban)
+    ? data.jawaban.reduce((acc: any, item: any) => {
+      acc[item.soalId] = item.jawaban;
+      return acc;
+    }, {})
+    : {};
+
+  const isCorrect = (soal: any, ans: any) => {
+    if (!ans) return false;
+    if (soal.bankSoal.tipe === "PILIHAN_GANDA" || soal.bankSoal.tipe === "BENAR_SALAH") {
+      const correct = soal.bankSoal.pilihanJawaban?.find((p: any) => p.isCorrect);
+      return correct?.id === ans;
+    }
+    // Simple string match for others, or rely on internal logic? 
+    // For essay we don't know "correct" easily without manual grade, 
+    // but let's just show if it matches key for simple types.
+    if (soal.bankSoal.tipe === "ISIAN_SINGKAT") {
+      return soal.bankSoal.jawabanBenar?.toLowerCase() === ans?.toLowerCase();
+    }
+    return null; // Essay or others
+  }
+
+  return (
+    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+      <Card className="w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+        <CardHeader className="flex flex-row items-center justify-between border-b border-border py-4">
+          <div>
+            <CardTitle>Detail Jawaban</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              {data?.siswa?.nama} • {data?.siswa?.kelas?.nama || "-"}
+            </p>
+          </div>
+          <Button variant="ghost" onClick={onClose} size="sm">
+            Tutup
+          </Button>
+        </CardHeader>
+        <CardContent className="p-0 overflow-y-auto bg-muted/10">
+          <div className="divide-y divide-border">
+            {soalList.map((soal: any, idx: number) => {
+              const ans = jawabanMap[soal.bankSoalId];
+              const correct = isCorrect(soal, ans);
+              const isEssay = soal.bankSoal.tipe === "ESSAY" || soal.bankSoal.tipe === "ISIAN_SINGKAT";
+
+              return (
+                <div key={soal.id} className="p-6 bg-background">
+                  <div className="flex items-start gap-4">
+                    <div className="min-w-[30px] flex flex-col items-center gap-2">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted font-semibold text-sm">
+                        {idx + 1}
+                      </div>
+                      {correct === true && <CheckCircle className="text-green-500" size={20} />}
+                      {correct === false && <AlertTriangle className="text-red-500" size={20} />}
+                    </div>
+                    <div className="flex-1 space-y-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge className="text-xs">{soal.bankSoal.tipe.replace("_", " ")}</Badge>
+                        <Badge className="text-xs">Bobot: {soal.bankSoal.bobot ?? 0}</Badge>
+                      </div>
+
+                      <div className="prose prose-sm max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: soal.bankSoal.pertanyaan }} />
+
+                      {/* Options for PG */}
+                      {(soal.bankSoal.tipe === "PILIHAN_GANDA" || soal.bankSoal.tipe === "BENAR_SALAH") && (
+                        <div className="space-y-2 mt-4 ml-1">
+                          {soal.bankSoal.pilihanJawaban?.map((p: any) => {
+                            const isSelected = p.id === ans;
+                            const isKey = p.isCorrect;
+                            let itemClass = "border-transparent bg-muted/30";
+                            if (isSelected && isKey) itemClass = "border-green-500 bg-green-500/10";
+                            else if (isSelected && !isKey) itemClass = "border-red-500 bg-red-500/10";
+                            else if (isKey) itemClass = "border-green-500/50 bg-green-500/5 dashed border";
+
+                            return (
+                              <div key={p.id} className={cn("flex items-center gap-3 p-3 rounded-lg border text-sm", itemClass)}>
+                                <div className={cn("w-4 h-4 rounded-full border flex items-center justify-center",
+                                  isSelected ? (isKey ? "border-green-600 bg-green-600" : "border-red-600 bg-red-600") : "border-muted-foreground"
+                                )}>
+                                  {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
+                                </div>
+                                <div dangerouslySetInnerHTML={{ __html: p.text }} />
+                                {isKey && <Badge className="ml-auto bg-green-600 hover:bg-green-700">Kunci</Badge>}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+
+                      {/* Essay / Isian */}
+                      {isEssay && (
+                        <div className="mt-4 p-4 rounded-lg bg-muted/30 space-y-3">
+                          <div>
+                            <span className="text-xs font-semibold text-muted-foreground uppercase">Jawaban Siswa</span>
+                            <div className="mt-1 text-sm bg-background p-3 rounded border border-border">
+                              {ans || <span className="text-muted-foreground italic">Tidak dijawab</span>}
+                            </div>
+                          </div>
+                          {soal.bankSoal.jawabanBenar && (
+                            <div>
+                              <span className="text-xs font-semibold text-muted-foreground uppercase">Kunci Jawaban</span>
+                              <div className="mt-1 text-sm bg-green-500/10 border border-green-500/20 p-3 rounded text-green-900 dark:text-green-100">
+                                {soal.bankSoal.jawabanBenar}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+        <div className="p-4 border-t border-border flex justify-end">
+          <Button onClick={onClose}>Tutup</Button>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+// ... GradeModal ...
 
 function StatusPill({ status }: { status: string }) {
   if (status === "SELESAI") {
@@ -294,9 +440,9 @@ function GradeModal({ data, onClose, onSaved, isLoading, token }: any) {
 
   const jawabanMap = Array.isArray(data?.jawaban)
     ? data.jawaban.reduce((acc: any, item: any) => {
-        acc[item.soalId] = item.jawaban;
-        return acc;
-      }, {})
+      acc[item.soalId] = item.jawaban;
+      return acc;
+    }, {})
     : {};
 
   const soalList = data?.ujian?.ujianSoal ?? [];
@@ -335,7 +481,7 @@ function GradeModal({ data, onClose, onSaved, isLoading, token }: any) {
   };
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/10 p-4">
       <Card className="w-full max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
         <CardHeader className="flex flex-row items-center justify-between border-b border-border">
           <div>
@@ -364,10 +510,10 @@ function GradeModal({ data, onClose, onSaved, isLoading, token }: any) {
                   <div key={soal.id} className="p-4 space-y-3">
                     <div className="flex items-start gap-2">
                       <span className="text-sm font-semibold text-muted-foreground">Soal {idx + 1}</span>
-                      <Badge variant="outline" className="text-xs">
+                      <Badge className="text-xs">
                         {soal.bankSoal.tipe.replace("_", " ")}
                       </Badge>
-                      <Badge variant="outline" className="text-xs">
+                      <Badge className="text-xs">
                         Bobot: {soal.bankSoal.bobot ?? 0}
                       </Badge>
                     </div>

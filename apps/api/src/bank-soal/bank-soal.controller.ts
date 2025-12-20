@@ -195,14 +195,67 @@ export class BankSoalController {
                 }
 
                 // Process jawaban for multiple choice
-                if (soal.tipe === 'PILIHAN_GANDA' && jawaban.length > 0) {
+                if (soal.tipe === 'PILIHAN_GANDA') {
                     const pilihanJawaban: any[] = [];
                     const options = ['A', 'B', 'C', 'D', 'E'];
+                    let processedJawaban: string[] = [];
 
-                    for (let i = 0; i < jawaban.length && i < 5; i++) {
+                    // Try to parse from HTML first for better structure (handling lists/paragraphs)
+                    if (htmlBlocks.length === soalBlocks.length) {
+                        const htmlBlock = htmlBlocks[blockIndex] || '';
+
+                        // Find content between JAWABAN: and KUNCI JAWABAN:
+                        // regex to match JAWABAN: with potential tags around it
+                        const matchJawaban = htmlBlock.match(/(?:<[^>]+>|\s)*JAWABAN\s*:(?:<[^>]+>|\s)*/i);
+                        const matchKunci = htmlBlock.match(/(?:<[^>]+>|\s)*KUNCI JAWABAN\s*:(?:<[^>]+>|\s)*/i);
+
+                        if (matchJawaban) {
+                            const startIndex = matchJawaban.index! + matchJawaban[0].length;
+                            const endIndex = matchKunci ? matchKunci.index : htmlBlock.length;
+                            const jawabanHtml = htmlBlock.substring(startIndex, endIndex);
+
+                            // Check for list items <li>
+                            const listItems = jawabanHtml.match(/<li[^>]*>([\s\S]*?)<\/li>/gi);
+                            if (listItems && listItems.length > 0) {
+                                processedJawaban = listItems.map(item => this.stripHtmlTags(item).trim());
+                            } else {
+                                // Fallback to paragraphs <p>
+                                const paragraphs = jawabanHtml.match(/<p[^>]*>([\s\S]*?)<\/p>/gi);
+                                if (paragraphs && paragraphs.length > 0) {
+                                    processedJawaban = paragraphs.map(p => this.stripHtmlTags(p).trim()).filter(t => t);
+                                }
+                            }
+                        }
+                    }
+
+                    // Fallback to text lines if HTML parsing failed or returned empty
+                    if (processedJawaban.length === 0 && jawaban.length > 0) {
+                        // Check prefixes in text lines (A., B., etc)
+                        const hasPrefix = jawaban.some(j => /^[A-E][).]\s/i.test(j));
+                        if (hasPrefix) {
+                            const mapped: Record<string, string> = {};
+                            let currentKey = '';
+                            jawaban.forEach(line => {
+                                const match = line.match(/^([A-E])[).]\s(.*)/i);
+                                if (match) {
+                                    currentKey = match[1].toUpperCase();
+                                    mapped[currentKey] = match[2].trim();
+                                } else if (currentKey) {
+                                    mapped[currentKey] += ' ' + line.trim();
+                                }
+                            });
+                            processedJawaban = options.map(opt => mapped[opt] || '');
+                        } else {
+                            processedJawaban = jawaban;
+                        }
+                    }
+
+                    // Final mapping
+                    for (let i = 0; i < processedJawaban.length && i < 5; i++) {
+                        if (!processedJawaban[i]) continue;
                         pilihanJawaban.push({
                             id: options[i],
-                            text: jawaban[i],
+                            text: processedJawaban[i],
                             isCorrect: options[i] === kunciJawaban,
                         });
                     }

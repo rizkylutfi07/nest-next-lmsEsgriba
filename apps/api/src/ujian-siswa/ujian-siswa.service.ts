@@ -508,6 +508,11 @@ export class UjianSiswaService {
                 },
                 ujian: {
                     select: {
+                        ujianSoal: {
+                            include: {
+                                bankSoal: true,
+                            },
+                        },
                         _count: {
                             select: {
                                 ujianSoal: true,
@@ -523,17 +528,41 @@ export class UjianSiswaService {
             },
         });
 
-        // Attach violation count from in-memory logs
+        // Attach violation count and PG stats from in-memory logs and calculation
         return result.map(u => {
             const logs = this.activityLogs.get(u.id) || [];
             const violationCount = logs.filter(
                 (log) => log.activityType === 'TAB_SWITCH' || log.activityType === 'EXIT_FULLSCREEN'
             ).length;
 
+            // Calculate PG stats
+            let pgBenar = 0;
+            let pgSalah = 0;
+            const jawabanSiswa = u.jawaban as any[] || [];
+
+            if (Array.isArray(jawabanSiswa)) {
+                u.ujian.ujianSoal.forEach(soal => {
+                    if (soal.bankSoal?.tipe === TipeSoal.PILIHAN_GANDA || soal.bankSoal?.tipe === TipeSoal.BENAR_SALAH) {
+                        const jawab = jawabanSiswa.find(j => j.soalId === soal.bankSoalId);
+                        if (jawab) {
+                            const pilihan = soal.bankSoal.pilihanJawaban as any[];
+                            const benar = pilihan?.find(p => p.isCorrect);
+                            if (benar && jawab.jawaban === benar.id) {
+                                pgBenar++;
+                            } else {
+                                pgSalah++;
+                            }
+                        }
+                    }
+                });
+            }
+
             return {
                 ...u,
                 violationCount,
                 answeredCount: getAnsweredCount(u.jawaban),
+                pgBenar,
+                pgSalah,
             };
         });
     }

@@ -160,7 +160,7 @@ export default function EditUjianPage({ params }: { params: Promise<{ id: string
     const updateMutation = useMutation({
         mutationFn: async (data: any) => {
             const res = await fetch(`http://localhost:3001/ujian/${id}`, {
-                method: "PUT",
+                method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
@@ -204,6 +204,8 @@ export default function EditUjianPage({ params }: { params: Promise<{ id: string
             ...formData,
             mataPelajaranId: formData.mataPelajaranId || undefined,
             guruId: formData.guruId || undefined,
+            tanggalMulai: new Date(formData.tanggalMulai).toISOString(),
+            tanggalSelesai: new Date(formData.tanggalSelesai).toISOString(),
             paketSoalId: formData.paketSoalId,
             kelasIds: kelasIds,
             siswaIds: targetPeserta === "SPECIFIC" ? siswaIds : undefined,

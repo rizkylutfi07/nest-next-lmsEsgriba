@@ -423,7 +423,10 @@ export class UjianService {
 
         return this.prisma.ujian.update({
             where: { id },
-            data: ujianData,
+            data: {
+                ...ujianData,
+                paketSoalId,
+            },
             include: {
                 mataPelajaran: true,
                 guru: true,

@@ -327,7 +327,7 @@ export default function MonitoringPage() {
                                                     <div className="font-bold text-foreground mb-1 group-hover:text-primary transition-colors">
                                                         {student.siswa?.nama}
                                                     </div>
-                                                    <div className="text-xs text-muted-foreground mb-2">{student.siswa?.nisn}</div>
+                                                    <div className="text-xs text-muted-foreground mb-2">{student.siswa?.nisn} | {student.siswa?.email}</div>
                                                     <Badge className="bg-muted text-muted-foreground border-border text-[10px] px-2 py-0.5 pointer-events-none hover:bg-muted">
                                                         {student.siswa?.kelas?.nama}
                                                     </Badge>
