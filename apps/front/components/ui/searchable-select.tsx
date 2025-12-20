@@ -187,7 +187,7 @@ export function SearchableSelect({
                     </div>
 
                     {/* Options List */}
-                    <div className="max-h-60 overflow-y-auto">
+                    <div className="max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-zinc-700 scrollbar-track-transparent">
                         {filteredOptions.length === 0 ? (
                             <div className="p-4 text-center text-sm text-muted-foreground">
                                 {emptyMessage}

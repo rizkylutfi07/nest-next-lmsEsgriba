@@ -62,6 +62,7 @@ model MataPelajaran {
   bankSoal BankSoal[]
   paketSoal PaketSoal[]
   ujian Ujian[]
+  jadwalPelajaran JadwalPelajaran[]
 }
 
 model Guru {
@@ -83,6 +84,7 @@ model Guru {
   paketSoal     PaketSoal[]
   kelasWali     Kelas[]         @relation("WaliKelas")
   ujian         Ujian[]
+  jadwalPelajaran JadwalPelajaran[]
 }
 
 enum StatusGuru {
@@ -122,6 +124,7 @@ model Kelas {
   siswaKelasHistory SiswaKelasHistory[]
   ujian             Ujian[]
   ujianKelas        UjianKelas[] // Many-to-many relationship with Ujian
+  jadwalPelajaran   JadwalPelajaran[]
 }
 
 model Siswa {
@@ -377,4 +380,38 @@ enum StatusPengerjaan {
   SEDANG_MENGERJAKAN
   SELESAI
   TIDAK_HADIR
+  DIBLOKIR
+}
+
+// ==================== JADWAL PELAJARAN ====================
+
+enum Hari {
+  SENIN
+  SELASA
+  RABU
+  KAMIS
+  JUMAT
+  SABTU
+}
+
+model JadwalPelajaran {
+  id              String        @id @default(cuid())
+  hari            Hari
+  jamMulai        String        // e.g., "07:00"
+  jamSelesai      String        // e.g., "08:30"
+  
+  kelasId         String
+  kelas           Kelas         @relation(fields: [kelasId], references: [id])
+  
+  mataPelajaranId String
+  mataPelajaran   MataPelajaran @relation(fields: [mataPelajaranId], references: [id])
+  
+  guruId          String
+  guru            Guru          @relation(fields: [guruId], references: [id])
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([kelasId])
+  @@index([hari])
 }

@@ -21,6 +21,7 @@ import { PaketSoalModule } from './paket-soal/paket-soal.module';
 import { UjianModule } from './ujian/ujian.module';
 import { UjianSiswaModule } from './ujian-siswa/ujian-siswa.module';
 import { UploadModule } from './upload/upload.module';
+import { JadwalPelajaranModule } from './jadwal-pelajaran/jadwal-pelajaran.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { UploadModule } from './upload/upload.module';
     UjianModule,
     UjianSiswaModule,
     UploadModule,
+    JadwalPelajaranModule,
   ],
   controllers: [AppController],
   providers: [AppService],

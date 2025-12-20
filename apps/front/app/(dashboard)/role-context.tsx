@@ -80,6 +80,7 @@ const navByRole: Record<Role, NavGroup[]> = {
         { label: "Data Jurusan", icon: BookOpen, href: "/jurusan", note: "Program studi" },
         { label: "Tahun Ajaran", icon: CalendarClock, href: "/tahun-ajaran", note: "Periode aktif" },
         { label: "Mata Pelajaran", icon: BookOpen, href: "/mata-pelajaran", note: "Silabus & mapel" },
+        { label: "Jadwal Pelajaran", icon: CalendarRange, href: "/jadwal-pelajaran", note: "Jadwal per kelas" },
       ],
     },
     {
