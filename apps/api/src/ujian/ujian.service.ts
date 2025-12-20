@@ -11,7 +11,7 @@ export class UjianService {
 
     async create(createUjianDto: CreateUjianDto, createdBy: string) {
         const { paketSoalId, kelasIds, siswaIds, ...rest } = createUjianDto;
-        
+
         // Prepare ujianData with only valid Prisma fields (exclude kelasIds and siswaIds which are handled separately)
         const tanggalMulai = new Date(rest.tanggalMulai);
         const tanggalSelesai = new Date(rest.tanggalSelesai);
@@ -304,6 +304,7 @@ export class UjianService {
                 _count: {
                     select: {
                         ujianSiswa: true,
+                        ujianSoal: true,
                     },
                 },
             },

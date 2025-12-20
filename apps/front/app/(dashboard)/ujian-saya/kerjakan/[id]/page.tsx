@@ -549,12 +549,24 @@ export default function KerjakanUjianPage() {
                         const pertanyaan = soalData?.pertanyaan ?? currentSoal.pertanyaan ?? "";
                         const pilihanRaw = soalData?.pilihanJawaban ?? currentSoal.pilihanJawaban;
                         const pilihanJawaban = normalizePilihanData(pilihanRaw);
+                        const bobot = currentSoal.bobot ?? soalData?.bobot ?? 1;
+                        const getTipeLabel = (tipe: string) => {
+                            const labels: Record<string, string> = {
+                                PILIHAN_GANDA: "Pilihan Ganda",
+                                ESSAY: "Essay",
+                                BENAR_SALAH: "Benar/Salah",
+                                ISIAN_SINGKAT: "Isian Singkat",
+                            };
+                            return labels[tipe] || tipe;
+                        };
 
                         return (
                             <Card>
                                 <CardContent className="p-6 space-y-6">
-                                    <div className="flex items-start gap-3">
+                                    <div className="flex items-center gap-2 flex-wrap">
                                         <Badge className="bg-muted text-muted-foreground border border-border">Soal {currentIndex + 1}</Badge>
+                                        <Badge className="bg-blue-500/15 text-blue-600 border-0">{getTipeLabel(tipeSoal)}</Badge>
+                                        <Badge className="bg-purple-500/15 text-purple-600 border-0">Bobot: {bobot}</Badge>
                                     </div>
 
                                     {typeof pertanyaan === "string" && pertanyaan.includes("<") ? (
@@ -591,7 +603,14 @@ export default function KerjakanUjianPage() {
                                                             className="mt-1"
                                                         />
                                                         <div className="flex-1">
-                                                            <span>{optionLabel}</span>
+                                                            {optionLabel.includes('<img') ? (
+                                                                <div
+                                                                    className="prose prose-sm max-w-none"
+                                                                    dangerouslySetInnerHTML={{ __html: optionLabel }}
+                                                                />
+                                                            ) : (
+                                                                <span>{optionLabel}</span>
+                                                            )}
                                                             {optionImageUrl && (
                                                                 <img
                                                                     src={optionImageUrl.startsWith('/') ? `${process.env.NEXT_PUBLIC_API_URL || ''}${optionImageUrl}` : optionImageUrl}
@@ -648,7 +667,7 @@ export default function KerjakanUjianPage() {
                                                 queueSaveProgress(next);
                                             }}
                                             placeholder="Tulis jawaban Anda di sini..."
-                                            className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                                            className="w-full rounded-lg border border-border bg-background px-4 py-3 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                                             rows={tipeSoal === "ESSAY" ? 6 : 2}
                                         />
                                     )}

@@ -572,7 +572,14 @@ export class PaketSoalService {
         // Clean up whitespace
         cleaned = cleaned.replace(/\s+/g, ' ').trim();
 
-        return cleaned;
+        // Remove question type and weight prefixes from the beginning of the text
+        // Patterns like: "PG NILAI: 3 SOAL:", "PILIHAN GANDA NILAI: 5 SOAL:", etc.
+        cleaned = cleaned.replace(/^(PG|PILIHAN GANDA|ESSAY|BENAR[\s-]?SALAH|ISIAN SINGKAT)\s*NILAI:\s*\d+\s*SOAL:\s*/i, '');
+
+        // Also handle variations without "SOAL:" label
+        cleaned = cleaned.replace(/^(PG|PILIHAN GANDA|ESSAY|BENAR[\s-]?SALAH|ISIAN SINGKAT)\s*NILAI:\s*\d+\s*:\s*/i, '');
+
+        return cleaned.trim();
     }
 
     /**

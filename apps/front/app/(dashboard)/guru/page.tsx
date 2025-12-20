@@ -373,7 +373,7 @@ function ImportModal({ onClose, onSuccess, token }: { onClose: () => void; onSuc
                   type="file"
                   accept=".xlsx,.xls"
                   onChange={(e) => setFile(e.target.files?.[0] || null)}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none"
+                  className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none"
                 />
               </div>
               <div className="flex gap-2">
@@ -495,7 +495,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
 
                 value={formData.nip || ''}
                 onChange={(e) => setFormData({ ...formData, nip: e.target.value })}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
               />
             </div>
             <div>
@@ -508,7 +508,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
 
                 value={formData.nama || ''}
                 onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
               />
             </div>
             <div>
@@ -521,7 +521,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
 
                 value={formData.email || ''}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
               />
             </div>
             <div>
@@ -534,7 +534,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
 
                 value={formData.nomorTelepon || ''}
                 onChange={(e) => setFormData({ ...formData, nomorTelepon: e.target.value })}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
               />
             </div>
             <div>
@@ -543,7 +543,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
                 required
                 value={formData.status || ''}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
               >
                 <option value="">Pilih Status</option>
                 <option value="AKTIF">AKTIF</option>
@@ -562,16 +562,16 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
                   placeholder="Cari mata pelajaran..."
                   value={searchMataPelajaran}
                   onChange={(e) => setSearchMataPelajaran(e.target.value)}
-                  className="w-full h-9 rounded-md border border-white/10 bg-white/5 pl-9 pr-4 text-sm outline-none focus:border-primary/50"
+                  className="w-full h-9 rounded-md border border-border bg-background pl-9 pr-4 text-sm outline-none focus:border-primary/50"
                 />
               </div>
 
-              <div className="max-h-48 overflow-y-auto rounded-lg border border-white/10 bg-white/5 p-3">
+              <div className="max-h-48 overflow-y-auto rounded-lg border border-border bg-background p-3">
                 {mataPelajaranList?.data?.length > 0 ? (
                   filteredAndSortedMataPelajaran.length > 0 ? (
                     <div className="space-y-2">
                       {filteredAndSortedMataPelajaran.map((mp: any) => (
-                        <label key={mp.id} className="flex items-center gap-2 cursor-pointer hover:bg-white/5 p-2 rounded">
+                        <label key={mp.id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/40 p-2 rounded">
                           <input
                             type="checkbox"
                             checked={(formData.mataPelajaranIds || []).includes(mp.id)}
@@ -597,7 +597,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
             </div>
 
             {!item && (
-              <div className="rounded-lg border border-white/10 bg-white/5 p-4">
+              <div className="rounded-lg border border-border bg-background p-4">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"

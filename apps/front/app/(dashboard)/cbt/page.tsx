@@ -157,7 +157,7 @@ export default function CBTPage() {
         </CardContent>
       </Card>
 
-      <Card className="border-white/10 bg-card/70">
+      <Card className="border-border bg-card/70">
         <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
             <CardTitle>Menu CBT</CardTitle>
@@ -171,7 +171,7 @@ export default function CBTPage() {
             return (
               <div
                 key={item.title}
-                className="flex flex-col gap-3 rounded-xl border border-white/8 bg-white/5 p-4 transition hover:border-primary/40 hover:shadow-lg hover:shadow-primary/15"
+                className="flex flex-col gap-3 rounded-xl border border-white/8 bg-muted/40 p-4 transition hover:border-primary/40 hover:shadow-lg hover:shadow-primary/15"
               >
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/15 text-primary">

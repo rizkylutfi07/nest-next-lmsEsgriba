@@ -178,14 +178,14 @@ export default function SiswaPage() {
               placeholder="Cari..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              className="w-full rounded-lg border border-white/10 bg-white/5 py-2 pl-10 pr-4 text-sm outline-none transition focus:border-primary/60 focus:bg-white/10"
+              className="w-full rounded-lg border border-border bg-background py-2 pl-10 pr-4 text-sm outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
             />
           </div>
           <div className="flex gap-2">
             <select
               value={filterKelas}
               onChange={(e) => { setFilterKelas(e.target.value); setPage(1); }}
-              className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:bg-white/10"
+              className="rounded-lg border border-border bg-background px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
             >
               <option value="">Semua Kelas</option>
               {kelasList?.data?.map((kelas: any) => (
@@ -197,7 +197,7 @@ export default function SiswaPage() {
             <select
               value={filterStatus}
               onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
-              className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:bg-white/10"
+              className="rounded-lg border border-border bg-background px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
             >
               <option value="">Semua Status</option>
               <option value="AKTIF">AKTIF</option>
@@ -208,7 +208,7 @@ export default function SiswaPage() {
             <select
               value={filterTahunAjaran}
               onChange={(e) => { setFilterTahunAjaran(e.target.value); setPage(1); }}
-              className="hidden md:block rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:bg-white/10"
+              className="hidden md:block rounded-lg border border-border bg-background px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
             >
               <option value="">Semua Tahun Ajaran</option>
               {activeTahunAjaran && (
@@ -494,7 +494,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
                 required
                 value={formData.nisn || ''}
                 onChange={(e) => setFormData({ ...formData, nisn: e.target.value })}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
               />
             </div>
             <div>
@@ -504,7 +504,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
                 required
                 value={formData.nama || ''}
                 onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
               />
             </div>
             <div>
@@ -513,7 +513,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
                 type="email"
                 value={formData.email || ''}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
               />
             </div>
             <div>
@@ -523,7 +523,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
                 required
                 value={formData.tanggalLahir?.split('T')[0] || ''}
                 onChange={(e) => setFormData({ ...formData, tanggalLahir: e.target.value })}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
               />
             </div>
             <div>
@@ -531,7 +531,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
               <textarea
                 value={formData.alamat || ''}
                 onChange={(e) => setFormData({ ...formData, alamat: e.target.value })}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                 rows={2}
               />
             </div>
@@ -541,7 +541,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
                 type="tel"
                 value={formData.nomorTelepon || ''}
                 onChange={(e) => setFormData({ ...formData, nomorTelepon: e.target.value })}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
               />
             </div>
             <div>
@@ -549,7 +549,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
               <select
                 value={formData.kelasId || ''}
                 onChange={(e) => setFormData({ ...formData, kelasId: e.target.value || undefined })}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
               >
                 <option value="">Pilih Kelas</option>
                 {kelasList?.data?.map((kelas: any) => (
@@ -565,7 +565,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
                 required
                 value={formData.status || 'AKTIF'}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
               >
                 <option value="AKTIF">AKTIF</option>
                 <option value="PKL">PKL</option>
@@ -575,7 +575,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
             </div>
 
             {!item && (
-              <div className="rounded-lg border border-white/10 bg-white/5 p-4">
+              <div className="rounded-lg border border-border bg-background p-4">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -683,13 +683,13 @@ function ImportModal({ onClose, onSuccess }: any) {
             </p>
           </div>
 
-          <div className="border-t border-white/10 pt-4">
+          <div className="border-t border-border pt-4">
             <label className="mb-2 block text-sm font-medium">Pilih File Excel/CSV</label>
             <input
               type="file"
               accept=".xlsx,.xls,.csv"
               onChange={handleFileChange}
-              className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:bg-white/10"
+              className="w-full rounded-lg border border-border bg-background px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
             />
             {file && (
               <p className="mt-2 text-xs text-muted-foreground">
@@ -699,7 +699,7 @@ function ImportModal({ onClose, onSuccess }: any) {
           </div>
 
           {result && (
-            <div className="rounded-lg border border-white/10 bg-white/5 p-4">
+            <div className="rounded-lg border border-border bg-background p-4">
               <h4 className="font-medium mb-2">Hasil Import:</h4>
               <p className="text-sm text-green-500">✓ Berhasil: {result.success}</p>
               <p className="text-sm text-red-500">✗ Gagal: {result.failed}</p>

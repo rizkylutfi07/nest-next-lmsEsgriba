@@ -52,7 +52,7 @@ export default function LoginPage() {
       </div>
 
       <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-10">
-        <Card className="w-full max-w-md border-white/10 bg-card/70 shadow-xl shadow-black/30">
+        <Card className="w-full max-w-md border-border bg-card/70 shadow-xl shadow-black/30">
           <CardHeader className="space-y-3">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-secondary text-background shadow-lg shadow-primary/40">
@@ -83,7 +83,7 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-lg border border-primary/20 bg-white/5 px-3 py-2 text-sm outline-none transition focus:border-primary/60 focus:bg-white/10"
+                  className="w-full rounded-lg border border-primary/20 bg-muted/40 px-3 py-2 text-sm outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                   placeholder="admin@sekolah.id"
                 />
               </label>
@@ -97,7 +97,7 @@ export default function LoginPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-lg border border-primary/20 bg-white/5 px-3 py-2 text-sm outline-none transition focus:border-primary/60 focus:bg-white/10"
+                  className="w-full rounded-lg border border-primary/20 bg-muted/40 px-3 py-2 text-sm outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                   placeholder="********"
                   minLength={6}
                 />

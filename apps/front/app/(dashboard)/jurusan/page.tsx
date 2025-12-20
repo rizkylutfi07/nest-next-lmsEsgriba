@@ -253,7 +253,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
                 placeholder="IPA, IPS, RPL, dll"
                 value={formData.kode || ''}
                 onChange={(e) => setFormData({ ...formData, kode: e.target.value })}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
               />
             </div>
             <div>
@@ -264,7 +264,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
                 placeholder="Ilmu Pengetahuan Alam"
                 value={formData.nama || ''}
                 onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
               />
             </div>
             <div>
@@ -273,7 +273,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
                 value={formData.deskripsi || ''}
                 onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
                 rows={3}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
               />
             </div>
             <div className="flex gap-2 pt-4">

@@ -125,7 +125,7 @@ export default function TahunAjaranPage() {
                 placeholder="Cari..."
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                className="w-full rounded-lg border border-white/10 bg-white/5 py-2 pl-10 pr-4 text-sm outline-none transition focus:border-primary/60 focus:bg-white/10"
+                className="w-full rounded-lg border border-border bg-background py-2 pl-10 pr-4 text-sm outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
               />
             </div>
           </div>
@@ -140,7 +140,7 @@ export default function TahunAjaranPage() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-white/10 text-left text-sm text-muted-foreground">
+                    <tr className="border-b border-border text-left text-sm text-muted-foreground">
                       <th className="pb-3 font-medium">Tahun</th>
                       <th className="pb-3 font-medium">Tanggal Mulai</th>
                       <th className="pb-3 font-medium">Tanggal Selesai</th>
@@ -150,7 +150,7 @@ export default function TahunAjaranPage() {
                   </thead>
                   <tbody>
                     {data?.data.map((item: any) => (
-                      <tr key={item.id} className="border-b border-white/5 transition hover:bg-white/5">
+                      <tr key={item.id} className="border-b border-white/5 transition hover:bg-muted/40">
                         <td className="py-4">
                           <div className="flex items-center gap-2">
                             {item.tahun}
@@ -283,7 +283,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
 
                 value={formData.tahun || ''}
                 onChange={(e) => setFormData({ ...formData, tahun: e.target.value })}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
               />
             </div>
             <div>
@@ -296,7 +296,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
 
                 value={formData.tanggalMulai || ''}
                 onChange={(e) => setFormData({ ...formData, tanggalMulai: e.target.value })}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
               />
             </div>
             <div>
@@ -309,7 +309,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
 
                 value={formData.tanggalSelesai || ''}
                 onChange={(e) => setFormData({ ...formData, tanggalSelesai: e.target.value })}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
               />
             </div>
             <div>
@@ -318,7 +318,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
                 required
                 value={formData.status || ''}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
               >
                 <option value="">Pilih Status</option>
                 <option value="AKTIF">AKTIF</option>

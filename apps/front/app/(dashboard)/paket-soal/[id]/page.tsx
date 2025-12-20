@@ -365,7 +365,7 @@ function AddFromBankModal({ paketSoalId, token, onClose, onSuccess }: any) {
                                 placeholder="Cari soal..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 mb-4 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                                className="w-full rounded-lg border border-border bg-background px-4 py-2 mb-4 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                             />
 
                             <div className="space-y-2">
@@ -375,7 +375,7 @@ function AddFromBankModal({ paketSoalId, token, onClose, onSuccess }: any) {
                                         onClick={() => toggleSoal(soal.id)}
                                         className={`p-3 rounded-lg border cursor-pointer transition ${selectedSoal.includes(soal.id)
                                             ? "border-primary bg-primary/10"
-                                            : "border-white/10 hover:border-white/20"
+                                            : "border-border hover:border-white/20"
                                             }`}
                                     >
                                         <div className="flex items-start gap-2">
@@ -532,7 +532,7 @@ function ImportSoalModal({ paketSoalId, token, onClose, onSuccess }: any) {
                                         Soal akan divalidasi terlebih dahulu sebelum diimport.
                                     </p>
 
-                                    <div className="border-2 border-dashed border-white/10 rounded-lg p-6 text-center">
+                                    <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
                                         <input
                                             type="file"
                                             accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -826,7 +826,14 @@ function PreviewModal({ paketSoal, index, setIndex, answers, setAnswers, onClose
                                                             className="mt-1"
                                                         />
                                                         <div className="flex-1">
-                                                            <span>{optionLabel}</span>
+                                                            {optionLabel.includes('<img') ? (
+                                                                <div
+                                                                    className="prose prose-sm max-w-none"
+                                                                    dangerouslySetInnerHTML={{ __html: optionLabel }}
+                                                                />
+                                                            ) : (
+                                                                <span>{optionLabel}</span>
+                                                            )}
                                                             {optionImageUrl && (
                                                                 <img
                                                                     src={optionImageUrl.startsWith('/') ? `${process.env.NEXT_PUBLIC_API_URL || ''}${optionImageUrl}` : optionImageUrl}

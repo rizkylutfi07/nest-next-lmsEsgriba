@@ -126,7 +126,7 @@ export default function BankSoalPage() {
                                 setSearch(e.target.value);
                                 setPage(1);
                             }}
-                            className="w-full rounded-lg border border-white/10 bg-white/5 py-2 px-4 text-sm outline-none transition focus:border-primary/60 focus:bg-white/10"
+                            className="w-full rounded-lg border border-border bg-background py-2 px-4 text-sm outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                         />
 
                         <select
@@ -135,7 +135,7 @@ export default function BankSoalPage() {
                                 setFilterTipe(e.target.value);
                                 setPage(1);
                             }}
-                            className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:bg-white/10"
+                            className="rounded-lg border border-border bg-background px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                         >
                             <option value="">Semua Tipe</option>
                             <option value="PILIHAN_GANDA">Pilihan Ganda</option>
@@ -373,7 +373,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
                                     type="text"
                                     value={generatedKode}
                                     disabled
-                                    className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none opacity-60"
+                                    className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none opacity-60"
                                 />
                             </div>
                         )}
@@ -388,7 +388,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
                                 onChange={(e) =>
                                     setFormData({ ...formData, pertanyaan: e.target.value })
                                 }
-                                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                                 rows={4}
                             />
                         </div>
@@ -403,7 +403,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
                                 onChange={(e) =>
                                     setFormData({ ...formData, tipe: e.target.value })
                                 }
-                                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                             >
                                 <option value="PILIHAN_GANDA">Pilihan Ganda</option>
                                 <option value="ESSAY">Essay</option>
@@ -425,7 +425,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
                                             mataPelajaranId: e.target.value || undefined,
                                         })
                                     }
-                                    className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                                    className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                                 >
                                     <option value="">Pilih Mata Pelajaran</option>
                                     {mataPelajaranList?.data?.map((mp: any) => (
@@ -448,7 +448,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
                                             bobot: parseInt(e.target.value),
                                         })
                                     }
-                                    className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                                    className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                                 />
                             </div>
                         </div>
@@ -493,7 +493,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
                                                                 pilihanJawaban: updated,
                                                             });
                                                         }}
-                                                        className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                                                        className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                                                     />
                                                 </div>
                                             </div>
@@ -514,7 +514,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
                                 onChange={(e) =>
                                     setFormData({ ...formData, penjelasan: e.target.value })
                                 }
-                                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                                 rows={3}
                             />
                         </div>
@@ -686,7 +686,7 @@ function ImportModal({ onClose, token, queryClient }: any) {
                                     type="file"
                                     accept=".docx,.doc,.txt,.json"
                                     onChange={(e) => setFile(e.target.files?.[0] || null)}
-                                    className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:bg-white/10"
+                                    className="w-full rounded-lg border border-border bg-background px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                                 />
                                 <p className="text-xs text-muted-foreground mt-1">
                                     Format yang didukung: Word (.docx, .doc), Text (.txt) atau JSON (.json)
@@ -701,7 +701,7 @@ function ImportModal({ onClose, token, queryClient }: any) {
                                 <select
                                     value={mataPelajaranId}
                                     onChange={(e) => setMataPelajaranId(e.target.value)}
-                                    className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                                    className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                                 >
                                     <option value="">Pilih Mata Pelajaran</option>
                                     {mataPelajaranList?.data?.map((mp: any) => (

@@ -253,7 +253,7 @@ export default function HomePage() {
                 <div
                   key={item.title}
                   className={cn(
-                    "rounded-xl border border-white/10 p-4 shadow-lg shadow-black/10",
+                    "rounded-xl border border-border p-4 shadow-lg shadow-black/10",
                     "bg-gradient-to-br",
                     item.accent,
                   )}
@@ -311,7 +311,7 @@ export default function HomePage() {
           </CardContent>
         </Card>
 
-        <Card className="border-white/10 bg-card/70 backdrop-blur">
+        <Card className="border-border bg-card/70 backdrop-blur">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2">
               <CalendarRange size={18} />
@@ -323,7 +323,7 @@ export default function HomePage() {
             {schedule.map((item) => (
               <div
                 key={item.title}
-                className="flex flex-col gap-2 rounded-lg border border-white/5 bg-white/5 p-3 md:flex-row md:items-center md:justify-between"
+                className="flex flex-col gap-2 rounded-lg border border-white/5 bg-muted/40 p-3 md:flex-row md:items-center md:justify-between"
               >
                 <div className="flex items-center gap-3">
                   <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/15 text-primary">
@@ -369,7 +369,7 @@ export default function HomePage() {
               return (
                 <div
                   key={item.title}
-                  className="flex flex-col gap-3 rounded-xl border border-white/8 bg-white/5 p-4 transition hover:border-primary/40 hover:shadow-lg hover:shadow-primary/15"
+                  className="flex flex-col gap-3 rounded-xl border border-white/8 bg-muted/40 p-4 transition hover:border-primary/40 hover:shadow-lg hover:shadow-primary/15"
                 >
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/15 text-primary">
@@ -408,7 +408,7 @@ export default function HomePage() {
       </Card>
 
       {showManagement && (
-        <Card className="border-white/10 bg-card/70">
+        <Card className="border-border bg-card/70">
           <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div>
               <CardTitle>Data akademik esensial</CardTitle>
@@ -422,7 +422,7 @@ export default function HomePage() {
               return (
                 <div
                   key={item.title}
-                  className="flex flex-col gap-3 rounded-xl border border-white/8 bg-white/5 p-4 transition hover:border-primary/40 hover:shadow-lg hover:shadow-primary/15"
+                  className="flex flex-col gap-3 rounded-xl border border-white/8 bg-muted/40 p-4 transition hover:border-primary/40 hover:shadow-lg hover:shadow-primary/15"
                 >
                   <div className="flex items-start gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/15 text-primary">
@@ -448,7 +448,7 @@ export default function HomePage() {
       )}
 
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-        <Card className="border-white/10 bg-card/70">
+        <Card className="border-border bg-card/70">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle>Progress course utama</CardTitle>
@@ -460,7 +460,7 @@ export default function HomePage() {
             {courses.map((course) => (
               <div
                 key={course.title}
-                className="rounded-xl border border-white/5 bg-white/5 p-4"
+                className="rounded-xl border border-white/5 bg-muted/40 p-4"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="space-y-1">
@@ -484,7 +484,7 @@ export default function HomePage() {
         </Card>
 
         {showGuruTasks && (
-          <Card className="border-white/10 bg-card/70">
+          <Card className="border-border bg-card/70">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>
@@ -502,7 +502,7 @@ export default function HomePage() {
               {tasks.map((task) => (
                 <div
                   key={task.title}
-                  className="flex items-center justify-between rounded-lg border border-white/5 bg-white/5 px-3 py-2"
+                  className="flex items-center justify-between rounded-lg border border-white/5 bg-muted/40 px-3 py-2"
                 >
                   <div>
                     <p className="text-sm font-semibold">{task.title}</p>
@@ -533,7 +533,7 @@ export default function HomePage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-        <Card className="border-white/10 bg-card/70">
+        <Card className="border-border bg-card/70">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle>Pengumuman & broadcast</CardTitle>
@@ -548,7 +548,7 @@ export default function HomePage() {
             {announcements.map((announcement) => (
               <div
                 key={announcement.title}
-                className="rounded-lg border border-white/5 bg-white/5 p-4"
+                className="rounded-lg border border-white/5 bg-muted/40 p-4"
               >
                 <p className="font-semibold">{announcement.title}</p>
                 <p className="text-sm text-muted-foreground">{announcement.detail}</p>
@@ -562,7 +562,7 @@ export default function HomePage() {
         </Card>
 
         {role !== "SISWA" && (
-          <Card className="border-white/10 bg-card/70">
+          <Card className="border-border bg-card/70">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Aktivitas terbaru</CardTitle>
@@ -592,7 +592,7 @@ export default function HomePage() {
                   <p className="text-xs text-muted-foreground">SSO + OTP aktif</p>
                 </div>
               </div>
-              <div className="rounded-xl border border-white/5 bg-white/5 p-4">
+              <div className="rounded-xl border border-white/5 bg-muted/40 p-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-semibold">Bandwidth penggunaan video</p>

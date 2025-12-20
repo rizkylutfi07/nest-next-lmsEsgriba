@@ -93,7 +93,7 @@ export default function PaketSoalPage() {
                                 setSearch(e.target.value);
                                 setPage(1);
                             }}
-                            className="w-full rounded-lg border border-white/10 bg-white/5 py-2 px-4 text-sm outline-none transition focus:border-primary/60 focus:bg-white/10"
+                            className="w-full rounded-lg border border-border bg-background py-2 px-4 text-sm outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                         />
 
                         <select
@@ -102,7 +102,7 @@ export default function PaketSoalPage() {
                                 setFilterMataPelajaran(e.target.value);
                                 setPage(1);
                             }}
-                            className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:bg-white/10"
+                            className="rounded-lg border border-border bg-background px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                         >
                             <option value="">Semua Mata Pelajaran</option>
                             {mataPelajaranList?.data?.map((mp: any) => (

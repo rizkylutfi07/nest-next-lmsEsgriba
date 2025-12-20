@@ -117,7 +117,7 @@ export default function UsersPage() {
                                         setSearch(e.target.value);
                                         setPage(1);
                                     }}
-                                    className="w-full rounded-lg border border-white/10 bg-white/5 py-2 pl-10 pr-4 text-sm outline-none transition focus:border-primary/60 focus:bg-white/10"
+                                    className="w-full rounded-lg border border-border bg-background py-2 pl-10 pr-4 text-sm outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                                 />
                             </div>
                             <select
@@ -126,7 +126,7 @@ export default function UsersPage() {
                                     setSelectedRole(e.target.value);
                                     setPage(1);
                                 }}
-                                className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:bg-white/10"
+                                className="rounded-lg border border-border bg-background px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                             >
                                 <option value="">Semua Role</option>
                                 <option value="ADMIN">Admin</option>
@@ -147,7 +147,7 @@ export default function UsersPage() {
                             <div className="overflow-x-auto">
                                 <table className="w-full">
                                     <thead>
-                                        <tr className="border-b border-white/10 text-left text-sm text-muted-foreground">
+                                        <tr className="border-b border-border text-left text-sm text-muted-foreground">
                                             <th className="pb-3 font-medium">User</th>
                                             <th className="pb-3 font-medium">Email</th>
                                             <th className="pb-3 font-medium">Role</th>
@@ -157,7 +157,7 @@ export default function UsersPage() {
                                     </thead>
                                     <tbody>
                                         {data?.data.map((user) => (
-                                            <tr key={user.id} className="border-b border-white/5 transition hover:bg-white/5">
+                                            <tr key={user.id} className="border-b border-white/5 transition hover:bg-muted/40">
                                                 <td className="py-4">
                                                     <div className="flex items-center gap-3">
                                                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -328,7 +328,7 @@ function UserFormModal({
                                 required
                                 value={formData.email}
                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                             />
                         </div>
                         <div>
@@ -338,7 +338,7 @@ function UserFormModal({
                                 required
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                             />
                         </div>
                         <div>
@@ -350,7 +350,7 @@ function UserFormModal({
                                 required={!user}
                                 value={formData.password}
                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                             />
                         </div>
                         <div>
@@ -359,7 +359,7 @@ function UserFormModal({
                                 required
                                 value={formData.role}
                                 onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                             >
                                 <option value="SISWA">Siswa</option>
                                 <option value="GURU">Guru</option>

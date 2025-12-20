@@ -390,7 +390,7 @@ function ImportModal({ onClose, onSuccess, token }: { onClose: () => void; onSuc
                   type="file"
                   accept=".xlsx,.xls"
                   onChange={(e) => setFile(e.target.files?.[0] || null)}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none"
+                  className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none"
                 />
               </div>
               <div className="flex gap-2">
@@ -486,7 +486,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
                 placeholder="X IPA 1"
                 value={formData.nama || ''}
                 onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
               />
             </div>
             <div>
@@ -495,7 +495,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
                 required
                 value={formData.tingkat || ''}
                 onChange={(e) => setFormData({ ...formData, tingkat: e.target.value })}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
               >
                 <option value="">Pilih Tingkat</option>
                 <option value="X">X</option>
@@ -508,7 +508,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
               <select
                 value={formData.jurusanId || ''}
                 onChange={(e) => setFormData({ ...formData, jurusanId: e.target.value })}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
               >
                 <option value="">Pilih Jurusan (Opsional)</option>
                 {jurusanList?.data?.map((jurusan: any) => (
@@ -523,7 +523,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
               <select
                 value={formData.waliKelasId || ''}
                 onChange={(e) => setFormData({ ...formData, waliKelasId: e.target.value })}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
               >
                 <option value="">Pilih Wali Kelas (Opsional)</option>
                 {guruList?.data?.map((guru: any) => (
@@ -541,7 +541,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
                 min="1"
                 value={formData.kapasitas || ''}
                 onChange={(e) => setFormData({ ...formData, kapasitas: parseInt(e.target.value) })}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
               />
             </div>
             <div className="flex gap-2 pt-4">

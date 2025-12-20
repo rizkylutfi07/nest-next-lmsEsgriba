@@ -61,6 +61,27 @@ export default function MulaiUjianPage() {
         );
     }
 
+    // Handle case when ujian data is not available or is an error
+    if (!ujian || !ujian.id) {
+        return (
+            <div className="max-w-2xl mx-auto">
+                <Card>
+                    <CardContent className="py-8 text-center">
+                        <p className="text-muted-foreground">Ujian tidak ditemukan atau terjadi kesalahan.</p>
+                        <Button
+                            variant="outline"
+                            onClick={() => router.back()}
+                            className="mt-4"
+                        >
+                            <ArrowLeft size={16} className="mr-2" />
+                            Kembali
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
+
     return (
         <div className="max-w-2xl mx-auto space-y-6">
             <Card>
@@ -130,7 +151,7 @@ export default function MulaiUjianPage() {
                                 value={tokenAccess}
                                 onChange={(e) => setTokenAccess(e.target.value)}
                                 placeholder="Masukkan token akses dari guru"
-                                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                             />
                             <p className="text-xs text-muted-foreground mt-1">
                                 Token akses diperlukan untuk memulai ujian ini

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import {
   Bell,
   CalendarRange,
@@ -12,6 +12,7 @@ import {
   Globe2,
   LogOut,
   Menu,
+  Search,
   Settings2,
   ShieldCheck,
   Sparkles,
@@ -27,7 +28,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { type Role, useRole } from "./role-context";
+import { type Role, type NavGroup, type NavItem, useRole } from "./role-context";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const accessByRole: Record<Role, string[]> = {
@@ -36,6 +37,194 @@ const accessByRole: Record<Role, string[]> = {
   SISWA: ["/", "/kelas", "/mata-pelajaran", "/cbt", "/ujian-saya", "/keamanan"],
   PETUGAS_ABSENSI: ["/", "/attendance"],
 };
+
+// Search Command Component
+function SearchCommand({ navigation }: { navigation: NavGroup[] }) {
+  const router = useRouter();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [query, setQuery] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  // Flatten all navigation items for searching
+  const allItems = useMemo(() => {
+    const items: (NavItem & { group: string })[] = [];
+    navigation.forEach((group) => {
+      group.items.forEach((item) => {
+        items.push({ ...item, group: group.label || "Menu" });
+      });
+    });
+    return items;
+  }, [navigation]);
+
+  // Filter items based on query
+  const filteredItems = useMemo(() => {
+    if (!query.trim()) return allItems.slice(0, 8); // Show first 8 items when no query
+    const lowerQuery = query.toLowerCase();
+    return allItems.filter(
+      (item) =>
+        item.label.toLowerCase().includes(lowerQuery) ||
+        item.note.toLowerCase().includes(lowerQuery) ||
+        item.href.toLowerCase().includes(lowerQuery)
+    );
+  }, [allItems, query]);
+
+  // Reset selected index when filtered items change
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [filteredItems]);
+
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      // "/" to focus search
+      if (e.key === "/" && document.activeElement !== inputRef.current) {
+        e.preventDefault();
+        inputRef.current?.focus();
+        setIsOpen(true);
+      }
+    };
+
+    document.addEventListener("keydown", handleGlobalKeyDown);
+    return () => document.removeEventListener("keydown", handleGlobalKeyDown);
+  }, []);
+
+  // Handle click outside to close
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node) &&
+        inputRef.current &&
+        !inputRef.current.contains(e.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSelect = useCallback(
+    (item: NavItem) => {
+      router.push(item.href);
+      setIsOpen(false);
+      setQuery("");
+      inputRef.current?.blur();
+    },
+    [router]
+  );
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!isOpen) return;
+
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        setSelectedIndex((prev) =>
+          prev < filteredItems.length - 1 ? prev + 1 : 0
+        );
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        setSelectedIndex((prev) =>
+          prev > 0 ? prev - 1 : filteredItems.length - 1
+        );
+        break;
+      case "Enter":
+        e.preventDefault();
+        if (filteredItems[selectedIndex]) {
+          handleSelect(filteredItems[selectedIndex]);
+        }
+        break;
+      case "Escape":
+        e.preventDefault();
+        setIsOpen(false);
+        inputRef.current?.blur();
+        break;
+    }
+  };
+
+  return (
+    <div className="relative hidden flex-1 items-center md:flex">
+      <div className="absolute left-3 text-muted-foreground z-10">
+        <Search size={16} />
+      </div>
+      <input
+        ref={inputRef}
+        value={query}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          setIsOpen(true);
+        }}
+        onFocus={() => setIsOpen(true)}
+        onKeyDown={handleKeyDown}
+        placeholder="Cari menu..."
+        className="w-full rounded-xl border border-border bg-secondary/50 px-10 py-3 text-sm outline-none transition focus:border-primary/60 focus:bg-background"
+      />
+      <div className="absolute right-3 text-xs text-muted-foreground">
+        tekan /
+      </div>
+
+      {/* Dropdown */}
+      {isOpen && filteredItems.length > 0 && (
+        <div
+          ref={dropdownRef}
+          className="absolute top-full left-0 right-0 mt-2 max-h-80 overflow-y-auto rounded-xl border border-border bg-card shadow-lg backdrop-blur-xl z-50"
+        >
+          {filteredItems.map((item, index) => {
+            const Icon = item.icon;
+            const isSelected = index === selectedIndex;
+            return (
+              <button
+                key={`${item.href}-${index}`}
+                onClick={() => handleSelect(item)}
+                onMouseEnter={() => setSelectedIndex(index)}
+                className={cn(
+                  "flex w-full items-center gap-3 px-4 py-3 text-left transition",
+                  isSelected
+                    ? "bg-primary/10 text-primary"
+                    : "hover:bg-muted/50"
+                )}
+              >
+                <Icon
+                  size={18}
+                  className={cn(
+                    "shrink-0",
+                    isSelected ? "text-primary" : "text-muted-foreground"
+                  )}
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium truncate">{item.label}</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {item.note}
+                  </p>
+                </div>
+                {item.group && (
+                  <span className="text-xs text-muted-foreground shrink-0">
+                    {item.group}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* No results */}
+      {isOpen && query && filteredItems.length === 0 && (
+        <div
+          ref={dropdownRef}
+          className="absolute top-full left-0 right-0 mt-2 rounded-xl border border-border bg-card p-4 text-center text-sm text-muted-foreground shadow-lg"
+        >
+          Tidak ada hasil untuk "{query}"
+        </div>
+      )}
+    </div>
+  );
+}
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -194,18 +383,18 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                           href={item.href}
                           onClick={() => setMobileSidebarOpen(false)}
                           className={cn(
-                            "group flex w-full items-center gap-3 rounded-xl border border-transparent px-3 py-3 text-left text-sm font-semibold transition duration-200",
+                            "group flex w-full items-center gap-3 rounded-xl border border-transparent px-3 py-3 text-left text-sm font-medium transition duration-200",
                             hasLabel && !sidebarCollapsed ? "ml-2" : "",
                             isActive
-                              ? "border-primary/50 bg-primary/10 text-primary shadow-lg shadow-primary/25"
-                              : "text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground"
+                              ? "border-border bg-muted text-foreground"
+                              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                           )}
                         >
                           <Icon
                             size={18}
                             className={cn(
-                              "text-primary transition duration-200 group-hover:scale-105",
-                              isActive && "drop-shadow"
+                              "transition duration-200",
+                              isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"
                             )}
                           />
                           {!sidebarCollapsed && (
@@ -294,18 +483,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                 >
                   <Menu size={18} />
                 </Button>
-                <div className="relative hidden flex-1 items-center md:flex">
-                  <div className="absolute left-3 text-muted-foreground">
-                    <Globe2 size={16} />
-                  </div>
-                  <input
-                    placeholder="Cari kelas, siswa, atau modul..."
-                    className="w-full rounded-xl border border-border bg-secondary/50 px-10 py-3 text-sm outline-none transition focus:border-primary/60 focus:bg-background"
-                  />
-                  <div className="absolute right-3 text-xs text-muted-foreground">
-                    tekan /
-                  </div>
-                </div>
+                <SearchCommand navigation={navigation} />
               </div>
               <div className="flex items-center gap-2">
                 <Badge tone="info" className="hidden md:inline-flex capitalize">

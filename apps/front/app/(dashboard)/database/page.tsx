@@ -272,7 +272,7 @@ function ImportModal({ onClose, onSuccess, token }: { onClose: () => void; onSuc
                                     type="file"
                                     accept=".sql"
                                     onChange={(e) => setFile(e.target.files?.[0] || null)}
-                                    className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none"
+                                    className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none"
                                 />
                                 {file && (
                                     <p className="mt-2 text-sm text-muted-foreground">

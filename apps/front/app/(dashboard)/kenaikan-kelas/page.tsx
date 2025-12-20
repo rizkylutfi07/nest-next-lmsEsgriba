@@ -151,7 +151,7 @@ export default function KenaikanKelasPage() {
                             <select
                                 value={kelasAsalId}
                                 onChange={(e) => { setKelasAsalId(e.target.value); setSiswaList([]); setSelectedSiswaIds([]); setKelasTujuanId(""); setTahunAjaranTujuanId(""); }}
-                                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                             >
                                 <option value="">Pilih Kelas Asal</option>
                                 {kelasList?.data?.map((kelas: any) => (
@@ -168,7 +168,7 @@ export default function KenaikanKelasPage() {
                                     <select
                                         value={kelasTujuanId}
                                         onChange={(e) => setKelasTujuanId(e.target.value)}
-                                        className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                                        className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                                     >
                                         <option value="">Pilih Kelas Tujuan</option>
                                         {kelasList?.data?.map((kelas: any) => (
@@ -183,7 +183,7 @@ export default function KenaikanKelasPage() {
                                     <select
                                         value={tahunAjaranTujuanId}
                                         onChange={(e) => setTahunAjaranTujuanId(e.target.value)}
-                                        className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                                        className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                                     >
                                         <option value="">Pilih Tahun Ajaran Tujuan</option>
                                         {tahunAjaranList?.data?.map((ta: any) => (
@@ -225,7 +225,7 @@ export default function KenaikanKelasPage() {
                             <div className="overflow-x-auto">
                                 <table className="w-full">
                                     <thead>
-                                        <tr className="border-b border-white/10 text-left text-sm text-muted-foreground">
+                                        <tr className="border-b border-border text-left text-sm text-muted-foreground">
                                             <th className="pb-3 font-medium w-12"></th>
                                             <th className="pb-3 font-medium">NISN</th>
                                             <th className="pb-3 font-medium">Nama</th>

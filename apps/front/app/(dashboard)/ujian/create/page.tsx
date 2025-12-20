@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, ArrowLeft, Search, Filter, Users, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useRole } from "../../role-context";
 
 export default function CreateUjianPage() {
@@ -35,10 +36,10 @@ export default function CreateUjianPage() {
     const [targetPeserta, setTargetPeserta] = useState<"ALL_CLASS" | "SPECIFIC">("ALL_CLASS");
     const [filterAgama, setFilterAgama] = useState<string>("ALL");
     const [searchStudent, setSearchStudent] = useState("");
-    
-    // Search state for guru and mata pelajaran
-    const [searchGuru, setSearchGuru] = useState<string>("");
-    const [searchMataPelajaran, setSearchMataPelajaran] = useState<string>("");
+
+    // Search state for guru and mata pelajaran - no longer needed with SearchableSelect
+    // const [searchGuru, setSearchGuru] = useState<string>("");
+    // const [searchMataPelajaran, setSearchMataPelajaran] = useState<string>("");
 
     // Fetch guru
     const { data: guruList } = useQuery({
@@ -298,7 +299,7 @@ export default function CreateUjianPage() {
                                         type="text"
                                         value={generatedKode}
                                         disabled
-                                        className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none opacity-60"
+                                        className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none opacity-60"
                                     />
                                 </div>
                             )}
@@ -314,7 +315,7 @@ export default function CreateUjianPage() {
                                     onChange={(e) =>
                                         setFormData({ ...formData, judul: e.target.value })
                                     }
-                                    className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                                    className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                                     placeholder="Contoh: Ujian Tengah Semester Matematika"
                                 />
                             </div>
@@ -328,7 +329,7 @@ export default function CreateUjianPage() {
                                     onChange={(e) =>
                                         setFormData({ ...formData, deskripsi: e.target.value })
                                     }
-                                    className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                                    className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                                     rows={3}
                                 />
                             </div>
@@ -337,46 +338,23 @@ export default function CreateUjianPage() {
                                 <label className="mb-2 block text-sm font-medium">
                                     Guru *
                                 </label>
-                                {/* Search Input for Guru */}
-                                <div className="mb-2 relative">
-                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                    <input
-                                        type="text"
-                                        placeholder="Cari guru..."
-                                        value={searchGuru}
-                                        onChange={(e) => setSearchGuru(e.target.value)}
-                                        className="w-full h-9 rounded-md border border-white/10 bg-white/5 pl-9 pr-4 text-sm outline-none focus:border-primary/50"
-                                    />
-                                </div>
-                                <select
+                                <SearchableSelect
+                                    options={guruList?.data?.map((guru: any) => ({
+                                        value: guru.id,
+                                        label: guru.nama,
+                                    })) || []}
                                     value={formData.guruId}
-                                    onChange={(e) => {
+                                    onChange={(value) => {
                                         setFormData({
                                             ...formData,
-                                            guruId: e.target.value,
+                                            guruId: value,
                                             mataPelajaranId: "", // Reset mata pelajaran when guru changes
                                         });
-                                        setSearchMataPelajaran(""); // Reset search mata pelajaran
                                     }}
-                                    className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
-                                >
-                                    <option value="">Pilih Guru</option>
-                                    {guruList?.data
-                                        ?.filter((guru: any) => {
-                                            if (!searchGuru) return true;
-                                            const searchLower = searchGuru.toLowerCase();
-                                            return (
-                                                guru.nama.toLowerCase().includes(searchLower) ||
-                                                guru.nip?.toLowerCase().includes(searchLower)
-                                            );
-                                        })
-                                        .sort((a: any, b: any) => a.nama.localeCompare(b.nama, 'id', { sensitivity: 'base' }))
-                                        .map((guru: any) => (
-                                            <option key={guru.id} value={guru.id}>
-                                                {guru.nama} {guru.nip ? `(${guru.nip})` : ''}
-                                            </option>
-                                        ))}
-                                </select>
+                                    placeholder="Pilih Guru"
+                                    searchPlaceholder="Cari guru..."
+                                    emptyMessage="Guru tidak ditemukan"
+                                />
                                 {!formData.guruId && (
                                     <p className="mt-1 text-xs text-muted-foreground">
                                         Pilih guru terlebih dahulu untuk melihat mata pelajaran
@@ -388,48 +366,25 @@ export default function CreateUjianPage() {
                                 <label className="mb-2 block text-sm font-medium">
                                     Mata Pelajaran
                                 </label>
-                                {formData.guruId ? (
+                                {formData.guruId && selectedGuru?.mataPelajaran ? (
                                     <>
-                                        {/* Search Input for Mata Pelajaran */}
-                                        <div className="mb-2 relative">
-                                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                            <input
-                                                type="text"
-                                                placeholder="Cari mata pelajaran..."
-                                                value={searchMataPelajaran}
-                                                onChange={(e) => setSearchMataPelajaran(e.target.value)}
-                                                className="w-full h-9 rounded-md border border-white/10 bg-white/5 pl-9 pr-4 text-sm outline-none focus:border-primary/50"
-                                            />
-                                        </div>
-                                        <select
+                                        <SearchableSelect
+                                            options={selectedGuru?.mataPelajaran?.map((mp: any) => ({
+                                                value: mp.id,
+                                                label: mp.nama,
+                                                description: mp.kode ? `Kode: ${mp.kode}` : undefined,
+                                            })) || []}
                                             value={formData.mataPelajaranId}
-                                            onChange={(e) =>
+                                            onChange={(value) =>
                                                 setFormData({
                                                     ...formData,
-                                                    mataPelajaranId: e.target.value,
+                                                    mataPelajaranId: value,
                                                 })
                                             }
-                                            className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
-                                        >
-                                            <option value="">Pilih Mata Pelajaran</option>
-                                            {selectedGuru?.mataPelajaran
-                                                ?.filter((mp: any) => {
-                                                    if (!searchMataPelajaran) return true;
-                                                    const searchLower = searchMataPelajaran.toLowerCase();
-                                                    return (
-                                                        mp.nama.toLowerCase().includes(searchLower) ||
-                                                        mp.kode?.toLowerCase().includes(searchLower)
-                                                    );
-                                                })
-                                                .sort((a: any, b: any) => 
-                                                    a.nama.localeCompare(b.nama, 'id', { sensitivity: 'base' })
-                                                )
-                                                .map((mp: any) => (
-                                                    <option key={mp.id} value={mp.id}>
-                                                        {mp.nama} {mp.kode ? `(${mp.kode})` : ''}
-                                                    </option>
-                                                ))}
-                                        </select>
+                                            placeholder="Pilih Mata Pelajaran"
+                                            searchPlaceholder="Cari mata pelajaran..."
+                                            emptyMessage="Mata pelajaran tidak ditemukan"
+                                        />
                                         {selectedGuru?.mataPelajaran?.length === 0 && (
                                             <p className="mt-1 text-xs text-muted-foreground">
                                                 Guru ini belum memiliki mata pelajaran yang diajar
@@ -437,7 +392,7 @@ export default function CreateUjianPage() {
                                         )}
                                     </>
                                 ) : (
-                                    <div className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-muted-foreground">
+                                    <div className="w-full rounded-lg border border-border bg-background px-4 py-2 text-sm text-muted-foreground">
                                         Pilih guru terlebih dahulu
                                     </div>
                                 )}
@@ -445,7 +400,7 @@ export default function CreateUjianPage() {
                         </div>
 
                         {/* Class & Student Selection */}
-                        <div className="space-y-4 rounded-lg border border-white/10 bg-white/5 p-4">
+                        <div className="space-y-4 rounded-lg border border-border bg-background p-4">
                             <h3 className="text-lg font-semibold flex items-center gap-2">
                                 <Users size={18} />
                                 Peserta Ujian
@@ -464,7 +419,7 @@ export default function CreateUjianPage() {
                                                 cursor-pointer rounded-lg border px-3 py-2 text-sm transition
                                                 ${kelasIds.includes(kelas.id)
                                                     ? "bg-primary/20 border-primary text-primary"
-                                                    : "border-white/10 bg-white/5 hover:bg-white/10"}
+                                                    : "border-border bg-background hover:bg-accent"}
                                             `}
                                             onClick={() => toggleKelas(kelas.id)}
                                         >
@@ -487,7 +442,7 @@ export default function CreateUjianPage() {
 
                             {/* Target Peserta Type */}
                             {kelasIds.length > 0 && (
-                                <div className="space-y-4 pt-4 border-t border-white/10">
+                                <div className="space-y-4 pt-4 border-t border-border">
                                     <div>
                                         <label className="mb-2 block text-sm font-medium">
                                             Target Peserta
@@ -528,7 +483,7 @@ export default function CreateUjianPage() {
                                                             placeholder="Cari siswa..."
                                                             value={searchStudent}
                                                             onChange={(e) => setSearchStudent(e.target.value)}
-                                                            className="h-9 w-[200px] rounded-md border border-white/10 bg-black/20 pl-9 pr-4 text-sm outline-none focus:border-primary/50"
+                                                            className="h-9 w-[200px] rounded-md border border-border bg-black/20 pl-9 pr-4 text-sm outline-none focus:border-primary/50"
                                                         />
                                                     </div>
                                                     <div className="relative">
@@ -536,7 +491,7 @@ export default function CreateUjianPage() {
                                                         <select
                                                             value={filterAgama}
                                                             onChange={(e) => setFilterAgama(e.target.value)}
-                                                            className="h-9 rounded-md border border-white/10 bg-black/20 pl-9 pr-8 text-sm outline-none focus:border-primary/50 appearance-none"
+                                                            className="h-9 rounded-md border border-border bg-black/20 pl-9 pr-8 text-sm outline-none focus:border-primary/50 appearance-none"
                                                         >
                                                             <option value="ALL">Semua Agama</option>
                                                             {religionOptions.map(agama => (
@@ -566,7 +521,7 @@ export default function CreateUjianPage() {
                                                 </div>
                                             </div>
 
-                                            <div className="max-h-60 overflow-y-auto border border-white/10 rounded-md">
+                                            <div className="max-h-60 overflow-y-auto border border-border rounded-md">
                                                 {isLoadingStudents ? (
                                                     <div className="p-4 text-center">
                                                         <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
@@ -578,7 +533,7 @@ export default function CreateUjianPage() {
                                                     </div>
                                                 ) : (
                                                     <table className="w-full text-sm">
-                                                        <thead className="bg-white/5 sticky top-0">
+                                                        <thead className="bg-muted/40 sticky top-0">
                                                             <tr>
                                                                 <th className="px-4 py-2 text-left w-10">
                                                                     <input
@@ -642,10 +597,22 @@ export default function CreateUjianPage() {
                                         type="datetime-local"
                                         required
                                         value={formData.tanggalMulai}
-                                        onChange={(e) =>
-                                            setFormData({ ...formData, tanggalMulai: e.target.value })
-                                        }
-                                        className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                                        onChange={(e) => {
+                                            const newMulai = e.target.value;
+                                            const newData = { ...formData, tanggalMulai: newMulai };
+                                            // Auto-calculate duration if both dates are set
+                                            if (newMulai && formData.tanggalSelesai) {
+                                                const start = new Date(newMulai);
+                                                const end = new Date(formData.tanggalSelesai);
+                                                const diffMs = end.getTime() - start.getTime();
+                                                const diffMins = Math.round(diffMs / 60000);
+                                                if (diffMins > 0) {
+                                                    newData.durasi = diffMins;
+                                                }
+                                            }
+                                            setFormData(newData);
+                                        }}
+                                        className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                                     />
                                 </div>
 
@@ -657,13 +624,22 @@ export default function CreateUjianPage() {
                                         type="datetime-local"
                                         required
                                         value={formData.tanggalSelesai}
-                                        onChange={(e) =>
-                                            setFormData({
-                                                ...formData,
-                                                tanggalSelesai: e.target.value,
-                                            })
-                                        }
-                                        className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                                        onChange={(e) => {
+                                            const newSelesai = e.target.value;
+                                            const newData = { ...formData, tanggalSelesai: newSelesai };
+                                            // Auto-calculate duration if both dates are set
+                                            if (formData.tanggalMulai && newSelesai) {
+                                                const start = new Date(formData.tanggalMulai);
+                                                const end = new Date(newSelesai);
+                                                const diffMs = end.getTime() - start.getTime();
+                                                const diffMins = Math.round(diffMs / 60000);
+                                                if (diffMins > 0) {
+                                                    newData.durasi = diffMins;
+                                                }
+                                            }
+                                            setFormData(newData);
+                                        }}
+                                        className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                                     />
                                 </div>
                             </div>
@@ -684,7 +660,7 @@ export default function CreateUjianPage() {
                                                 durasi: parseInt(e.target.value),
                                             })
                                         }
-                                        className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                                        className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                                     />
                                 </div>
 
@@ -703,7 +679,7 @@ export default function CreateUjianPage() {
                                                 nilaiMinimal: parseInt(e.target.value),
                                             })
                                         }
-                                        className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                                        className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                                     />
                                 </div>
                             </div>
@@ -764,7 +740,7 @@ export default function CreateUjianPage() {
                                             })
                                         }
                                         required
-                                        className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2 outline-none transition focus:border-primary/60 focus:bg-white/10"
+                                        className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                                     >
                                         <option value="">Pilih Paket Soal</option>
                                         {paketSoalList?.data?.map((paket: any) => (

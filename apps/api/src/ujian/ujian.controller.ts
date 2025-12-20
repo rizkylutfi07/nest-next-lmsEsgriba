@@ -77,7 +77,7 @@ export class UjianController {
     }
 
     @Get(':id')
-    @Roles(Role.ADMIN, Role.GURU)
+    @Roles(Role.ADMIN, Role.GURU, Role.SISWA)
     findOne(@Param('id') id: string) {
         return this.ujianService.findOne(id);
     }
