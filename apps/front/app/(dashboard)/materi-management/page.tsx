@@ -59,6 +59,7 @@ export default function MateriManagementPage() {
     const [filteredGuruList, setFilteredGuruList] = useState<any[]>([]);
     const [guruSearch, setGuruSearch] = useState("");
     const [mapelSearch, setMapelSearch] = useState("");
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(true);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -172,14 +173,33 @@ export default function MateriManagementPage() {
 
     const onSubmit = async (data: any) => {
         try {
-            if (editingId) {
+            if (editingId && editingId.trim() !== "") {
+                // Edit mode: use JSON for now (file upload in edit not implemented yet)
                 await materiApi.update(editingId, data);
                 alert("Materi berhasil diupdate!");
             } else {
-                await materiApi.create(data);
+                // Create mode: use FormData if file uploaded
+                if (selectedFile) {
+                    const formData = new FormData();
+                    formData.append('file', selectedFile);
+                    formData.append('judul', data.judul);
+                    formData.append('deskripsi', data.deskripsi || '');
+                    formData.append('tipe', data.tipe);
+                    formData.append('konten', data.konten || '');
+                    formData.append('mataPelajaranId', data.mataPelajaranId);
+                    if (data.kelasId) formData.append('kelasId', data.kelasId);
+                    if (data.guruId) formData.append('guruId', data.guruId);
+                    formData.append('isPublished', String(data.isPublished ?? true));
+
+                    await materiApi.createWithFile(formData);
+                } else {
+                    // No file: use regular JSON
+                    await materiApi.create(data);
+                }
                 alert("Materi berhasil dibuat!");
             }
             setDialogOpen(false);
+            setSelectedFile(null);
             form.reset();
             setEditingId(null);
             loadData();
@@ -336,13 +356,19 @@ export default function MateriManagementPage() {
                                                 onChange={(e) => {
                                                     const file = e.target.files?.[0];
                                                     if (file) {
-                                                        // TODO: Implement file upload to server
-                                                        alert(`File ${file.name} siap diupload. Fitur upload sedang dalam pengembangan.`);
+                                                        setSelectedFile(file);
+                                                        // Clear konten field when file selected
+                                                        form.setValue('konten', '');
                                                     }
                                                 }}
                                             />
+                                            {selectedFile && (
+                                                <p className="text-xs text-green-600">
+                                                    File selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                                                </p>
+                                            )}
                                             <p className="text-xs text-muted-foreground">
-                                                Upload file HTML, PDF, DOCX, atau PPTX sebagai konten materi (fitur coming soon)
+                                                Upload file HTML, PDF, DOCX, atau PPTX sebagai konten materi
                                             </p>
                                         </div>
 

@@ -127,7 +127,80 @@ export default function MateriDetailPage() {
                         <CardTitle className="text-lg">Konten Materi</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        {materi.konten.startsWith('http') ? (
+                        {materi.konten.startsWith('file://') ? (
+                            // Uploaded file
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <p className="text-sm text-muted-foreground">File materi yang diupload:</p>
+                                    {materi.konten.endsWith('.html') && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => {
+                                                const iframe = document.getElementById('materi-iframe') as HTMLIFrameElement;
+                                                if (iframe) {
+                                                    if (document.fullscreenElement) {
+                                                        document.exitFullscreen();
+                                                    } else {
+                                                        iframe.requestFullscreen();
+                                                    }
+                                                }
+                                            }}
+                                        >
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="16"
+                                                height="16"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="2"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                className="mr-2"
+                                            >
+                                                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+                                            </svg>
+                                            Fullscreen
+                                        </Button>
+                                    )}
+                                </div>
+                                {materi.konten.endsWith('.html') ? (
+                                    // Render HTML in iframe
+                                    <iframe
+                                        id="materi-iframe"
+                                        src={`http://localhost:3001/uploads/materi/${materi.konten.replace('file://', '')}`}
+                                        className="w-full h-[600px] border rounded-lg"
+                                        title="Materi Content"
+                                        allowFullScreen
+                                    />
+                                ) : (
+                                    // PDF or other docs - provide download link
+                                    <div className="flex items-center gap-4 p-4 rounded-lg border bg-muted/50">
+                                        <div className="flex-1">
+                                            <p className="font-medium">{materi.konten.replace('file://', '')}</p>
+                                            <p className="text-xs text-muted-foreground">
+                                                {materi.konten.endsWith('.pdf') ? 'PDF Document' :
+                                                    materi.konten.endsWith('.docx') ? 'Word Document' :
+                                                        'Document'}
+                                            </p>
+                                        </div>
+                                        <Button asChild>
+                                            <a
+                                                href={`http://localhost:3001/uploads/materi/${materi.konten.replace('file://', '')}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                download
+                                            >
+                                                <Download className="mr-2 h-4 w-4" />
+                                                Download
+                                            </a>
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
+                        ) : materi.konten.startsWith('http') ? (
+                            // External URL link
                             <div className="space-y-4">
                                 <p className="text-sm text-muted-foreground">Link eksternal:</p>
                                 <Button asChild className="w-full">
@@ -138,6 +211,7 @@ export default function MateriDetailPage() {
                                 </Button>
                             </div>
                         ) : (
+                            // Text content
                             <div className="prose prose-sm max-w-none dark:prose-invert">
                                 <p className="whitespace-pre-wrap">{materi.konten}</p>
                             </div>

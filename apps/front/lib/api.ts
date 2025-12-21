@@ -55,6 +55,39 @@ export const materiApi = {
             body: JSON.stringify(data),
         }),
 
+    createWithFile: async (formData: FormData) => {
+        const token = typeof window !== 'undefined'
+            ? JSON.parse(localStorage.getItem('arunika-auth') || '{}').token
+            : null;
+
+        console.log('Token found:', token ? 'Yes' : 'No');
+        console.log('Uploading to:', `${API_URL}/materi`);
+
+        const response = await fetch(`${API_URL}/materi`, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+            body: formData,
+        });
+
+        console.log('Response status:', response.status);
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Upload error response:', errorText);
+            let error;
+            try {
+                error = JSON.parse(errorText);
+            } catch {
+                error = { message: errorText || 'Upload failed' };
+            }
+            throw new Error(error.message || 'Upload failed');
+        }
+
+        return response.json();
+    },
+
     update: (id: string, data: any) =>
         fetchApi(`/materi/${id}`, {
             method: 'PATCH',

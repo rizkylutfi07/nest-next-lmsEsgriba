@@ -1,4 +1,5 @@
 import { IsString, IsOptional, IsBoolean, IsEnum } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { TipeMateri } from '@prisma/client';
 
 export class CreateMateriDto {
@@ -25,10 +26,12 @@ export class CreateMateriDto {
 
     @IsOptional()
     @IsBoolean()
+    @Transform(({ value }) => value === 'true' || value === true)
     isPinned?: boolean;
 
     @IsOptional()
     @IsBoolean()
+    @Transform(({ value }) => value === 'true' || value === true)
     isPublished?: boolean;
 
     @IsOptional()

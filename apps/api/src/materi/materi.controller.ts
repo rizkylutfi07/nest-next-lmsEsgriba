@@ -12,7 +12,11 @@ import {
     ParseBoolPipe,
     DefaultValuePipe,
     BadRequestException,
+    UseInterceptors,
+    UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { multerConfig } from '../config/multer.config';
 import { MateriService } from './materi.service';
 import { CreateMateriDto, UpdateMateriDto } from './dto/materi.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -27,7 +31,17 @@ export class MateriController {
 
     @Post()
     @Roles(Role.GURU, Role.ADMIN)
-    async create(@Body() createMateriDto: CreateMateriDto, @Req() req: any) {
+    @UseInterceptors(FileInterceptor('file', multerConfig))
+    async create(
+        @Body() createMateriDto: CreateMateriDto,
+        @UploadedFile() file: Express.Multer.File,
+        @Req() req: any
+    ) {
+        console.log('Materi create called');
+        console.log('User from request:', req.user);
+        console.log('DTO received:', createMateriDto);
+        console.log('File received:', file?.filename);
+
         let guruId: string;
 
         // If GURU role, always use their own guruId
@@ -47,6 +61,12 @@ export class MateriController {
             throw new BadRequestException('Unauthorized role');
         }
 
+        // If file uploaded, store file path in konten
+        if (file) {
+            createMateriDto.konten = `file://${file.filename}`;
+        }
+
+        console.log('Creating materi with guruId:', guruId);
         return this.materiService.create(guruId, createMateriDto);
     }
 
