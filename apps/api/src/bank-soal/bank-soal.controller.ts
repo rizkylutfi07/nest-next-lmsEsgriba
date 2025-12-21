@@ -99,178 +99,234 @@ export class BankSoalController {
             const text = resultText.value;
             const html = resultHtml.value;
 
-            // Parse text format based on user's template:
-            // [NOMOR X]
-            // JENIS SOAL: PG/ESSAY
-            // NILAI: X
-            // SOAL:
-            // ...pertanyaan...
-            // JAWABAN:
-            // ...pilihan...
-            // KUNCI JAWABAN: A/B/C/D/E
+            // Split by [NOMOR pattern to get individual questions
+            // Support [NOMOR 1], [NOMOR-1], or [NOMOR: 1]
+            const questionBlocks = text
+                .split(/\[NOMOR(?:\s*[-:]\s*|\s+)\d+\]/i)
+                .filter(Boolean);
 
-            // Split by [NOMOR X] markers
-            const soalBlocks = text.split(/\[NOMOR\s+\d+\]/).filter(block => block.trim());
-            const htmlBlocks = html.split(/\[NOMOR\s+\d+\]/).filter((block: string) => block.trim());
+            const htmlBlocks = html
+                .split(/\[NOMOR(?:\s*[-:]\s*|\s+)\d+\]/i)
+                .filter(Boolean);
 
-            soalBlocks.forEach((block, blockIndex) => {
-                const lines = block.split('\n').map(l => l.trim()).filter(l => l);
-                if (lines.length === 0) {
-                    return;
+            console.log('\n=== STARTING QUESTION PARSING ===');
+            console.log('Total question blocks found:', questionBlocks.length);
+
+            questionBlocks.forEach((block, index) => {
+                const questionNumber = index + 1;
+                const htmlBlock = htmlBlocks[index] || '';
+
+                console.log(`\n--- Parsing Question #${questionNumber} ---`);
+                console.log('Text block preview:', block.substring(0, 200));
+
+                // Extract JENIS SOAL - handle merged text like "ESSAYNILAI" or "PGNILAI"
+                const jenisMatch = block.match(
+                    /(?:JENIS\s*:?\s*SOAL\s*:?\s*)?(ESSAY|PG|PILIHAN\s*GANDA)(?:\s*NILAI|\s*:|\s+)/i
+                );
+                const jenisSoal = jenisMatch ? jenisMatch[1].toUpperCase() : null;
+
+                console.log('JENIS SOAL detected:', jenisSoal);
+
+                if (!jenisSoal) {
+                    console.log('⚠️ Skipping - No JENIS SOAL found');
+                    return; // Skip invalid questions
+                }
+
+                const tipe = jenisSoal === 'ESSAY' ? 'ESSAY' : 'PILIHAN_GANDA';
+
+                // Extract NILAI - handle merged text like "ESSAYNILAI:12" or "NILAI:12"
+                const nilaiMatch = block.match(/(?:NILAI|ESSAY|PG)\s*:?\s*(\d+)/i);
+                const bobot = nilaiMatch ? parseInt(nilaiMatch[1]) : 1;
+
+                console.log('NILAI/bobot:', bobot);
+
+                // Extract SOAL - handle merged text
+                let pertanyaan = '';
+
+                // First try to find "SOAL:" explicitly
+                const soalExplicitMatch = block.match(
+                    /(?:^|\r?\n)\s*SOAL\s*:?\s*([^]*)(?=(?:^|\r?\n)\s*(?:JAWABAN\s*:?|KUNCI\s*[:\s]+JAWABAN\s*:?)|$)/i
+                );
+
+                if (soalExplicitMatch) {
+                    pertanyaan = soalExplicitMatch[1].trim();
+                } else {
+                    // Fallback: Extract text after the point value until JAWABAN
+                    const afterNilaiMatch = block.match(
+                        /(?:^|\r?\n)\s*\d+\s*([^]*)(?=(?:^|\r?\n)\s*(?:JAWABAN\s*:?|KUNCI\s*[:\s]+JAWABAN\s*:?)|$)/i
+                    );
+                    if (afterNilaiMatch) {
+                        pertanyaan = afterNilaiMatch[1]
+                            .replace(/^SOAL\s*:?\s*/i, '')
+                            .trim();
+                    }
+                }
+
+                console.log('PERTANYAAN extracted:', pertanyaan.substring(0, 100));
+
+                if (!pertanyaan) {
+                    console.log('⚠️ Skipping - No question text found');
+                    return; // Skip if no question text
                 }
 
                 const soal: any = {
-                    tipe: 'PILIHAN_GANDA',
-                    bobot: 1,
+                    tipe,
+                    bobot,
+                    pertanyaan: this.decodeHtmlEntities(pertanyaan),
                 };
 
-                let currentSection = '';
-                let pertanyaan = '';
-                let pertanyaanHtml = '';
-                let jawaban: string[] = [];
-                let kunciJawaban = '';
-
-                for (const line of lines) {
-                    // Check for section headers
-                    if (line.startsWith('JENIS SOAL:')) {
-                        const jenis = line.replace('JENIS SOAL:', '').trim();
-                        if (jenis === 'PG') {
-                            soal.tipe = 'PILIHAN_GANDA';
-                        } else if (jenis === 'ESSAY') {
-                            soal.tipe = 'ESSAY';
-                        }
-                        continue;
-                    }
-
-                    if (line.startsWith('NILAI:')) {
-                        const nilai = line.replace('NILAI:', '').trim();
-                        soal.bobot = parseInt(nilai) || 1;
-                        continue;
-                    }
-
-                    if (line === 'SOAL:') {
-                        currentSection = 'SOAL';
-                        continue;
-                    }
-
-                    if (line === 'JAWABAN:') {
-                        currentSection = 'JAWABAN';
-                        continue;
-                    }
-
-                    if (line.startsWith('KUNCI JAWABAN:')) {
-                        kunciJawaban = line.replace('KUNCI JAWABAN:', '').trim();
-                        currentSection = '';
-                        continue;
-                    }
-
-                    // Collect content based on current section
-                    if (currentSection === 'SOAL') {
-                        pertanyaan += (pertanyaan ? '\n' : '') + line;
-                    } else if (currentSection === 'JAWABAN') {
-                        if (line) {
-                            jawaban.push(line);
-                        }
-                    }
-                }
-
-                // Extract formatted question HTML (keeps bold/paragraph from Word) if available
-                if (htmlBlocks.length === soalBlocks.length) {
-                    const htmlBlock = htmlBlocks[blockIndex] || '';
-                    const afterSoalMarker = htmlBlock.split(/SOAL:/i)[1];
-                    if (afterSoalMarker) {
-                        const soalSection = afterSoalMarker.split(/JAWABAN:/i)[0] || afterSoalMarker.split(/KUNCI JAWABAN:/i)[0];
-                        if (soalSection) {
-                            // Convert HTML lists to numbered text format
-                            pertanyaanHtml = this.processHtmlToText(soalSection);
-                        }
-                    }
-                }
-
-                // Set pertanyaan - prefer processed HTML which preserves list numbers
-                if (pertanyaanHtml) {
-                    soal.pertanyaan = pertanyaanHtml;
-                } else if (pertanyaan) {
-                    soal.pertanyaan = pertanyaan.trim();
-                }
-
-                // Process jawaban for multiple choice
-                if (soal.tipe === 'PILIHAN_GANDA') {
+                if (tipe === 'PILIHAN_GANDA') {
                     const pilihanJawaban: any[] = [];
-                    const options = ['A', 'B', 'C', 'D', 'E'];
-                    let processedJawaban: string[] = [];
 
-                    // Try to parse from HTML first for better structure (handling lists/paragraphs)
-                    if (htmlBlocks.length === soalBlocks.length) {
-                        const htmlBlock = htmlBlocks[blockIndex] || '';
+                    // Extract KUNCI JAWABAN first
+                    const kunciMatch = block.match(
+                        /KUNCI\s*[:\s]+JAWABAN\s*:?\s*([A-Ea-e1-5])/i
+                    );
+                    let kunciValue = kunciMatch ? kunciMatch[1].toUpperCase() : '';
 
-                        // Find content between JAWABAN: and KUNCI JAWABAN:
-                        // regex to match JAWABAN: with potential tags around it
-                        const matchJawaban = htmlBlock.match(/(?:<[^>]+>|\s)*JAWABAN\s*:(?:<[^>]+>|\s)*/i);
-                        const matchKunci = htmlBlock.match(/(?:<[^>]+>|\s)*KUNCI JAWABAN\s*:(?:<[^>]+>|\s)*/i);
+                    // Convert number to letter if needed
+                    const numberToLetter: { [key: string]: string } = {
+                        '1': 'A', '2': 'B', '3': 'C', '4': 'D', '5': 'E',
+                    };
+                    if (numberToLetter[kunciValue]) {
+                        kunciValue = numberToLetter[kunciValue];
+                    }
 
-                        if (matchJawaban) {
-                            const startIndex = matchJawaban.index! + matchJawaban[0].length;
-                            const endIndex = matchKunci ? matchKunci.index : htmlBlock.length;
-                            const jawabanHtml = htmlBlock.substring(startIndex, endIndex);
+                    console.log('KUNCI JAWABAN:', kunciValue);
 
-                            // Check for list items <li>
+                    // Extract JAWABAN section
+                    const jawabanMatch = block.match(
+                        /(?:^|\r?\n)\s*JAWABAN\s*:?\s*([^]*)(?=(?:^|\r?\n)\s*KUNCI\s*[:\s]+JAWABAN\s*:?|$)/i
+                    );
+
+                    if (jawabanMatch) {
+                        const jawabanText = jawabanMatch[1].trim();
+                        console.log('JAWABAN section found, length:', jawabanText.length);
+                        console.log('JAWABAN preview:', jawabanText.substring(0, 200));
+
+                        // First try: HTML lists (Word numbering)
+                        const jawabanHtmlMatch = htmlBlock.match(
+                            /JAWABAN\s*:?\s*([^]*?)(?=KUNCI\s+JAWABAN|$)/i
+                        );
+
+                        let extractedFromHtml = false;
+
+                        if (jawabanHtmlMatch) {
+                            const jawabanHtml = jawabanHtmlMatch[1];
                             const listItems = jawabanHtml.match(/<li[^>]*>([\s\S]*?)<\/li>/gi);
-                            if (listItems && listItems.length > 0) {
-                                processedJawaban = listItems.map(item => this.stripHtmlTags(item).trim());
-                            } else {
-                                // Fallback to paragraphs <p>
-                                const paragraphs = jawabanHtml.match(/<p[^>]*>([\s\S]*?)<\/p>/gi);
-                                if (paragraphs && paragraphs.length > 0) {
-                                    processedJawaban = paragraphs.map(p => this.stripHtmlTags(p).trim()).filter(t => t);
-                                }
+
+                            console.log('HTML list items found:', listItems ? listItems.length : 0);
+
+                            if (listItems && listItems.length >= 4) {
+                                const options = ['A', 'B', 'C', 'D', 'E'];
+                                listItems.slice(0, 5).forEach((item, idx) => {
+                                    let text = this.stripHtmlTags(item)
+                                        .replace(/^\d+\.?\s*/, '') // Remove leading number
+                                        .replace(/^[a-e]\.?\s*/i, '') // Remove leading letter
+                                        .trim();
+                                    text = this.decodeHtmlEntities(text);
+
+                                    console.log(`  Option ${options[idx]}:`, text.substring(0, 50));
+
+                                    if (text) {
+                                        pilihanJawaban.push({
+                                            id: options[idx],
+                                            text,
+                                            isCorrect: options[idx] === kunciValue,
+                                        });
+                                    }
+                                });
+
+                                extractedFromHtml = true;
+                                console.log('✓ Extracted from HTML lists');
                             }
                         }
-                    }
 
-                    // Fallback to text lines if HTML parsing failed or returned empty
-                    if (processedJawaban.length === 0 && jawaban.length > 0) {
-                        // Check prefixes in text lines (A., B., etc)
-                        const hasPrefix = jawaban.some(j => /^[A-E][).]\s/i.test(j));
-                        if (hasPrefix) {
-                            const mapped: Record<string, string> = {};
-                            let currentKey = '';
-                            jawaban.forEach(line => {
-                                const match = line.match(/^([A-E])[).]\s(.*)/i);
-                                if (match) {
-                                    currentKey = match[1].toUpperCase();
-                                    mapped[currentKey] = match[2].trim();
-                                } else if (currentKey) {
-                                    mapped[currentKey] += ' ' + line.trim();
-                                }
-                            });
-                            processedJawaban = options.map(opt => mapped[opt] || '');
-                        } else {
-                            processedJawaban = jawaban;
+                        // Second try: Plain text with each line as an option (TEMPLATE FORMAT)
+                        if (!extractedFromHtml) {
+                            // Split by newlines and filter out empty lines
+                            const lines = jawabanText
+                                .split(/\r?\n/)
+                                .map(line => line.trim())
+                                .filter(line => line.length > 0 && !line.match(/^KUNCI/i));
+
+                            console.log('Plain text lines found:', lines.length);
+                            console.log('Lines:', lines);
+
+                            if (lines.length >= 4) {
+                                const options = ['A', 'B', 'C', 'D', 'E'];
+                                lines.slice(0, 5).forEach((line, idx) => {
+                                    // Remove any leading letters or numbers
+                                    let text = line
+                                        .replace(/^[A-Ea-e1-5][\.\)]\s*/, '')
+                                        .replace(/^\d+[\.\)]\s*/, '')
+                                        .trim();
+                                    text = this.decodeHtmlEntities(text);
+
+                                    console.log(`  Option ${options[idx]}:`, text.substring(0, 50));
+
+                                    if (text) {
+                                        pilihanJawaban.push({
+                                            id: options[idx],
+                                            text,
+                                            isCorrect: options[idx] === kunciValue,
+                                        });
+                                    }
+                                });
+                                console.log('✓ Extracted from plain text lines');
+                            } else {
+                                console.log('⚠️ Not enough lines for options');
+                            }
                         }
+                    } else {
+                        console.log('⚠️ No JAWABAN section found');
                     }
 
-                    // Final mapping
-                    for (let i = 0; i < processedJawaban.length && i < 5; i++) {
-                        if (!processedJawaban[i]) continue;
-                        pilihanJawaban.push({
-                            id: options[i],
-                            text: processedJawaban[i],
-                            isCorrect: options[i] === kunciJawaban,
-                        });
-                    }
-
+                    console.log('Total options extracted:', pilihanJawaban.length);
                     soal.pilihanJawaban = pilihanJawaban;
-                } else if (soal.tipe === 'ESSAY' && kunciJawaban) {
-                    // For essay, kunci jawaban is the explanation/rubric
-                    soal.penjelasan = kunciJawaban;
+                } else if (tipe === 'ESSAY') {
+                    // For essay, try to extract from JAWABAN or KUNCI JAWABAN section
+                    let textAnswer = '';
+
+                    // Pattern 1: Extract from JAWABAN section
+                    let jawabanMatch = block.match(
+                        /JAWABAN\s*:?\s*([^]*)(?=KUNCI\s+JAWABAN\s*:?|$)/i
+                    );
+
+                    // Pattern 2: If JAWABAN is empty, try KUNCI JAWABAN
+                    if (!jawabanMatch || !jawabanMatch[1].trim()) {
+                        jawabanMatch = block.match(
+                            /KUNCI\s+JAWABAN\s*:?\s*([^]*)$/i
+                        );
+                    }
+
+                    if (jawabanMatch) {
+                        textAnswer = jawabanMatch[1]
+                            .trim()
+                            .replace(/^[-\s]+|[-\s]+$/g, '')
+                            .trim();
+                    }
+
+                    console.log('ESSAY answer:', textAnswer.substring(0, 100));
+
+                    if (textAnswer && textAnswer !== '-') {
+                        soal.penjelasan = this.decodeHtmlEntities(textAnswer);
+                    }
                 }
 
                 // Only add if we have a valid question
                 if (soal.pertanyaan) {
+                    console.log('✓ Question added to list');
                     soalList.push(soal);
+                } else {
+                    console.log('⚠️ Question skipped - missing pertanyaan');
                 }
             });
+
+            console.log('\n=== PARSING COMPLETE ===');
+            console.log('Total questions extracted:', soalList.length);
+            console.log('Questions:', JSON.stringify(soalList, null, 2));
+
         } else {
             throw new BadRequestException('Unsupported file type. Please upload JSON or Word (.docx) file.');
         }
@@ -376,6 +432,49 @@ CATATAN PENTING:
     }
 
     /**
+     * Decode all HTML entities to preserve special characters
+     */
+    private decodeHtmlEntities(text: string): string {
+        if (!text) return '';
+
+        let result = text;
+
+        // Common HTML entities
+        const entities: Record<string, string> = {
+            '&nbsp;': ' ',
+            '&amp;': '&',
+            '&lt;': '<',
+            '&gt;': '>',
+            '&quot;': '"',
+            '&#39;': "'",
+            '&apos;': "'",
+            '&cent;': '¢',
+            '&pound;': '£',
+            '&yen;': '¥',
+            '&euro;': '€',
+            '&copy;': '©',
+            '&reg;': '®',
+        };
+
+        // Replace named entities
+        for (const [entity, char] of Object.entries(entities)) {
+            result = result.replace(new RegExp(entity, 'g'), char);
+        }
+
+        // Decode numeric entities (decimal)
+        result = result.replace(/&#(\d+);/g, (match, dec) => {
+            return String.fromCharCode(parseInt(dec));
+        });
+
+        // Decode numeric entities (hexadecimal)
+        result = result.replace(/&#x([0-9a-f]+);/gi, (match, hex) => {
+            return String.fromCharCode(parseInt(hex, 16));
+        });
+
+        return result;
+    }
+
+    /**
      * Convert HTML to plain text while preserving list numbering
      * Word auto-numbered lists are converted to (1), (2), etc. format
      */
@@ -411,14 +510,6 @@ CATATAN PENTING:
         // Strip remaining HTML tags
         result = this.stripHtmlTags(result);
 
-        // Decode HTML entities
-        result = result.replace(/&nbsp;/g, ' ');
-        result = result.replace(/&amp;/g, '&');
-        result = result.replace(/&lt;/g, '<');
-        result = result.replace(/&gt;/g, '>');
-        result = result.replace(/&quot;/g, '"');
-        result = result.replace(/&#39;/g, "'");
-
         // Clean up multiple newlines
         result = result.replace(/\n{3,}/g, '\n\n');
 
@@ -426,9 +517,10 @@ CATATAN PENTING:
     }
 
     /**
-     * Remove all HTML tags from a string
+     * Remove all HTML tags from a string and decode entities
      */
     private stripHtmlTags(html: string): string {
-        return html.replace(/<[^>]*>/g, '');
+        const stripped = html.replace(/<[^>]*>/g, '');
+        return this.decodeHtmlEntities(stripped);
     }
 }

@@ -478,6 +478,10 @@ export class PaketSoalService {
      * Parse HTML content from mammoth to extract questions with images
      */
     private parseHtmlContent(html: string): any[] {
+        console.log('\n=== PARSING HTML CONTENT (IMPORT FINAL) ===');
+        console.log('HTML length:', html.length);
+        console.log('HTML preview:', html.substring(0, 300));
+
         const soalList: any[] = [];
 
         // Split by [NOMOR x] pattern and filter out blocks without question content
@@ -485,7 +489,13 @@ export class PaketSoalService {
             .filter(block => block.trim())
             .filter(block => /JENIS SOAL:/i.test(block)); // Only blocks with actual questions
 
-        for (const block of blocks) {
+        console.log('Total soal blocks found:', blocks.length);
+
+        for (let blockIdx = 0; blockIdx < blocks.length; blockIdx++) {
+            const block = blocks[blockIdx];
+            console.log(`\n--- Processing Block ${blockIdx + 1}/${blocks.length} ---`);
+            console.log('Block preview:', block.substring(0, 200).replace(/<[^>]*>/g, ''));
+
             try {
                 // Strip HTML tags but preserve img tags
                 let workingBlock = block;
@@ -501,6 +511,7 @@ export class PaketSoalService {
                 const jenisMatch = workingBlock.match(/JENIS SOAL:\s*([^<\n]+)/i);
                 if (jenisMatch) {
                     const jenis = jenisMatch[1].trim().toUpperCase();
+                    console.log('JENIS SOAL detected:', jenis);
                     if (jenis.includes('PILIHAN GANDA') || jenis.includes('PG')) {
                         jenisSoal = 'PILIHAN_GANDA';
                     } else if (jenis.includes('ESSAY')) {
@@ -516,25 +527,36 @@ export class PaketSoalService {
                 const nilaiMatch = workingBlock.match(/NILAI:\s*(\d+)/i);
                 if (nilaiMatch) {
                     nilai = parseInt(nilaiMatch[1]);
+                    console.log('NILAI detected:', nilai);
                 }
 
                 // Extract SOAL section (between SOAL: and JAWABAN:)
                 const soalMatch = workingBlock.match(/SOAL:([\s\S]*?)(?:JAWABAN:|KUNCI JAWABAN:|$)/i);
                 if (soalMatch) {
                     pertanyaan = this.cleanHtmlContent(soalMatch[1]);
+                    console.log('PERTANYAAN:', pertanyaan.substring(0, 100));
                 }
 
                 // Extract JAWABAN section
                 const jawabanMatch = workingBlock.match(/JAWABAN:([\s\S]*?)(?:KUNCI JAWABAN:|$)/i);
                 if (jawabanMatch) {
+                    console.log('JAWABAN section found');
                     const jawabanHtml = jawabanMatch[1];
+                    console.log('JAWABAN HTML preview:', jawabanHtml.substring(0, 200));
                     jawaban = this.parseAnswerOptions(jawabanHtml);
+                    console.log('Total options parsed:', jawaban.length);
+                    jawaban.forEach((opt, idx) => {
+                        console.log(`  Option ${opt.id}: ${opt.text.substring(0, 50)}`);
+                    });
+                } else {
+                    console.log('⚠️ No JAWABAN section found');
                 }
 
                 // Extract KUNCI JAWABAN
                 const kunciMatch = workingBlock.match(/KUNCI JAWABAN:\s*([A-E])/i);
                 if (kunciMatch) {
                     kunciJawaban = kunciMatch[1].toUpperCase();
+                    console.log('KUNCI JAWABAN:', kunciJawaban);
                 }
 
                 // Mark correct answer
@@ -542,21 +564,37 @@ export class PaketSoalService {
                     const correctAnswer = jawaban.find(j => j.id === kunciJawaban);
                     if (correctAnswer) {
                         correctAnswer.isCorrect = true;
+                        console.log(`✓ Marked option ${kunciJawaban} as correct`);
+                    } else {
+                        console.log(`⚠️ Could not find option ${kunciJawaban} to mark as correct`);
                     }
                 }
 
-                // Always add the soal
-                soalList.push({
+                const soal = {
                     pertanyaan: pertanyaan || '[Soal dengan gambar]',
                     tipe: jenisSoal,
                     bobot: nilai,
                     pilihanJawaban: jawaban.length > 0 ? jawaban : null,
                     jawabanBenar: kunciJawaban || null,
+                };
+
+                console.log('✓ Soal added to list');
+                console.log('Summary:', {
+                    tipe: soal.tipe,
+                    bobot: soal.bobot,
+                    optionsCount: jawaban.length,
+                    kunci: kunciJawaban
                 });
+
+                soalList.push(soal);
             } catch (error) {
-                console.error('Error parsing HTML soal block:', error);
+                console.error('❌ Error parsing HTML soal block:', error);
             }
         }
+
+        console.log('\n=== PARSING COMPLETE ===');
+        console.log('Total soal parsed:', soalList.length);
+        console.log('Full soal list:', JSON.stringify(soalList, null, 2));
 
         return soalList;
     }
@@ -599,48 +637,76 @@ export class PaketSoalService {
      * Parse answer options from HTML, preserving images
      */
     private parseAnswerOptions(html: string): any[] {
+        console.log('  → parseAnswerOptions called');
+        console.log('  → HTML input:', html.substring(0, 300));
+
         const options: any[] = [];
         const optionLabels = ['A', 'B', 'C', 'D', 'E'];
 
-        // Split by option labels (A., B., etc. or A), B), etc.)
-        const parts = html.split(/(?=<[^>]*>[A-E][\.\)\s])|(?=[A-E][\.\)\s])/i);
+        // STRATEGY 1: Try parsing LI tags first (Word auto-numbering creates clean lists)
+        const liMatches = html.match(/<li[^>]*>([\s\S]*?)<\/li>/gi);
+        console.log('  → LI tags found:', liMatches ? liMatches.length : 0);
 
-        for (const part of parts) {
-            const trimmed = part.trim();
-            if (!trimmed) continue;
+        if (liMatches && liMatches.length >= 4) {
+            console.log('  → Using LI tag parsing (Word auto-numbering detected)');
 
-            // Try to match option label at start
-            const optionMatch = trimmed.match(/^(?:<[^>]*>)?([A-E])[\.\)\s]+(.+)/is);
+            liMatches.forEach((li, i) => {
+                if (i < optionLabels.length) {
+                    // Remove LI tags and any leading A., B., etc that might be in the text
+                    let text = li.replace(/<\/?li[^>]*>/gi, '');
+                    text = this.cleanHtmlContent(text);
+
+                    // Remove any leading A., B., C. pattern if present
+                    text = text.replace(/^[A-E][\.\)]\s*/i, '').trim();
+
+                    console.log(`    → LI option ${optionLabels[i]}: ${text.substring(0, 50)}`);
+
+                    options.push({
+                        id: optionLabels[i],
+                        text: text || '[Jawaban dengan gambar]',
+                        isCorrect: false,
+                    });
+                }
+            });
+
+            console.log('  → Final options from LI:', options.length);
+            return options;
+        }
+
+        // STRATEGY 2: Try regex-based parsing (manual A., B., C. format)
+        console.log('  → No sufficient LI tags, trying regex parsing...');
+
+        // Split by lines and try to match A., B., C. patterns
+        const lines = html
+            .replace(/<[^>]*>/g, ' ') // Strip all HTML tags
+            .split(/\n/)
+            .map(line => line.trim())
+            .filter(line => line.length > 0);
+
+        console.log('  → Lines to parse:', lines.length);
+
+        for (const line of lines) {
+            // Match patterns: A. text, A) text, or just A text
+            const optionMatch = line.match(/^([A-E])[\.\)\s]+(.+)/i);
+
             if (optionMatch) {
                 const label = optionMatch[1].toUpperCase();
-                let text = this.cleanHtmlContent(optionMatch[2]);
+                const text = optionMatch[2].trim();
 
-                options.push({
-                    id: label,
-                    text: text || '[Jawaban dengan gambar]',
-                    isCorrect: false,
-                });
+                console.log(`    ✓ Matched label: ${label}, text: ${text.substring(0, 50)}`);
+
+                // Only add if not duplicate
+                if (!options.find(opt => opt.id === label)) {
+                    options.push({
+                        id: label,
+                        text: text || '[Jawaban dengan gambar]',
+                        isCorrect: false,
+                    });
+                }
             }
         }
 
-        // If no options found by pattern, try alternative parsing
-        if (options.length === 0) {
-            // Split by li tags if present
-            const liMatches = html.match(/<li[^>]*>([\s\S]*?)<\/li>/gi);
-            if (liMatches) {
-                liMatches.forEach((li, i) => {
-                    if (i < optionLabels.length) {
-                        const text = this.cleanHtmlContent(li.replace(/<\/?li[^>]*>/gi, ''));
-                        options.push({
-                            id: optionLabels[i],
-                            text: text || '[Jawaban dengan gambar]',
-                            isCorrect: false,
-                        });
-                    }
-                });
-            }
-        }
-
+        console.log('  → Final options from regex:', options.length);
         return options;
     }
 
@@ -652,12 +718,23 @@ export class PaketSoalService {
     }
 
     private parseWordContent(text: string): any[] {
+        console.log('\n=== PARSING WORD CONTENT (PAKET SOAL) ===');
+        console.log('Text length:', text.length);
+        console.log('Text preview:', text.substring(0, 300));
+
         const soalList: any[] = [];
         const soalBlocks = text.split(/\[NOMOR \d+\]/i).filter(block => block.trim());
 
-        for (const block of soalBlocks) {
+        console.log('Total soal blocks found:', soalBlocks.length);
+
+        for (let blockIdx = 0; blockIdx < soalBlocks.length; blockIdx++) {
+            const block = soalBlocks[blockIdx];
+            console.log(`\n--- Processing Block ${blockIdx + 1}/${soalBlocks.length} ---`);
+            console.log('Block preview:', block.substring(0, 200));
+
             try {
                 const lines = block.split('\n').map(line => line.trim()).filter(line => line);
+                console.log('Total lines in block:', lines.length);
 
                 let jenisSoal = 'PILIHAN_GANDA';
                 let nilai = 10;
@@ -672,6 +749,7 @@ export class PaketSoalService {
                         const match = line.match(/JENIS SOAL:\s*(.+)/i);
                         if (match) {
                             const jenis = match[1].trim().toUpperCase();
+                            console.log('JENIS SOAL detected:', jenis);
                             if (jenis.includes('PILIHAN GANDA') || jenis.includes('PG')) {
                                 jenisSoal = 'PILIHAN_GANDA';
                             } else if (jenis.includes('ESSAY')) {
@@ -684,7 +762,10 @@ export class PaketSoalService {
                         }
                     } else if (line.match(/^NILAI:/i)) {
                         const match = line.match(/NILAI:\s*(\d+)/i);
-                        if (match) nilai = parseInt(match[1]);
+                        if (match) {
+                            nilai = parseInt(match[1]);
+                            console.log('NILAI detected:', nilai);
+                        }
                     } else if (line.match(/^SOAL:/i)) {
                         pertanyaan = line.replace(/^SOAL:/i, '').trim();
                         // Collect multi-line question
@@ -692,7 +773,10 @@ export class PaketSoalService {
                             i++;
                             pertanyaan += ' ' + lines[i];
                         }
+                        console.log('PERTANYAAN:', pertanyaan.substring(0, 100));
                     } else if (line.match(/^JAWABAN:/i)) {
+                        console.log('JAWABAN section found');
+
                         // Collect all answer options (with or without A./B./C. prefix)
                         const optionLabels = ['A', 'B', 'C', 'D', 'E'];
                         let optionIndex = 0;
@@ -702,6 +786,8 @@ export class PaketSoalService {
                             const answerLine = lines[i]; // keep original text to avoid trimming first letter
                             if (!answerLine) continue;
 
+                            console.log(`  Parsing answer line: "${answerLine}"`);
+
                             const optionMatch = answerLine.match(/^([A-E])[\.\)]\s*(.+)/);
 
                             let optionId = optionLabels[optionIndex] || `${optionIndex + 1}`;
@@ -710,12 +796,11 @@ export class PaketSoalService {
                             if (optionMatch) {
                                 optionId = optionMatch[1].toUpperCase();
                                 optionText = optionMatch[2];
-
-                                const matchedIndex = optionLabels.indexOf(optionId);
-                                if (matchedIndex >= 0) {
-                                    optionIndex = matchedIndex;
-                                }
+                                console.log(`    ✓ Matched with prefix: ${optionId} -> "${optionText.substring(0, 50)}"`);
+                            } else {
+                                console.log(`    → Using plain text as option ${optionId}: "${optionText.substring(0, 50)}"`);
                             }
+
                             jawaban.push({
                                 id: optionId,
                                 text: optionText,
@@ -724,9 +809,13 @@ export class PaketSoalService {
 
                             optionIndex++;
                         }
+                        console.log(`Total options collected: ${jawaban.length}`);
                     } else if (line.match(/^KUNCI JAWABAN:/i)) {
                         const match = line.match(/KUNCI JAWABAN:\s*([A-E])/i);
-                        if (match) kunciJawaban = match[1].toUpperCase();
+                        if (match) {
+                            kunciJawaban = match[1].toUpperCase();
+                            console.log('KUNCI JAWABAN:', kunciJawaban);
+                        }
                     }
                 }
 
@@ -735,22 +824,37 @@ export class PaketSoalService {
                     const correctAnswer = jawaban.find(j => j.id === kunciJawaban);
                     if (correctAnswer) {
                         correctAnswer.isCorrect = true;
+                        console.log(`✓ Marked option ${kunciJawaban} as correct`);
+                    } else {
+                        console.log(`⚠️ Could not find option ${kunciJawaban} to mark as correct`);
                     }
                 }
 
-                // Always add the soal, even if pertanyaan is empty (may contain images)
-                // Use placeholder if pertanyaan is empty
-                soalList.push({
+                const soal = {
                     pertanyaan: pertanyaan || '[Soal dengan gambar]',
                     tipe: jenisSoal,
                     bobot: nilai,
                     pilihanJawaban: jawaban.length > 0 ? jawaban : null,
                     jawabanBenar: kunciJawaban || null,
+                };
+
+                console.log('✓ Soal added to list');
+                console.log('Summary:', {
+                    tipe: soal.tipe,
+                    bobot: soal.bobot,
+                    optionsCount: jawaban.length,
+                    kunci: kunciJawaban
                 });
+
+                soalList.push(soal);
             } catch (error) {
-                console.error('Error parsing soal block:', error);
+                console.error('❌ Error parsing soal block:', error);
             }
         }
+
+        console.log('\n=== PARSING COMPLETE ===');
+        console.log('Total soal parsed:', soalList.length);
+        console.log('Soal list:', JSON.stringify(soalList, null, 2));
 
         return soalList;
     }
