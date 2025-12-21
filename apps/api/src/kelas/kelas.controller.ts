@@ -27,7 +27,7 @@ import { Role } from '@prisma/client';
 
 @Controller('kelas')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.ADMIN)
+@Roles(Role.ADMIN, Role.GURU)
 export class KelasController {
   constructor(private readonly kelasService: KelasService) { }
 

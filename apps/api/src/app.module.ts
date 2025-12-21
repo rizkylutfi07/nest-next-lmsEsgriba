@@ -22,6 +22,12 @@ import { UjianModule } from './ujian/ujian.module';
 import { UjianSiswaModule } from './ujian-siswa/ujian-siswa.module';
 import { UploadModule } from './upload/upload.module';
 import { JadwalPelajaranModule } from './jadwal-pelajaran/jadwal-pelajaran.module';
+// LMS Modules
+import { MateriModule } from './materi/materi.module';
+import { TugasModule } from './tugas/tugas.module';
+import { ForumModule } from './forum/forum.module';
+import { NotifikasiModule } from './notifikasi/notifikasi.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -52,6 +58,12 @@ import { JadwalPelajaranModule } from './jadwal-pelajaran/jadwal-pelajaran.modul
     UjianSiswaModule,
     UploadModule,
     JadwalPelajaranModule,
+    // LMS Modules
+    MateriModule,
+    TugasModule,
+    ForumModule,
+    NotifikasiModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

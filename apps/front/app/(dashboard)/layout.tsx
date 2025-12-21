@@ -32,9 +32,9 @@ import { type Role, type NavGroup, type NavItem, useRole } from "./role-context"
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const accessByRole: Record<Role, string[]> = {
-  ADMIN: ["/", "/users", "/siswa", "/kenaikan-kelas", "/guru", "/kelas", "/jurusan", "/tahun-ajaran", "/mata-pelajaran", "/jadwal-pelajaran", "/attendance", "/database", "/cbt", "/bank-soal", "/paket-soal", "/ujian", "/penilaian", "/laporan", "/keuangan", "/keamanan", "/settings"],
-  GURU: ["/", "/kelas", "/mata-pelajaran", "/jadwal-pelajaran", "/attendance", "/cbt", "/bank-soal", "/paket-soal", "/ujian", "/penilaian", "/laporan"],
-  SISWA: ["/", "/kelas", "/mata-pelajaran", "/cbt", "/ujian-saya", "/keamanan"],
+  ADMIN: ["/", "/users", "/siswa", "/kenaikan-kelas", "/guru", "/kelas", "/jurusan", "/tahun-ajaran", "/mata-pelajaran", "/jadwal-pelajaran", "/materi", "/materi-management", "/tugas", "/forum", "/attendance", "/database", "/cbt", "/bank-soal", "/paket-soal", "/ujian", "/penilaian", "/laporan", "/keuangan", "/keamanan", "/settings"],
+  GURU: ["/", "/kelas", "/mata-pelajaran", "/jadwal-pelajaran", "/materi", "/materi-management", "/tugas", "/forum", "/attendance", "/cbt", "/bank-soal", "/paket-soal", "/ujian", "/penilaian", "/laporan"],
+  SISWA: ["/", "/kelas", "/mata-pelajaran", "/materi", "/tugas", "/forum", "/cbt", "/ujian-saya", "/keamanan"],
   PETUGAS_ABSENSI: ["/", "/attendance"],
 };
 

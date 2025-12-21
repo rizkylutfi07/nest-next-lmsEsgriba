@@ -63,6 +63,12 @@ model MataPelajaran {
   paketSoal PaketSoal[]
   ujian Ujian[]
   jadwalPelajaran JadwalPelajaran[]
+  
+  // LMS Relations
+  materi Materi[]
+  tugas Tugas[]
+  forumKategori ForumKategori[]
+  progressSiswa ProgressSiswa[]
 }
 
 model Guru {
@@ -85,6 +91,10 @@ model Guru {
   kelasWali     Kelas[]         @relation("WaliKelas")
   ujian         Ujian[]
   jadwalPelajaran JadwalPelajaran[]
+  
+  // LMS Relations
+  materi Materi[]
+  tugas Tugas[]
 }
 
 enum StatusGuru {
@@ -125,6 +135,11 @@ model Kelas {
   ujian             Ujian[]
   ujianKelas        UjianKelas[] // Many-to-many relationship with Ujian
   jadwalPelajaran   JadwalPelajaran[]
+  
+  // LMS Relations
+  materi Materi[]
+  tugas Tugas[]
+  forumKategori ForumKategori[]
 }
 
 model Siswa {
@@ -154,6 +169,11 @@ model Siswa {
   kelasHistory SiswaKelasHistory[]
   attendance   Attendance[]
   ujianSiswa   UjianSiswa[]
+  
+  // LMS Relations
+  materiBookmarks MateriBookmark[]
+  tugasSiswa TugasSiswa[]
+  progressSiswa ProgressSiswa[]
 }
 
 model SiswaKelasHistory {
@@ -415,3 +435,328 @@ model JadwalPelajaran {
   @@index([kelasId])
   @@index([hari])
 }
+
+// ==================== LMS FEATURES ====================
+
+// Materi Pelajaran (Course Materials)
+model Materi {
+  id              String        @id @default(cuid())
+  judul           String
+  deskripsi       String?       @db.Text
+  tipe            TipeMateri    @default(DOKUMEN)
+  konten          String?       @db.Text // For text content or embedded links
+  
+  mataPelajaranId String
+  mataPelajaran   MataPelajaran @relation(fields: [mataPelajaranId], references: [id])
+  
+  guruId          String
+  guru            Guru          @relation(fields: [guruId], references: [id])
+  
+  kelasId         String?
+  kelas           Kelas?        @relation(fields: [kelasId], references: [id])
+  
+  isPinned        Boolean       @default(false)
+  isPublished     Boolean       @default(true)
+  viewCount       Int           @default(0)
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  deletedAt       DateTime?
+  
+  attachments     MateriAttachment[]
+  bookmarks       MateriBookmark[]
+  
+  @@index([mataPelajaranId])
+  @@index([guruId])
+  @@index([kelasId])
+  @@index([isPublished])
+}
+
+enum TipeMateri {
+  DOKUMEN      // PDF, DOC, PPT, etc
+  VIDEO        // MP4, YouTube link, etc
+  LINK         // External URL
+  TEKS         // Rich text content
+  GAMBAR       // Image files
+}
+
+model MateriAttachment {
+  id          String   @id @default(cuid())
+  materiId    String
+  materi      Materi   @relation(fields: [materiId], references: [id], onDelete: Cascade)
+  
+  namaFile    String
+  ukuranFile  Int      // in bytes
+  tipeFile    String   // MIME type
+  urlFile     String   // File path or URL
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([materiId])
+}
+
+model MateriBookmark {
+  id        String   @id @default(cuid())
+  materiId  String
+  materi    Materi   @relation(fields: [materiId], references: [id], onDelete: Cascade)
+  siswaId   String
+  siswa     Siswa    @relation(fields: [siswaId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@unique([materiId, siswaId])
+  @@index([siswaId])
+}
+
+// Tugas (Assignments)
+model Tugas {
+  id              String        @id @default(cuid())
+  judul           String
+  deskripsi       String        @db.Text
+  instruksi       String?       @db.Text
+  
+  mataPelajaranId String
+  mataPelajaran   MataPelajaran @relation(fields: [mataPelajaranId], references: [id])
+  
+  guruId          String
+  guru            Guru          @relation(fields: [guruId], references: [id])
+  
+  kelasId         String?
+  kelas           Kelas?        @relation(fields: [kelasId], references: [id])
+  
+  deadline        DateTime
+  maxScore        Int           @default(100)
+  tipePenilaian   TipePenilaian @default(MANUAL)
+  allowLateSubmit Boolean       @default(false)
+  isPublished     Boolean       @default(true)
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  deletedAt       DateTime?
+  
+  submissions     TugasSiswa[]
+  attachments     TugasAttachment[]
+  
+  @@index([mataPelajaranId])
+  @@index([guruId])
+  @@index([kelasId])
+  @@index([deadline])
+}
+
+enum TipePenilaian {
+  MANUAL       // Graded by teacher
+  AUTO         // Auto-graded (for objective questions)
+  PEER_REVIEW  // Peer assessment
+}
+
+model TugasAttachment {
+  id          String   @id @default(cuid())
+  tugasId     String
+  tugas       Tugas    @relation(fields: [tugasId], references: [id], onDelete: Cascade)
+  
+  namaFile    String
+  ukuranFile  Int
+  tipeFile    String
+  urlFile     String
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([tugasId])
+}
+
+model TugasSiswa {
+  id              String            @id @default(cuid())
+  tugasId         String
+  tugas           Tugas             @relation(fields: [tugasId], references: [id], onDelete: Cascade)
+  siswaId         String
+  siswa           Siswa             @relation(fields: [siswaId], references: [id], onDelete: Cascade)
+  
+  status          StatusPengumpulan @default(BELUM_DIKUMPULKAN)
+  submittedAt     DateTime?
+  gradedAt        DateTime?
+  
+  konten          String?           @db.Text  // Text answer/notes
+  score           Float?
+  feedback        String?           @db.Text
+  
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  
+  files           TugasSiswaFile[]
+  
+  @@unique([tugasId, siswaId])
+  @@index([tugasId])
+  @@index([siswaId])
+  @@index([status])
+}
+
+enum StatusPengumpulan {
+  BELUM_DIKUMPULKAN
+  DIKUMPULKAN
+  TERLAMBAT
+  DINILAI
+}
+
+model TugasSiswaFile {
+  id           String     @id @default(cuid())
+  tugasSiswaId String
+  tugasSiswa   TugasSiswa @relation(fields: [tugasSiswaId], references: [id], onDelete: Cascade)
+  
+  namaFile     String
+  ukuranFile   Int
+  tipeFile     String
+  urlFile      String
+  
+  createdAt    DateTime   @default(now())
+  
+  @@index([tugasSiswaId])
+}
+
+// Forum Diskusi (Discussion Forum)
+model ForumKategori {
+  id              String        @id @default(cuid())
+  nama            String
+  deskripsi       String?
+  icon            String?       // Icon name or emoji
+  warna           String?       // Hex color for category badge
+  
+  mataPelajaranId String?
+  mataPelajaran   MataPelajaran? @relation(fields: [mataPelajaranId], references: [id])
+  
+  kelasId         String?
+  kelas           Kelas?        @relation(fields: [kelasId], references: [id])
+  
+  urutan          Int           @default(0)
+  isActive        Boolean       @default(true)
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  threads         ForumThread[]
+  
+  @@index([mataPelajaranId])
+  @@index([kelasId])
+}
+
+model ForumThread {
+  id              String         @id @default(cuid())
+  judul           String
+  isPinned        Boolean        @default(false)
+  isLocked        Boolean        @default(false)
+  
+  kategoriId      String
+  kategori        ForumKategori  @relation(fields: [kategoriId], references: [id], onDelete: Cascade)
+  
+  authorId        String         // User ID (could be Siswa or Guru)
+  authorType      String         // "SISWA" or "GURU"
+  
+  viewCount       Int            @default(0)
+  replyCount      Int            @default(0)
+  
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  deletedAt       DateTime?
+  
+  posts           ForumPost[]
+  
+  @@index([kategoriId])
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+model ForumPost {
+  id          String       @id @default(cuid())
+  threadId    String
+  thread      ForumThread  @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  
+  parentId    String?      // For nested replies
+  parent      ForumPost?   @relation("PostReplies", fields: [parentId], references: [id])
+  replies     ForumPost[]  @relation("PostReplies")
+  
+  authorId    String       // User ID
+  authorType  String       // "SISWA" or "GURU"
+  
+  konten      String       @db.Text
+  isEdited    Boolean      @default(false)
+  
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime?
+  
+  reactions   ForumReaction[]
+  
+  @@index([threadId])
+  @@index([authorId])
+  @@index([parentId])
+}
+
+model ForumReaction {
+  id        String    @id @default(cuid())
+  postId    String
+  post      ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  userId    String    // User ID
+  tipe      String    // "LIKE", "HELPFUL", "LOVE", etc
+  
+  createdAt DateTime  @default(now())
+  
+  @@unique([postId, userId, tipe])
+  @@index([postId])
+  @@index([userId])
+}
+
+// Notifikasi (Notifications)
+model Notifikasi {
+  id          String           @id @default(cuid())
+  userId      String           // Recipient user ID
+  tipe        TipeNotifikasi
+  judul       String
+  pesan       String           @db.Text
+  linkUrl     String?          // URL to related content
+  
+  isRead      Boolean          @default(false)
+  readAt      DateTime?
+  
+  metadata    Json?            // Additional contextual data
+  
+  createdAt   DateTime         @default(now())
+  
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+enum TipeNotifikasi {
+  MATERI_BARU
+  TUGAS_BARU
+  DEADLINE_REMINDER
+  TUGAS_DINILAI
+  FORUM_REPLY
+  PENGUMUMAN
+  SISTEM
+}
+
+// Progress Siswa (Student Progress Tracking)
+model ProgressSiswa {
+  id              String   @id @default(cuid())
+  siswaId         String
+  siswa           Siswa    @relation(fields: [siswaId], references: [id], onDelete: Cascade)
+  
+  mataPelajaranId String
+  mataPelajaran   MataPelajaran @relation(fields: [mataPelajaranId], references: [id])
+  
+  materiDibaca    Int      @default(0)  // Count of materials viewed
+  tugasSelesai    Int      @default(0)  // Count of assignments completed
+  forumPosts      Int      @default(0)  // Count of forum participations
+  
+  totalScore      Float    @default(0)  // Average score
+  lastActivity    DateTime @default(now())
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@unique([siswaId, mataPelajaranId])
+  @@index([siswaId])
+  @@index([mataPelajaranId])
+}
+

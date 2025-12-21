@@ -87,6 +87,9 @@ const navByRole: Record<Role, NavGroup[]> = {
       label: "LMS",
       collapsible: true,
       items: [
+        { label: "Kelola Materi", icon: BookOpen, href: "/materi-management", note: "Upload & edit materi" },
+        { label: "Tugas & PR", icon: ClipboardList, href: "/tugas", note: "Kelola tugas" },
+        { label: "Forum Diskusi", icon: Activity, href: "/forum", note: "Monitor diskusi" },
         { label: "Absensi", icon: ClipboardList, href: "/attendance", note: "Scan & laporan" },
         { label: "Absensi Manual", icon: Users2, href: "/attendance/manual", note: "Tandai kehadiran" },
         { label: "Pelaporan", icon: BarChart3, href: "/laporan", note: "Analitik & export" },
@@ -135,6 +138,9 @@ const navByRole: Record<Role, NavGroup[]> = {
       label: "LMS",
       collapsible: true,
       items: [
+        { label: "Kelola Materi", icon: BookOpen, href: "/materi-management", note: "Upload materi" },
+        { label: "Tugas & PR", icon: ClipboardList, href: "/tugas", note: "Buat & nilai tugas" },
+        { label: "Forum Diskusi", icon: Activity, href: "/forum", note: "Jawab & moderasi" },
         { label: "Absensi", icon: ClipboardList, href: "/attendance", note: "Scan & laporan" },
         { label: "Absensi Manual", icon: Users2, href: "/attendance/manual", note: "Tandai kehadiran" },
         { label: "Laporan Nilai", icon: BarChart3, href: "/laporan", note: "Rekap nilai" },
@@ -164,8 +170,11 @@ const navByRole: Record<Role, NavGroup[]> = {
       label: "Pembelajaran",
       collapsible: true,
       items: [
+        { label: "Materi Pelajaran", icon: BookOpen, href: "/materi", note: "Bank materi" },
+        { label: "Tugas & PR", icon: ClipboardList, href: "/tugas", note: "Kumpulkan tugas" },
+        { label: "Forum Diskusi", icon: Activity, href: "/forum", note: "Tanya & diskusi" },
         { label: "Jadwal & Kelas", icon: CalendarRange, href: "/kelas", note: "Kelas aktif" },
-        { label: "Mata Pelajaran", icon: BookOpen, href: "/mata-pelajaran", note: "Materi & modul" },
+        { label: "Mata Pelajaran", icon: BookOpen, href: "/mata-pelajaran", note: "Silabus" },
       ],
     },
     {

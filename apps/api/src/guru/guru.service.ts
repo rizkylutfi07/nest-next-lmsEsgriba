@@ -27,6 +27,13 @@ export class GuruService {
         take: limit,
         orderBy: { createdAt: 'desc' },
         include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
           mataPelajaran: {
             select: {
               id: true,

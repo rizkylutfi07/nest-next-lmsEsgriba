@@ -1,0 +1,145 @@
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+export class ApiError extends Error {
+    constructor(
+        public status: number,
+        message: string,
+        public data?: any
+    ) {
+        super(message);
+        this.name = 'ApiError';
+    }
+}
+
+async function fetchApi<T>(
+    endpoint: string,
+    options: RequestInit = {}
+): Promise<T> {
+    const token = typeof window !== 'undefined'
+        ? JSON.parse(localStorage.getItem('arunika-auth') || '{}').token
+        : null;
+
+    const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+        ...options.headers,
+    };
+
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_URL}${endpoint}`, {
+        ...options,
+        headers,
+    });
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: response.statusText }));
+        throw new ApiError(response.status, error.message || 'Request failed', error);
+    }
+
+    return response.json();
+}
+
+// Materi API
+export const materiApi = {
+    getAll: (filters?: { mataPelajaranId?: string; kelasId?: string }) =>
+        fetchApi(`/materi?${new URLSearchParams(filters as any)}`),
+
+    getOne: (id: string) =>
+        fetchApi(`/materi/${id}`),
+
+    create: (data: any) =>
+        fetchApi('/materi', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
+
+    update: (id: string, data: any) =>
+        fetchApi(`/materi/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        }),
+
+    delete: (id: string) =>
+        fetchApi(`/materi/${id}`, {
+            method: 'DELETE',
+        }),
+};
+
+// Tugas API
+export const tugasApi = {
+    getAll: (filters?: { mataPelajaranId?: string; kelasId?: string }) =>
+        fetchApi(`/tugas?${new URLSearchParams(filters as any)}`),
+
+    getOne: (id: string) =>
+        fetchApi(`/tugas/${id}`),
+
+    create: (data: any) =>
+        fetchApi('/tugas', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
+
+    update: (id: string, data: any) =>
+        fetchApi(`/tugas/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        }),
+
+    delete: (id: string) =>
+        fetchApi(`/tugas/${id}`, {
+            method: 'DELETE',
+        }),
+
+    grade: (tugasId: string, siswaId: string, data: { score: number; feedback?: string }) =>
+        fetchApi(`/tugas/${tugasId}/grade/${siswaId}`, {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
+};
+
+// Forum API
+export const forumApi = {
+    getThreads: (kategoriId?: string) =>
+        fetchApi(`/forum/threads${kategoriId ? `?kategoriId=${kategoriId}` : ''}`),
+
+    getThread: (id: string) =>
+        fetchApi(`/forum/threads/${id}`),
+
+    createThread: (data: any) =>
+        fetchApi('/forum/threads', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
+
+    createPost: (threadId: string, data: any) =>
+        fetchApi(`/forum/threads/${threadId}/posts`, {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
+
+    toggleReaction: (postId: string, tipe: string) =>
+        fetchApi(`/forum/posts/${postId}/reactions`, {
+            method: 'POST',
+            body: JSON.stringify({ tipe }),
+        }),
+};
+
+// Mata Pelajaran API (for dropdowns)
+export const mataPelajaranApi = {
+    getAll: (params?: { limit?: number; page?: number; search?: string }) =>
+        fetchApi(`/mata-pelajaran?${new URLSearchParams(params as any)}`),
+};
+
+// Kelas API (for dropdowns)
+export const kelasApi = {
+    getAll: (params?: { limit?: number; page?: number; search?: string }) =>
+        fetchApi(`/kelas?${new URLSearchParams(params as any)}`),
+};
+
+// Guru API (for dropdowns)
+export const guruApi = {
+    getAll: (params?: { limit?: number; page?: number; search?: string }) =>
+        fetchApi(`/guru?${new URLSearchParams(params as any)}`),
+};

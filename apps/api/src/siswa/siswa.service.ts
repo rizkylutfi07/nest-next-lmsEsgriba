@@ -249,7 +249,7 @@ export class SiswaService {
           }
         }
 
-        // Create siswa
+        // Create siswa with user account
         const siswaData: CreateSiswaDto = {
           nisn: row.nisn,
           nama: row.nama,
@@ -262,12 +262,9 @@ export class SiswaService {
           tahunAjaranId: activeTahunAjaran.id,
         };
 
-        // Create with or without user account
-        if (row.createUserAccount) {
-          await this.createWithUser(siswaData);
-        } else {
-          await this.create(siswaData);
-        }
+        // ALWAYS create with user account
+        // Default password = NISN
+        await this.createWithUser(siswaData);
 
         results.success++;
       } catch (error) {

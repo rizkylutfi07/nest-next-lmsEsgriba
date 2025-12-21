@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useRole } from "./role-context";
+import StudentDashboard from "@/components/student-dashboard";
 
 const highlights = [
   {
@@ -208,6 +209,11 @@ const essentialData = [
 
 export default function HomePage() {
   const { role } = useRole();
+
+  // Show student dashboard for SISWA role
+  if (role === "SISWA") {
+    return <StudentDashboard />;
+  }
 
   const roleHeadline =
     role === "ADMIN"

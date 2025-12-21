@@ -27,7 +27,7 @@ import { Role } from '@prisma/client';
 
 @Controller('mata-pelajaran')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.ADMIN)
+@Roles(Role.ADMIN, Role.GURU)
 export class MataPelajaranController {
   constructor(private readonly matapelajaranService: MataPelajaranService) { }
 
@@ -73,16 +73,19 @@ export class MataPelajaranController {
   }
 
   @Post()
+  @Roles(Role.ADMIN)
   create(@Body() createDto: CreateMataPelajaranDto) {
     return this.matapelajaranService.create(createDto);
   }
 
   @Put(':id')
+  @Roles(Role.ADMIN)
   update(@Param('id') id: string, @Body() updateDto: UpdateMataPelajaranDto) {
     return this.matapelajaranService.update(id, updateDto);
   }
 
   @Delete(':id')
+  @Roles(Role.ADMIN)
   remove(@Param('id') id: string) {
     return this.matapelajaranService.remove(id);
   }
