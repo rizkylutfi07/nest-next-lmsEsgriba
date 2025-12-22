@@ -6,9 +6,11 @@ import { ArrowUpCircle, Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRole } from "../role-context";
+import { useToast } from "@/hooks/use-toast";
 
 export default function KenaikanKelasPage() {
     const { token } = useRole();
+    const { toast } = useToast();
     const queryClient = useQueryClient();
     const [kelasAsalId, setKelasAsalId] = useState("");
     const [kelasTujuanId, setKelasTujuanId] = useState("");
@@ -79,7 +81,7 @@ export default function KenaikanKelasPage() {
             setKelasTujuanId("");
         },
         onError: (error: any) => {
-            alert(error.message || 'Gagal memproses kenaikan kelas');
+            toast({ title: "Error", description: error.message || "Gagal memproses kenaikan kelas", variant: "destructive" });
         },
     });
 
@@ -104,7 +106,7 @@ export default function KenaikanKelasPage() {
         const isGraduationMode = kelasAsal?.tingkat === "XII" || kelasAsal?.tingkat === "12" || kelasAsal?.tingkat === "3";
 
         if (!kelasAsalId || (!isGraduationMode && (!kelasTujuanId || !tahunAjaranTujuanId)) || selectedSiswaIds.length === 0) {
-            alert('Mohon lengkapi semua pilihan');
+            toast({ title: "Perhatian", description: "Mohon lengkapi semua pilihan", variant: "destructive" });
             return;
         }
 

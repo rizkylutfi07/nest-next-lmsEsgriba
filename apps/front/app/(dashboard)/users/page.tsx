@@ -13,6 +13,7 @@ import {
     Calendar,
     X,
     Loader2,
+    KeyRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,6 +45,7 @@ export default function UsersPage() {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [deletingUser, setDeletingUser] = useState<User | null>(null);
+    const [resettingPasswordUser, setResettingPasswordUser] = useState<User | null>(null);
 
     const { data, isLoading } = useQuery({
         queryKey: ["users", page, search, selectedRole],
@@ -81,6 +83,24 @@ export default function UsersPage() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["users"] });
             setDeletingUser(null);
+        },
+    });
+
+    const resetPasswordMutation = useMutation({
+        mutationFn: ({ userId, newPassword }: { userId: string; newPassword: string }) =>
+            fetch("http://localhost:3001/auth/admin/reset-password", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ userId, newPassword }),
+            }).then((res) => {
+                if (!res.ok) throw new Error("Gagal reset password");
+                return res.json();
+            }),
+        onSuccess: () => {
+            setResettingPasswordUser(null);
         },
     });
 
@@ -199,6 +219,14 @@ export default function UsersPage() {
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
+                                                            onClick={() => setResettingPasswordUser(user)}
+                                                            title="Reset Password"
+                                                        >
+                                                            <KeyRound size={14} />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
                                                             onClick={() => setDeletingUser(user)}
                                                         >
                                                             <Trash2 size={14} />
@@ -269,6 +297,16 @@ export default function UsersPage() {
                     onClose={() => setDeletingUser(null)}
                     onConfirm={() => deleteMutation.mutate(deletingUser.id)}
                     isLoading={deleteMutation.isPending}
+                />
+            )}
+
+            {/* Reset Password Modal */}
+            {resettingPasswordUser && (
+                <ResetPasswordModal
+                    user={resettingPasswordUser}
+                    onClose={() => setResettingPasswordUser(null)}
+                    onConfirm={(newPassword) => resetPasswordMutation.mutate({ userId: resettingPasswordUser.id, newPassword })}
+                    isLoading={resetPasswordMutation.isPending}
                 />
             )}
         </div>
@@ -417,6 +455,89 @@ function DeleteConfirmModal({
                             {isLoading ? <Loader2 className="animate-spin" size={16} /> : "Hapus"}
                         </Button>
                     </div>
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
+
+function ResetPasswordModal({
+    user,
+    onClose,
+    onConfirm,
+    isLoading,
+}: {
+    user: User;
+    onClose: () => void;
+    onConfirm: (newPassword: string) => void;
+    isLoading: boolean;
+}) {
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (newPassword !== confirmPassword) {
+            alert("Password tidak cocok!");
+            return;
+        }
+        if (newPassword.length < 6) {
+            alert("Password minimal 6 karakter!");
+            return;
+        }
+        onConfirm(newPassword);
+    };
+
+    return (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+            <Card className="w-full max-w-md">
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                        <CardTitle className="flex items-center gap-2">
+                            <KeyRound size={20} />
+                            Reset Password
+                        </CardTitle>
+                        <Button variant="ghost" size="icon" onClick={onClose}>
+                            <X size={18} />
+                        </Button>
+                    </div>
+                    <CardDescription>
+                        Reset password untuk user <strong>{user.name}</strong>
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div>
+                            <label className="mb-2 block text-sm font-medium">Password Baru</label>
+                            <input
+                                type="password"
+                                required
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                placeholder="Minimal 6 karakter"
+                                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                            />
+                        </div>
+                        <div>
+                            <label className="mb-2 block text-sm font-medium">Konfirmasi Password</label>
+                            <input
+                                type="password"
+                                required
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                placeholder="Ulangi password baru"
+                                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                            />
+                        </div>
+                        <div className="flex gap-2 pt-4">
+                            <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+                                Batal
+                            </Button>
+                            <Button type="submit" disabled={isLoading} className="flex-1">
+                                {isLoading ? <Loader2 className="animate-spin" size={16} /> : "Reset Password"}
+                            </Button>
+                        </div>
+                    </form>
                 </CardContent>
             </Card>
         </div>

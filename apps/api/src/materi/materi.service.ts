@@ -107,7 +107,7 @@ export class MateriService {
         return materi;
     }
 
-    async update(id: string, guruId: string, updateMateriDto: UpdateMateriDto) {
+    async update(id: string, guruId: string | null, updateMateriDto: UpdateMateriDto, skipOwnershipCheck: boolean = false) {
         const materi = await this.prisma.materi.findUnique({
             where: { id, deletedAt: null },
         });
@@ -116,8 +116,8 @@ export class MateriService {
             throw new NotFoundException('Materi tidak ditemukan');
         }
 
-        // Check ownership
-        if (materi.guruId !== guruId) {
+        // Check ownership (skip for ADMIN)
+        if (!skipOwnershipCheck && guruId && materi.guruId !== guruId) {
             throw new ForbiddenException('Anda tidak memiliki akses untuk mengubah materi ini');
         }
 
@@ -133,10 +133,11 @@ export class MateriService {
         });
     }
 
-    async remove(id: string, guruId: string) {
+    async remove(id: string, guruId: string | null, skipOwnershipCheck: boolean = false) {
         const materi = await this.findOne(id);
 
-        if (materi.guruId !== guruId) {
+        // Check ownership (skip for ADMIN)
+        if (!skipOwnershipCheck && guruId && materi.guruId !== guruId) {
             throw new ForbiddenException('Anda tidak memiliki akses untuk menghapus materi ini');
         }
 

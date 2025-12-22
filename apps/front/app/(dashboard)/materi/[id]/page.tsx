@@ -7,10 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { materiApi } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 export default function MateriDetailPage() {
     const params = useParams();
     const router = useRouter();
+    const { toast } = useToast();
     const [materi, setMateri] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
@@ -28,7 +30,7 @@ export default function MateriDetailPage() {
             setMateri(response);
         } catch (error) {
             console.error("Error loading materi:", error);
-            alert("Gagal memuat materi");
+            toast({ title: "Error", description: "Gagal memuat materi", variant: "destructive" });
         } finally {
             setLoading(false);
         }

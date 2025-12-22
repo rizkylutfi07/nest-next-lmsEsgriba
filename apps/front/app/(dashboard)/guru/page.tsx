@@ -6,6 +6,7 @@ import { Plus, Search, Pencil, Trash2, Loader2, X, Upload, Download } from "luci
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRole } from "../role-context";
+import { useToast } from "@/hooks/use-toast";
 
 // TODO: Create API client in lib/guru-api.ts
 const guruApi = {
@@ -55,6 +56,7 @@ const guruApi = {
 
 export default function GuruPage() {
   const { token, ready } = useRole();
+  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -82,10 +84,18 @@ export default function GuruPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["guru"] });
       setIsCreateModalOpen(false);
+      toast({
+        title: "Berhasil!",
+        description: "Data guru berhasil ditambahkan",
+      });
     },
     onError: (error: any) => {
       console.error('Create error:', error);
-      alert(error.message || 'Gagal menambah data guru');
+      toast({
+        title: "Error",
+        description: error.message || 'Gagal menambah data guru',
+        variant: "destructive",
+      });
     },
   });
 
@@ -94,10 +104,18 @@ export default function GuruPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["guru"] });
       setEditingItem(null);
+      toast({
+        title: "Berhasil!",
+        description: "Data guru berhasil diupdate",
+      });
     },
     onError: (error: any) => {
       console.error('Update error:', error);
-      alert(error.message || 'Gagal mengupdate data guru');
+      toast({
+        title: "Error",
+        description: error.message || 'Gagal mengupdate data guru',
+        variant: "destructive",
+      });
     },
   });
 
@@ -295,6 +313,7 @@ function ImportModal({ onClose, onSuccess, token }: { onClose: () => void; onSuc
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -317,10 +336,18 @@ function ImportModal({ onClose, onSuccess, token }: { onClose: () => void; onSuc
       setResult(data);
 
       if (data.success > 0) {
+        toast({
+          title: "Berhasil!",
+          description: `${data.success} data berhasil diimport`,
+        });
         setTimeout(() => onSuccess(), 2000);
       }
     } catch (error: any) {
-      alert(error.message || 'Gagal import data');
+      toast({
+        title: "Error",
+        description: error.message || 'Gagal import data',
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }

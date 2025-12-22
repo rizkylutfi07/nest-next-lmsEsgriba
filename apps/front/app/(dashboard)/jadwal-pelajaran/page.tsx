@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useRole } from "../role-context";
+import { useToast } from "@/hooks/use-toast";
 
 const HARI = ["SENIN", "SELASA", "RABU", "KAMIS", "JUMAT", "SABTU"] as const;
 const HARI_LABEL: Record<string, string> = {
@@ -65,12 +66,24 @@ function getKelasInitial(nama: string): string {
 }
 
 export default function JadwalPelajaranPage() {
-    const { token } = useRole();
+    const { token, role } = useRole();
     const queryClient = useQueryClient();
-    const [selectedHari, setSelectedHari] = useState<string>("SENIN");
+
+    // Auto-detect current day
+    const getCurrentDay = (): string => {
+        const days = ["MINGGU", "SENIN", "SELASA", "RABU", "KAMIS", "JUMAT", "SABTU"];
+        const today = new Date().getDay(); // 0 = Sunday, 1 = Monday, ...
+        const currentDay = days[today];
+        // If Sunday, default to Monday (since schools usually don't have classes on Sunday)
+        return currentDay === "MINGGU" ? "SENIN" : currentDay;
+    };
+
+    const [selectedHari, setSelectedHari] = useState<string>(getCurrentDay());
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<any>(null);
     const [modalSlot, setModalSlot] = useState<{ jamKe: number | null; jamMulai: string; jamSelesai: string; kelasId?: string } | null>(null);
+
+    const isReadOnly = role === 'SISWA';
 
     // Fetch kelas list
     const { data: kelasList } = useQuery({
@@ -190,6 +203,7 @@ export default function JadwalPelajaranPage() {
     }, [jadwalList]);
 
     const openModal = (jamKe: number | null, jamMulai: string, jamSelesai: string, kelasId?: string, item?: any) => {
+        if (isReadOnly) return; // Disable for SISWA
         setModalSlot({ jamKe, jamMulai, jamSelesai, kelasId });
         setEditingItem(item || null);
         setIsModalOpen(true);
@@ -232,7 +246,23 @@ export default function JadwalPelajaranPage() {
     // Sort classes: by tingkat (X, XI, XII), then by jurusan (TKR, AK, TKJ)
     const tingkatOrder: Record<string, number> = { "X": 1, "XI": 2, "XII": 3 };
     const jurusanOrder: Record<string, number> = { "TKR": 1, "AK": 2, "TKJ": 3 };
-    const classList = [...(kelasList?.data || [])].sort((a: any, b: any) => {
+
+    // Get classList: use kelasList if available (for ADMIN/GURU), otherwise extract from jadwalList (for SISWA)
+    let classListSource: any[] = [];
+    if (kelasList?.data && kelasList.data.length > 0) {
+        classListSource = kelasList.data;
+    } else if (jadwalList && Array.isArray(jadwalList) && jadwalList.length > 0) {
+        // Extract unique kelas from jadwalList
+        const uniqueKelasMap = new Map();
+        jadwalList.forEach((jadwal: any) => {
+            if (jadwal.kelas && !uniqueKelasMap.has(jadwal.kelas.id)) {
+                uniqueKelasMap.set(jadwal.kelas.id, jadwal.kelas);
+            }
+        });
+        classListSource = Array.from(uniqueKelasMap.values());
+    }
+
+    const classList = [...classListSource].sort((a: any, b: any) => {
         // First sort by tingkat
         const tingkatA = tingkatOrder[a.tingkat] || 99;
         const tingkatB = tingkatOrder[b.tingkat] || 99;
@@ -329,7 +359,12 @@ export default function JadwalPelajaranPage() {
                                                 return (
                                                     <td
                                                         key={`${kelas.id}-${slot.mulai}`}
-                                                        className={`border border-border p-1 transition ${isBreakSlot ? "bg-amber-500/10 cursor-not-allowed" : "cursor-pointer hover:bg-muted/50"}`}
+                                                        className={`border border-border p-1 transition ${isBreakSlot
+                                                            ? "bg-amber-500/10 cursor-not-allowed"
+                                                            : isReadOnly
+                                                                ? "cursor-default"
+                                                                : "cursor-pointer hover:bg-muted/50"
+                                                            }`}
                                                         onClick={() => !isBreakSlot && openModal(slot.jamKe, slot.mulai, slot.selesai, kelas.id, item)}
                                                     >
                                                         {isBreakSlot ? (
@@ -410,11 +445,12 @@ function ScheduleModal({
     const [kelasId, setKelasId] = useState(item?.kelasId || slot.kelasId || "");
     const [mataPelajaranId, setMataPelajaranId] = useState(item?.mataPelajaranId || "");
     const [guruId, setGuruId] = useState(item?.guruId || "");
+    const { toast } = useToast();
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!kelasId || !mataPelajaranId || !guruId) {
-            alert("Harap lengkapi semua field!");
+            toast({ title: "Perhatian", description: "Harap lengkapi semua field!", variant: "destructive" });
             return;
         }
         onSubmit({ kelasId, mataPelajaranId, guruId });

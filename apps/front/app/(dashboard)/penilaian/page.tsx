@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useRole } from "../role-context";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
 
 type UjianOption = {
   id: string;
@@ -31,6 +32,7 @@ type MonitoringItem = {
 
 export default function PenilaianPage() {
   const { token } = useRole();
+  const { toast } = useToast();
   const [selectedUjian, setSelectedUjian] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
@@ -413,6 +415,7 @@ function StatusPill({ status }: { status: string }) {
 }
 
 function GradeModal({ data, onClose, onSaved, isLoading, token }: any) {
+  const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   const [grades, setGrades] = useState<Record<string, number | null>>({});
 
@@ -468,7 +471,7 @@ function GradeModal({ data, onClose, onSaved, isLoading, token }: any) {
       if (!res.ok) throw new Error("Gagal menyimpan nilai");
       onSaved();
     } catch (err: any) {
-      alert(err?.message || "Gagal menyimpan nilai");
+      toast({ title: "Error", description: err?.message || "Gagal menyimpan nilai", variant: "destructive" });
     } finally {
       setSaving(false);
     }

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, X } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface ImportModalProps {
     title: string;
@@ -18,6 +19,7 @@ export function ImportModal({ title, description, endpoint, onClose, onSuccess, 
     const [file, setFile] = useState<File | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [result, setResult] = useState<any>(null);
+    const { toast } = useToast();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -40,10 +42,18 @@ export function ImportModal({ title, description, endpoint, onClose, onSuccess, 
             setResult(data);
 
             if (data.success > 0) {
+                toast({
+                    title: "Berhasil!",
+                    description: `${data.success} data berhasil diimport`,
+                });
                 setTimeout(() => onSuccess(), 2000);
             }
         } catch (error: any) {
-            alert(error.message || 'Gagal import data');
+            toast({
+                title: "Error",
+                description: error.message || 'Gagal import data',
+                variant: "destructive",
+            });
         } finally {
             setIsLoading(false);
         }

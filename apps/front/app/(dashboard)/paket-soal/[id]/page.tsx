@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useRole } from "../../role-context";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
 
 // ... (keep types and normalizePilihanData existing code)
 
@@ -67,6 +68,7 @@ function ModalPortal({ children }: { children: React.ReactNode }) {
 export default function PaketSoalDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
     const { token } = useRole();
+    const { toast } = useToast();
     const router = useRouter();
     const queryClient = useQueryClient();
     const [showAddModal, setShowAddModal] = useState(false);
@@ -433,6 +435,7 @@ function AddFromBankModal({ paketSoalId, token, onClose, onSuccess }: any) {
 }
 
 function ImportSoalModal({ paketSoalId, token, onClose, onSuccess }: any) {
+    const { toast } = useToast();
     const [file, setFile] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
     const [previewing, setPreviewing] = useState(false);
@@ -469,7 +472,7 @@ function ImportSoalModal({ paketSoalId, token, onClose, onSuccess }: any) {
             setPreview(data);
         } catch (error) {
             console.error("Preview error:", error);
-            alert("Gagal memproses file");
+            toast({ title: "Error", description: "Gagal memproses file", variant: "destructive" });
         } finally {
             setPreviewing(false);
         }
@@ -503,7 +506,7 @@ function ImportSoalModal({ paketSoalId, token, onClose, onSuccess }: any) {
             }
         } catch (error) {
             console.error("Upload error:", error);
-            alert("Gagal mengupload file");
+            toast({ title: "Error", description: "Gagal mengupload file", variant: "destructive" });
         } finally {
             setUploading(false);
         }

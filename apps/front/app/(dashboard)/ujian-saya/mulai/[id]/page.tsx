@@ -8,9 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useRole } from "../../../role-context";
+import { useToast } from "@/hooks/use-toast";
 
 export default function MulaiUjianPage() {
     const { token } = useRole();
+    const { toast } = useToast();
     const router = useRouter();
     const params = useParams();
     const ujianId = params.id as string;
@@ -49,7 +51,7 @@ export default function MulaiUjianPage() {
             router.push(`/ujian-saya/kerjakan/${data.id}`);
         },
         onError: (error: any) => {
-            alert(`Error: ${error.message}`);
+            toast({ title: "Error", description: error.message, variant: "destructive" });
         },
     });
 

@@ -25,9 +25,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { useRole } from "../../../role-context";
+import { useToast } from "@/hooks/use-toast";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function MonitoringPage() {
     const { token } = useRole();
+    const { toast } = useToast();
     const router = useRouter();
     const params = useParams();
     const ujianId = params.id as string;
@@ -36,6 +48,8 @@ export default function MonitoringPage() {
     const [filterClass, setFilterClass] = useState("ALL");
     const [filterStatus, setFilterStatus] = useState("ALL");
     const [lastUpdate, setLastUpdate] = useState(new Date());
+    const [blockStudent, setBlockStudent] = useState<string | null>(null);
+    const [unblockStudent, setUnblockStudent] = useState<string | null>(null);
 
     // Fetch ujian details
     const { data: ujian, isLoading: ujianLoading } = useQuery({
@@ -120,7 +134,6 @@ export default function MonitoringPage() {
     };
 
     const handleBlockStudent = async (studentId: string) => {
-        if (!confirm("Apakah Anda yakin ingin memblokir siswa ini?")) return;
         try {
             const res = await fetch(`http://localhost:3001/ujian-siswa/${studentId}/block`, {
                 method: "POST",
@@ -128,13 +141,13 @@ export default function MonitoringPage() {
             });
             if (!res.ok) throw new Error("Gagal memblokir siswa");
             refetch();
+            setBlockStudent(null);
         } catch (error) {
-            alert("Gagal memblokir siswa");
+            toast({ title: "Error", description: "Gagal memblokir siswa", variant: "destructive" });
         }
     };
 
     const handleUnblockStudent = async (studentId: string) => {
-        if (!confirm("Apakah Anda yakin ingin membuka blokir siswa ini?")) return;
         try {
             const res = await fetch(`http://localhost:3001/ujian-siswa/${studentId}/unblock`, {
                 method: "POST",
@@ -142,8 +155,9 @@ export default function MonitoringPage() {
             });
             if (!res.ok) throw new Error("Gagal membuka blokir siswa");
             refetch();
+            setUnblockStudent(null);
         } catch (error) {
-            alert("Gagal membuka blokir siswa");
+            toast({ title: "Error", description: "Gagal membuka blokir siswa", variant: "destructive" });
         }
     };
 

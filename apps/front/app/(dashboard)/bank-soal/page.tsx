@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useRole } from "../role-context";
+import { useToast } from "@/hooks/use-toast";
 
 export default function BankSoalPage() {
     const { token } = useRole();
+    const { toast } = useToast();
     const queryClient = useQueryClient();
     const [page, setPage] = useState(1);
     const [search, setSearch] = useState("");
@@ -286,6 +288,7 @@ export default function BankSoalPage() {
 
 function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
     const { token } = useRole();
+    const { toast } = useToast();
     const [formData, setFormData] = useState(
         item || {
             tipe: "PILIHAN_GANDA",
@@ -332,7 +335,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
 
         // Ensure pertanyaan is present
         if (!submitData.pertanyaan) {
-            alert("Pertanyaan harus diisi!");
+            toast({ title: "Perhatian", description: "Pertanyaan harus diisi!", variant: "destructive" });
             return;
         }
 
@@ -343,7 +346,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
             // Ensure at least one answer is marked as correct for multiple choice
             const hasCorrect = submitData.pilihanJawaban?.some((p: any) => p.isCorrect);
             if (!hasCorrect) {
-                alert("Pilih minimal satu jawaban yang benar!");
+                toast({ title: "Perhatian", description: "Pilih minimal satu jawaban yang benar!", variant: "destructive" });
                 return;
             }
         }
@@ -577,6 +580,7 @@ function ImportModal({ onClose, token, queryClient }: any) {
     const [mataPelajaranId, setMataPelajaranId] = useState("");
     const [isUploading, setIsUploading] = useState(false);
     const [result, setResult] = useState<any>(null);
+    const { toast } = useToast();
 
     const { data: mataPelajaranList } = useQuery({
         queryKey: ["mata-pelajaran-list"],
@@ -612,13 +616,13 @@ function ImportModal({ onClose, token, queryClient }: any) {
             a.click();
             window.URL.revokeObjectURL(url);
         } catch (error) {
-            alert("Gagal download template");
+            toast({ title: "Error", description: "Gagal download template", variant: "destructive" });
         }
     };
 
     const handleUpload = async () => {
         if (!file) {
-            alert("Pilih file terlebih dahulu!");
+            toast({ title: "Perhatian", description: "Pilih file terlebih dahulu!", variant: "destructive" });
             return;
         }
 
@@ -642,7 +646,7 @@ function ImportModal({ onClose, token, queryClient }: any) {
             setResult(data);
             queryClient.invalidateQueries({ queryKey: ["bank-soal"] });
         } catch (error: any) {
-            alert(`Error: ${error.message}`);
+            toast({ title: "Error", description: error.message, variant: "destructive" });
         } finally {
             setIsUploading(false);
         }

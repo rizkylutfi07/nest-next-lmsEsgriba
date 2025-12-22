@@ -170,11 +170,10 @@ const navByRole: Record<Role, NavGroup[]> = {
       label: "Pembelajaran",
       collapsible: true,
       items: [
+        { label: "Jadwal Pelajaran", icon: CalendarRange, href: "/jadwal-pelajaran", note: "Jadwal kelas" },
         { label: "Materi Pelajaran", icon: BookOpen, href: "/materi", note: "Bank materi" },
         { label: "Tugas & PR", icon: ClipboardList, href: "/tugas", note: "Kumpulkan tugas" },
         { label: "Forum Diskusi", icon: Activity, href: "/forum", note: "Tanya & diskusi" },
-        { label: "Jadwal & Kelas", icon: CalendarRange, href: "/kelas", note: "Kelas aktif" },
-        { label: "Mata Pelajaran", icon: BookOpen, href: "/mata-pelajaran", note: "Silabus" },
       ],
     },
     {

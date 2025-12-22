@@ -30,12 +30,14 @@ import {
 import { cn } from "@/lib/utils";
 import { type Role, type NavGroup, type NavItem, useRole } from "./role-context";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { UserAvatar } from "@/components/user-avatar";
+
 
 const accessByRole: Record<Role, string[]> = {
-  ADMIN: ["/", "/users", "/siswa", "/kenaikan-kelas", "/guru", "/kelas", "/jurusan", "/tahun-ajaran", "/mata-pelajaran", "/jadwal-pelajaran", "/materi", "/materi-management", "/tugas", "/forum", "/attendance", "/database", "/cbt", "/bank-soal", "/paket-soal", "/ujian", "/penilaian", "/laporan", "/keuangan", "/keamanan", "/settings"],
-  GURU: ["/", "/kelas", "/mata-pelajaran", "/jadwal-pelajaran", "/materi", "/materi-management", "/tugas", "/forum", "/attendance", "/cbt", "/bank-soal", "/paket-soal", "/ujian", "/penilaian", "/laporan"],
-  SISWA: ["/", "/kelas", "/mata-pelajaran", "/materi", "/tugas", "/forum", "/cbt", "/ujian-saya", "/keamanan"],
-  PETUGAS_ABSENSI: ["/", "/attendance"],
+  ADMIN: ["/", "/profile", "/change-password", "/users", "/siswa", "/kenaikan-kelas", "/guru", "/kelas", "/jurusan", "/tahun-ajaran", "/mata-pelajaran", "/jadwal-pelajaran", "/materi", "/materi-management", "/tugas", "/forum", "/attendance", "/database", "/cbt", "/bank-soal", "/paket-soal", "/ujian", "/penilaian", "/laporan", "/keuangan", "/keamanan", "/settings"],
+  GURU: ["/", "/profile", "/change-password", "/kelas", "/mata-pelajaran", "/jadwal-pelajaran", "/materi", "/materi-management", "/tugas", "/forum", "/attendance", "/cbt", "/bank-soal", "/paket-soal", "/ujian", "/penilaian", "/laporan"],
+  SISWA: ["/", "/profile", "/change-password", "/jadwal-pelajaran", "/materi", "/tugas", "/forum", "/cbt", "/ujian-saya", "/keamanan"],
+  PETUGAS_ABSENSI: ["/", "/profile", "/change-password", "/attendance"],
 };
 
 // Search Command Component
@@ -418,51 +420,6 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
               );
             })}
           </nav>
-
-          <div className="space-y-3 border-t border-border p-4">
-            <Card className="border-border bg-gradient-to-br from-background/50 via-card/60 to-background/70 shadow-sm">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/15 text-primary">
-                    <ShieldCheck size={18} />
-                  </div>
-                  {!sidebarCollapsed && (
-                    <div>
-                      <p className="text-sm font-semibold">Keamanan terjaga</p>
-                      <p className="text-xs text-muted-foreground">
-                        Single sign-on + audit trail aktif
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-            <div className="flex items-center justify-between gap-3">
-              {!sidebarCollapsed && (
-                <div className="text-xs text-muted-foreground">
-                  {user?.name ?? "Pengguna"}
-                  <p className="text-foreground capitalize">{user?.role?.toLowerCase()}</p>
-                </div>
-              )}
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon" className="text-muted-foreground">
-                  <Settings2 size={16} />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-muted-foreground"
-                  onClick={() => {
-                    logout();
-                    router.replace("/login");
-                  }}
-                  aria-label="Keluar"
-                >
-                  <LogOut size={16} />
-                </Button>
-              </div>
-            </div>
-          </div>
         </aside>
 
         <div
@@ -486,18 +443,18 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                 <SearchCommand navigation={navigation} />
               </div>
               <div className="flex items-center gap-2">
-                <Badge tone="info" className="hidden md:inline-flex capitalize">
-                  {role?.toLowerCase()}
-                </Badge>
                 <ThemeToggle />
                 <Button variant="ghost" size="icon" className="relative">
                   <Bell size={18} />
                   <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-secondary" />
                 </Button>
-                <Button size="sm">
-                  <Sparkles size={16} />
-                  Buat materi
-                </Button>
+                <UserAvatar
+                  user={user}
+                  onLogout={() => {
+                    logout();
+                    router.replace("/login");
+                  }}
+                />
               </div>
             </div>
           </header>

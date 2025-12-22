@@ -8,9 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useRole } from "../../role-context";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
 
 export default function CreatePaketSoalPage() {
     const { token } = useRole();
+    const { toast } = useToast();
     const router = useRouter();
     const [formData, setFormData] = useState({
         kode: "",
@@ -84,7 +86,7 @@ export default function CreatePaketSoalPage() {
         }
 
         if (!submitData.nama) {
-            alert("Nama paket soal harus diisi!");
+            toast({ title: "Perhatian", description: "Nama paket soal harus diisi!", variant: "destructive" });
             return;
         }
 

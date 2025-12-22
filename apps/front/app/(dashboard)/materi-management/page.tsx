@@ -22,6 +22,16 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
     Form,
     FormControl,
     FormDescription,
@@ -41,6 +51,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { materiApi, mataPelajaranApi, kelasApi, guruApi } from "@/lib/api";
 import { useRole } from "../role-context";
+import { useToast } from "@/hooks/use-toast";
 
 const TIPE_MATERI = [
     { value: "DOKUMEN", label: "Dokumen", icon: "📄" },
@@ -52,6 +63,7 @@ const TIPE_MATERI = [
 
 export default function MateriManagementPage() {
     const { user, role, ready } = useRole();
+    const { toast } = useToast();
     const [materiList, setMateriList] = useState<any[]>([]);
     const [mataPelajaranList, setMataPelajaranList] = useState<any[]>([]);
     const [kelasList, setKelasList] = useState<any[]>([]);
@@ -63,6 +75,8 @@ export default function MateriManagementPage() {
     const [loading, setLoading] = useState(true);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
 
     const form = useForm({
         defaultValues: {
@@ -135,12 +149,11 @@ export default function MateriManagementPage() {
             console.log("Data loaded successfully!");
         } catch (error: any) {
             console.error("Error loading data:", error);
-            console.error("Error details:", {
-                message: error.message,
-                status: error.status,
-                data: error.data
+            toast({
+                title: "Error",
+                description: "Gagal memuat data: " + error.message,
+                variant: "destructive",
             });
-            alert("Gagal memuat data: " + error.message);
         } finally {
             setLoading(false);
         }
@@ -176,7 +189,10 @@ export default function MateriManagementPage() {
             if (editingId && editingId.trim() !== "") {
                 // Edit mode: use JSON for now (file upload in edit not implemented yet)
                 await materiApi.update(editingId, data);
-                alert("Materi berhasil diupdate!");
+                toast({
+                    title: "Berhasil!",
+                    description: "Materi berhasil diupdate",
+                });
             } else {
                 // Create mode: use FormData if file uploaded
                 if (selectedFile) {
@@ -196,7 +212,10 @@ export default function MateriManagementPage() {
                     // No file: use regular JSON
                     await materiApi.create(data);
                 }
-                alert("Materi berhasil dibuat!");
+                toast({
+                    title: "Berhasil!",
+                    description: "Materi berhasil dibuat",
+                });
             }
             setDialogOpen(false);
             setSelectedFile(null);
@@ -205,7 +224,11 @@ export default function MateriManagementPage() {
             loadData();
         } catch (error: any) {
             console.error("Error saving materi:", error);
-            alert("Gagal menyimpan materi: " + error.message);
+            toast({
+                title: "Error",
+                description: "Gagal menyimpan materi: " + error.message,
+                variant: "destructive",
+            });
         }
     };
 
@@ -222,17 +245,31 @@ export default function MateriManagementPage() {
         setDialogOpen(true);
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm("Yakin ingin menghapus materi ini?")) return;
+    const handleDelete = async () => {
+        if (!deletingId) return;
 
         try {
-            await materiApi.delete(id);
-            alert("Materi berhasil dihapus!");
+            await materiApi.delete(deletingId);
+            toast({
+                title: "Berhasil!",
+                description: "Materi berhasil dihapus",
+            });
+            setDeleteDialogOpen(false);
+            setDeletingId(null);
             loadData();
         } catch (error: any) {
             console.error("Error deleting materi:", error);
-            alert("Gagal menghapus materi: " + error.message);
+            toast({
+                title: "Error",
+                description: "Gagal menghapus materi: " + error.message,
+                variant: "destructive",
+            });
         }
+    };
+
+    const openDeleteDialog = (id: string) => {
+        setDeletingId(id);
+        setDeleteDialogOpen(true);
     };
 
     const handleNewMateri = () => {
@@ -607,7 +644,7 @@ export default function MateriManagementPage() {
                                             size="sm"
                                             variant="outline"
                                             className="gap-2"
-                                            onClick={() => handleDelete(materi.id)}
+                                            onClick={() => openDeleteDialog(materi.id)}
                                         >
                                             <Trash2 size={14} />
                                         </Button>
@@ -618,6 +655,26 @@ export default function MateriManagementPage() {
                     })
                 )}
             </div>
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Hapus Materi?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Apakah Anda yakin ingin menghapus materi ini? Tindakan ini tidak dapat dibatalkan.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setDeletingId(null)}>
+                            Batal
+                        </AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete}>
+                            Hapus
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

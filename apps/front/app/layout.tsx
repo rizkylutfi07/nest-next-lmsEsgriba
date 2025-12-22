@@ -5,6 +5,7 @@ import "./globals.css";
 import { Providers } from "./providers";
 import { cn } from "@/lib/utils";
 import { RoleProvider } from "./(dashboard)/role-context";
+import { Toaster } from "@/components/ui/toaster";
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -42,6 +43,7 @@ export default function RootLayout({
         <RoleProvider>
           <Providers>{children}</Providers>
         </RoleProvider>
+        <Toaster />
       </body>
     </html>
   );

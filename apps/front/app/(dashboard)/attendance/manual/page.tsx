@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useRole } from "../../role-context";
 import { apiFetch } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 type AttendanceStatus = "HADIR" | "SAKIT" | "IZIN" | "ALPHA" | "TERLAMBAT";
 
@@ -80,6 +81,7 @@ export default function ManualAttendancePage() {
 
 function ManualAttendanceContent() {
     const { token } = useRole();
+    const { toast } = useToast();
     const queryClient = useQueryClient();
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
     const [selectedKelas, setSelectedKelas] = useState("");
@@ -276,7 +278,7 @@ function ManualAttendanceContent() {
         },
         onError: (error: Error) => {
             console.error("Failed to check-out:", error);
-            alert(error.message || "Gagal check-out");
+            toast({ title: "Error", description: error.message || "Gagal check-out", variant: "destructive" });
             setUpdatingStudentId(null);
         },
     });

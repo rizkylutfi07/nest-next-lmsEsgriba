@@ -8,9 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useRole } from "../role-context";
+import { useToast } from "@/hooks/use-toast";
 
 export default function SiswaPage() {
   const { token } = useRole();
+  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -91,9 +93,10 @@ export default function SiswaPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["siswa"] });
       setIsCreateModalOpen(false);
+      toast({ title: "Berhasil!", description: "Data siswa berhasil ditambahkan" });
     },
     onError: (error: any) => {
-      alert(`Error: ${error.message}`);
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
 
@@ -113,9 +116,10 @@ export default function SiswaPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["siswa"] });
       setEditingItem(null);
+      toast({ title: "Berhasil!", description: "Data siswa berhasil diupdate" });
     },
     onError: (error: any) => {
-      alert(`Error: ${error.message}`);
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
 
@@ -610,6 +614,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
 
 function ImportModal({ onClose, onSuccess }: any) {
   const { token } = useRole();
+  const { toast } = useToast();
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [result, setResult] = useState<any>(null);
@@ -640,10 +645,11 @@ function ImportModal({ onClose, onSuccess }: any) {
       setResult(data);
 
       if (data.success > 0) {
+        toast({ title: "Berhasil!", description: `${data.success} data berhasil diimport` });
         setTimeout(() => onSuccess(), 2000);
       }
     } catch (error: any) {
-      alert(`Error: ${error.message}`);
+      toast({ title: "Error", description: error.message, variant: "destructive" });
     } finally {
       setIsUploading(false);
     }

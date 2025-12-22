@@ -20,7 +20,7 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
-  ) {}
+  ) { }
 
   async register(dto: RegisterDto): Promise<TokenResponse> {
     const exists = await this.prisma.user.findUnique({
@@ -73,5 +73,112 @@ export class AuthService {
     const accessToken = await this.jwtService.signAsync(payload);
     const { password, ...rest } = user;
     return { accessToken, user: rest };
+  }
+
+  async updateProfile(userId: string, updateData: { name: string; email: string }) {
+    // Check if email is already used by another user
+    if (updateData.email) {
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email: updateData.email.toLowerCase() },
+      });
+      if (existingUser && existingUser.id !== userId) {
+        throw new BadRequestException('Email sudah digunakan oleh user lain');
+      }
+    }
+
+    // Get current user to check role
+    const currentUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    });
+
+    // Update user
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        name: updateData.name,
+        email: updateData.email?.toLowerCase(),
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        createdAt: true,
+      },
+    });
+
+    // Update related Siswa or Guru record if exists
+    if (currentUser?.role === 'SISWA') {
+      await this.prisma.siswa.updateMany({
+        where: { userId: userId },
+        data: {
+          nama: updateData.name,
+          email: updateData.email?.toLowerCase(),
+        },
+      });
+    } else if (currentUser?.role === 'GURU') {
+      await this.prisma.guru.updateMany({
+        where: { userId: userId },
+        data: {
+          nama: updateData.name,
+          email: updateData.email?.toLowerCase(),
+        },
+      });
+    }
+
+    return updatedUser;
+  }
+
+  async changePassword(
+    userId: string,
+    passwordData: { oldPassword: string; newPassword: string },
+  ) {
+    // Get current user
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User tidak ditemukan');
+    }
+
+    // Verify old password
+    const validOldPassword = await bcrypt.compare(
+      passwordData.oldPassword,
+      user.password,
+    );
+    if (!validOldPassword) {
+      throw new UnauthorizedException('Password lama salah');
+    }
+
+    // Hash and update new password
+    const hashedNewPassword = await this.hashPassword(passwordData.newPassword);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedNewPassword },
+    });
+
+    return { message: 'Password berhasil diubah' };
+  }
+
+  async adminResetPassword(userId: string, newPassword: string) {
+    // Check if user exists
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User tidak ditemukan');
+    }
+
+    // Hash and update new password (no old password verification needed for admin reset)
+    const hashedNewPassword = await this.hashPassword(newPassword);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedNewPassword },
+    });
+
+    return { message: `Password untuk ${user.name || user.email} berhasil direset` };
   }
 }

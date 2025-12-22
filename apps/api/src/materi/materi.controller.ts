@@ -98,21 +98,23 @@ export class MateriController {
     }
 
     @Put(':id')
-    @Roles(Role.GURU)
+    @Roles(Role.GURU, Role.ADMIN)
     update(
         @Param('id') id: string,
         @Body() updateMateriDto: UpdateMateriDto,
         @Req() req: any,
     ) {
-        const guruId = req.user.guru?.id;
-        return this.materiService.update(id, guruId, updateMateriDto);
+        const isAdmin = req.user.role === Role.ADMIN;
+        const guruId = req.user.guru?.id || null;
+        return this.materiService.update(id, guruId, updateMateriDto, isAdmin);
     }
 
     @Delete(':id')
-    @Roles(Role.GURU)
+    @Roles(Role.GURU, Role.ADMIN)
     remove(@Param('id') id: string, @Req() req: any) {
-        const guruId = req.user.guru?.id;
-        return this.materiService.remove(id, guruId);
+        const isAdmin = req.user.role === Role.ADMIN;
+        const guruId = req.user.guru?.id || null;
+        return this.materiService.remove(id, guruId, isAdmin);
     }
 
     // Bookmark operations

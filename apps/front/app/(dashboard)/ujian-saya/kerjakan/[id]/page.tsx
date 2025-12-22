@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useRole } from "../../../role-context";
+import { useToast } from "@/hooks/use-toast";
 
 type PilihanJawaban = {
     id: string;
@@ -54,6 +55,7 @@ const normalizePilihanData = (source: any): PilihanJawaban[] => {
 
 export default function KerjakanUjianPage() {
     const { token } = useRole();
+    const { toast } = useToast();
     const router = useRouter();
     const params = useParams();
     const ujianSiswaId = params.id as string;
@@ -206,7 +208,7 @@ export default function KerjakanUjianPage() {
             router.replace(shouldShowResult ? `/ujian-saya/hasil/${ujianSiswaId}` : "/");
         },
         onError: (err: any) => {
-            alert(err?.message || "Gagal submit ujian");
+            toast({ title: "Error", description: err?.message || "Gagal submit ujian", variant: "destructive" });
         },
     });
 
@@ -277,7 +279,7 @@ export default function KerjakanUjianPage() {
 
             if (remaining <= 0) {
                 clearInterval(timer);
-                alert("Waktu habis! Ujian akan dikirim otomatis oleh sistem.");
+                toast({ title: "Waktu Habis!", description: "Ujian akan dikirim otomatis oleh sistem.", variant: "destructive" });
             }
         }, 1000);
 

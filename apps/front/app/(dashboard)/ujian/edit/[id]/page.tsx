@@ -8,10 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useRole } from "../../../role-context";
+import { useToast } from "@/hooks/use-toast";
 
 export default function EditUjianPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
     const { token } = useRole();
+    const { toast } = useToast();
     const router = useRouter();
     const queryClient = useQueryClient();
 
@@ -178,7 +180,7 @@ export default function EditUjianPage({ params }: { params: Promise<{ id: string
             router.push("/ujian");
         },
         onError: (error: Error) => {
-            alert(error.message || "Gagal mengupdate ujian");
+            toast({ title: "Error", description: error.message || "Gagal mengupdate ujian", variant: "destructive" });
         },
     });
 
@@ -186,17 +188,17 @@ export default function EditUjianPage({ params }: { params: Promise<{ id: string
         e.preventDefault();
 
         if (!formData.paketSoalId) {
-            alert("Pilih paket soal!");
+            toast({ title: "Perhatian", description: "Pilih paket soal!", variant: "destructive" });
             return;
         }
 
         if (kelasIds.length === 0) {
-            alert("Pilih minimal 1 kelas!");
+            toast({ title: "Perhatian", description: "Pilih minimal 1 kelas!", variant: "destructive" });
             return;
         }
 
         if (targetPeserta === "SPECIFIC" && siswaIds.length === 0) {
-            alert("Pilih minimal 1 siswa jika menggunakan mode pilih siswa spesifik!");
+            toast({ title: "Perhatian", description: "Pilih minimal 1 siswa jika menggunakan mode pilih siswa spesifik!", variant: "destructive" });
             return;
         }
 

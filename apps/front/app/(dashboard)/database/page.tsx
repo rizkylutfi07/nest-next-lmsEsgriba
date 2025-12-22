@@ -6,11 +6,14 @@ import { Download, Upload, Loader2, X, Database, AlertTriangle, Trash2, FileDown
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRole } from "../role-context";
+import { useToast } from "@/hooks/use-toast";
 
 export default function DatabasePage() {
     const { token, role } = useRole();
+    const { toast } = useToast();
     const queryClient = useQueryClient();
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+    const [deleteBackupName, setDeleteBackupName] = useState<string | null>(null);
 
     // Check if user is admin
     if (role !== 'ADMIN') {
@@ -58,6 +61,7 @@ export default function DatabasePage() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["database-backups"] });
+            setDeleteBackupName(null);
         },
     });
 
@@ -173,11 +177,7 @@ export default function DatabasePage() {
                                         <Button
                                             variant="ghost"
                                             size="sm"
-                                            onClick={() => {
-                                                if (confirm(`Delete backup ${backup.filename}?`)) {
-                                                    deleteMutation.mutate(backup.filename);
-                                                }
-                                            }}
+                                            onClick={() => setDeleteBackupName(backup.filename)}
                                         >
                                             <Trash2 size={16} />
                                         </Button>
@@ -188,6 +188,34 @@ export default function DatabasePage() {
                     )}
                 </CardContent>
             </Card>
+
+            {deleteBackupName && (
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+                    <Card className="w-full max-w-md">
+                        <CardHeader>
+                            <CardTitle>Konfirmasi Hapus Backup</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <p className="text-sm text-muted-foreground">
+                                Apakah Anda yakin ingin menghapus backup <strong>{deleteBackupName}</strong>?
+                            </p>
+                            <div className="flex gap-2">
+                                <Button variant="outline" onClick={() => setDeleteBackupName(null)} className="flex-1">
+                                    Batal
+                                </Button>
+                                <Button
+                                    variant="destructive"
+                                    onClick={() => deleteMutation.mutate(deleteBackupName)}
+                                    disabled={deleteMutation.isPending}
+                                    className="flex-1"
+                                >
+                                    {deleteMutation.isPending ? <Loader2 className="animate-spin" size={16} /> : "Hapus"}
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
 
             {isImportModalOpen && (
                 <ImportModal
@@ -204,6 +232,7 @@ export default function DatabasePage() {
 }
 
 function ImportModal({ onClose, onSuccess, token }: { onClose: () => void; onSuccess: () => void; token: string | null }) {
+    const { toast } = useToast();
     const [file, setFile] = useState<File | null>(null);
     const [createBackup, setCreateBackup] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
@@ -229,10 +258,10 @@ function ImportModal({ onClose, onSuccess, token }: { onClose: () => void; onSuc
             }
 
             const data = await res.json();
-            alert(`Database imported successfully! ${data.backupFile ? `Backup created: ${data.backupFile}` : ''}`);
+            toast({ title: "Sukses", description: `Database berhasil diimport! ${data.backupFile ? `Backup: ${data.backupFile}` : ''}` });
             onSuccess();
         } catch (error: any) {
-            alert(`Error: ${error.message}`);
+            toast({ title: "Error", description: error.message, variant: "destructive" });
         } finally {
             setIsLoading(false);
         }

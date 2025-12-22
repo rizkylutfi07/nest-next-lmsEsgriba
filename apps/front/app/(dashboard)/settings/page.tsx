@@ -6,9 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Loader2, Settings as SettingsIcon, Save } from "lucide-react";
 import { useRole } from "../role-context";
+import { useToast } from "@/hooks/use-toast";
 
 export default function SettingsPage() {
     const { token } = useRole();
+    const { toast } = useToast();
     const queryClient = useQueryClient();
     const [lateTime, setLateTime] = useState("07:30");
 
@@ -52,10 +54,10 @@ export default function SettingsPage() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["settings"] });
-            alert("Pengaturan berhasil disimpan!");
+            toast({ title: "Sukses", description: "Pengaturan berhasil disimpan!" });
         },
         onError: (error: any) => {
-            alert(`Error: ${error.message}`);
+            toast({ title: "Error", description: error.message, variant: "destructive" });
         },
     });
 

@@ -6,6 +6,7 @@ import { Plus, Search, Pencil, Trash2, Loader2, X, Upload, Download } from "luci
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRole } from "../role-context";
+import { useToast } from "@/hooks/use-toast";
 
 // TODO: Create API client in lib/kelas-api.ts
 const kelasApi = {
@@ -62,6 +63,7 @@ const kelasApi = {
 
 export default function KelasPage() {
   const { token } = useRole();
+  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [filterTahunAjaran, setFilterTahunAjaran] = useState("");
@@ -93,10 +95,18 @@ export default function KelasPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["kelas"] });
       setIsCreateModalOpen(false);
+      toast({
+        title: "Berhasil!",
+        description: "Data kelas berhasil ditambahkan",
+      });
     },
     onError: (error: any) => {
       console.error('Create error:', error);
-      alert(error.message || 'Gagal menambah data kelas');
+      toast({
+        title: "Error",
+        description: error.message || 'Gagal menambah data kelas',
+        variant: "destructive",
+      });
     },
   });
 
@@ -105,10 +115,18 @@ export default function KelasPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["kelas"] });
       setEditingKelas(null);
+      toast({
+        title: "Berhasil!",
+        description: "Data kelas berhasil diupdate",
+      });
     },
     onError: (error: any) => {
       console.error('Update error:', error);
-      alert(error.message || 'Gagal mengupdate data kelas');
+      toast({
+        title: "Error",
+        description: error.message || 'Gagal mengupdate data kelas',
+        variant: "destructive",
+      });
     },
   });
 
@@ -316,6 +334,7 @@ function ImportModal({ onClose, onSuccess, token }: { onClose: () => void; onSuc
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -338,10 +357,18 @@ function ImportModal({ onClose, onSuccess, token }: { onClose: () => void; onSuc
       setResult(data);
 
       if (data.success > 0) {
+        toast({
+          title: "Berhasil!",
+          description: `${data.success} data berhasil diimport`,
+        });
         setTimeout(() => onSuccess(), 2000);
       }
     } catch (error: any) {
-      alert(error.message || 'Gagal import data');
+      toast({
+        title: "Error",
+        description: error.message || 'Gagal import data',
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }

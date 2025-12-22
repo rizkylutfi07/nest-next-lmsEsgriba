@@ -4,15 +4,16 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Pencil, Trash2, Plus, X, FileCheck, Eye, Send, Activity } from "lucide-react";
 
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useRole } from "../role-context";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
 
 export default function UjianPage() {
     const { token } = useRole();
+    const { toast } = useToast();
     const router = useRouter();
     const queryClient = useQueryClient();
     const [page, setPage] = useState(1);
@@ -65,7 +66,7 @@ export default function UjianPage() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["ujian"] });
-            alert("Ujian berhasil di-assign ke siswa!");
+            toast({ title: "Berhasil!", description: "Ujian berhasil di-assign ke siswa!" });
         },
     });
 
@@ -103,9 +104,10 @@ export default function UjianPage() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["ujian"] });
             setEditingItem(null);
+            toast({ title: "Berhasil!", description: "Status ujian berhasil diupdate" });
         },
         onError: (err) => {
-            alert(err.message);
+            toast({ title: "Error", description: err.message, variant: "destructive" });
         }
     });
 

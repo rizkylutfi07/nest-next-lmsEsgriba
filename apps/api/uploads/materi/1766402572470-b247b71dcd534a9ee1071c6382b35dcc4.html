@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tutorial Dasar Microsoft Word</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            scroll-behavior: smooth;
+        }
+        .step-card:hover {
+            transform: translateY(-5px);
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans">
+
+    <!-- Header / Navbar -->
+    <nav class="bg-blue-700 text-white p-4 sticky top-0 z-50 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="Store9 12h.01M7.5 8.25h9m-9 3H12m-4.5 3h1.5" />
+                </svg>
+                MS Word Master
+            </h1>
+            <div class="hidden md:flex gap-6">
+                <a href="#pengenalan" class="hover:underline">Pengenalan</a>
+                <a href="#formatting" class="hover:underline">Formatting</a>
+                <a href="#shortcut" class="hover:underline">Shortcut</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="bg-blue-600 text-white py-16 px-4">
+        <div class="container mx-auto text-center">
+            <h2 class="text-4xl md:text-5xl font-extrabold mb-4">Panduan Cepat Microsoft Word</h2>
+            <p class="text-lg opacity-90 max-w-2xl mx-auto">Kuasai dasar-dasar pengolah kata paling populer di dunia untuk meningkatkan produktivitas Anda.</p>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-12 max-w-5xl">
+        
+        <!-- Section 1: Pengenalan -->
+        <section id="pengenalan" class="mb-16">
+            <h3 class="text-2xl font-bold border-b-4 border-blue-500 inline-block mb-8">1. Mengenal Antarmuka</h3>
+            <div class="grid md:grid-cols-2 gap-8 items-center">
+                <div class="space-y-4">
+                    <div class="p-4 bg-white rounded-lg shadow-sm border-l-4 border-blue-500">
+                        <strong class="block text-blue-700">Ribbon</strong>
+                        <p class="text-sm">Kumpulan tab (Home, Insert, Layout) yang berisi alat untuk mengedit dokumen.</p>
+                    </div>
+                    <div class="p-4 bg-white rounded-lg shadow-sm border-l-4 border-blue-500">
+                        <strong class="block text-blue-700">Quick Access Toolbar</strong>
+                        <p class="text-sm">Tombol cepat untuk menyimpan (Save), membatalkan (Undo), dan mengulang (Redo).</p>
+                    </div>
+                    <div class="p-4 bg-white rounded-lg shadow-sm border-l-4 border-blue-500">
+                        <strong class="block text-blue-700">Status Bar</strong>
+                        <p class="text-sm">Informasi jumlah halaman, kata, dan pengaturan zoom di bagian bawah.</p>
+                    </div>
+                </div>
+                <div class="bg-slate-200 h-64 rounded-xl flex items-center justify-center text-slate-500 italic">
+                    [Ilustrasi Antarmuka Microsoft Word]
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Formatting -->
+        <section id="formatting" class="mb-16">
+            <h3 class="text-2xl font-bold border-b-4 border-blue-500 inline-block mb-8">2. Dasar Formatting Teks</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <div class="step-card bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                    <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-4 font-bold">B</div>
+                    <h4 class="font-bold mb-2">Font Style</h4>
+                    <p class="text-sm text-slate-600">Gunakan <strong>Bold</strong> untuk menebalkan, <em>Italic</em> untuk miring, dan <u>Underline</u> untuk garis bawah.</p>
+                </div>
+                <div class="step-card bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                    <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
+                        </svg>
+                    </div>
+                    <h4 class="font-bold mb-2">Alignment</h4>
+                    <p class="text-sm text-slate-600">Atur posisi teks: Rata Kiri, Tengah, Rata Kanan, atau Rata Kiri-Kanan (Justify).</p>
+                </div>
+                <div class="step-card bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                    <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                    <h4 class="font-bold mb-2">Line Spacing</h4>
+                    <p class="text-sm text-slate-600">Mengatur jarak antar baris kalimat agar dokumen lebih nyaman dibaca.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Shortcuts -->
+        <section id="shortcut" class="mb-16">
+            <h3 class="text-2xl font-bold border-b-4 border-blue-500 inline-block mb-8">3. Pintasan Keyboard Wajib</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full bg-white rounded-xl shadow-sm overflow-hidden text-left">
+                    <thead class="bg-slate-100">
+                        <tr>
+                            <th class="p-4 font-bold border-b">Kombinasi Tombol</th>
+                            <th class="p-4 font-bold border-b">Fungsi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="hover:bg-blue-50 border-b">
+                            <td class="p-4"><kbd class="bg-slate-200 px-2 py-1 rounded border shadow-sm">Ctrl</kbd> + <kbd class="bg-slate-200 px-2 py-1 rounded border shadow-sm">S</kbd></td>
+                            <td class="p-4">Menyimpan Dokumen (Save)</td>
+                        </tr>
+                        <tr class="hover:bg-blue-50 border-b">
+                            <td class="p-4"><kbd class="bg-slate-200 px-2 py-1 rounded border shadow-sm">Ctrl</kbd> + <kbd class="bg-slate-200 px-2 py-1 rounded border shadow-sm">C</kbd></td>
+                            <td class="p-4">Menyalin Teks (Copy)</td>
+                        </tr>
+                        <tr class="hover:bg-blue-50 border-b">
+                            <td class="p-4"><kbd class="bg-slate-200 px-2 py-1 rounded border shadow-sm">Ctrl</kbd> + <kbd class="bg-slate-200 px-2 py-1 rounded border shadow-sm">V</kbd></td>
+                            <td class="p-4">Menempel Teks (Paste)</td>
+                        </tr>
+                        <tr class="hover:bg-blue-50">
+                            <td class="p-4"><kbd class="bg-slate-200 px-2 py-1 rounded border shadow-sm">Ctrl</kbd> + <kbd class="bg-slate-200 px-2 py-1 rounded border shadow-sm">Z</kbd></td>
+                            <td class="p-4">Membatalkan Perintah Terakhir (Undo)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Call to Action -->
+        <div class="bg-blue-50 border-2 border-blue-200 rounded-2xl p-8 text-center">
+            <h4 class="text-xl font-bold text-blue-800 mb-2">Ingin Belajar Lebih Lanjut?</h4>
+            <p class="text-slate-600 mb-6">Cobalah membuat surat lamaran kerja sederhana untuk mempraktekkan ilmu di atas.</p>
+            <button onclick="window.scrollTo(0,0)" class="bg-blue-600 text-white px-6 py-3 rounded-full font-semibold hover:bg-blue-700 transition">
+                Kembali ke Atas
+            </button>
+        </div>
+
+    </main>
+
+    <footer class="bg-slate-800 text-slate-400 py-8 text-center">
+        <p>&copy; 2024 Tutorial MS Word Indonesia. Dibuat untuk tujuan edukasi.</p>
+    </footer>
+
+</body>
+</html>

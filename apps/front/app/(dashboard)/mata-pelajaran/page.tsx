@@ -6,6 +6,7 @@ import { Plus, Search, Pencil, Trash2, Loader2, X, Upload, Download } from "luci
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRole } from "../role-context";
+import { useToast } from "@/hooks/use-toast";
 
 // TODO: Create API client in lib/mata-pelajaran-api.ts
 const matapelajaranApi = {
@@ -125,7 +126,7 @@ export default function MataPelajaranPage() {
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <CardTitle>Daftar Mata Pelajaran</CardTitle>
-              <CardDescription>Total {data?.meta.total || 0} data</CardDescription>
+              <CardDescription>Total {data?.meta?.total || data?.length || 0} data</CardDescription>
             </div>
             <div className="relative flex-1 md:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
@@ -151,19 +152,34 @@ export default function MataPelajaranPage() {
                   <thead>
                     <tr className="border-b border-border text-left text-sm text-muted-foreground">
                       <th className="pb-3 font-medium">Kode</th>
-                      <th className="pb-3 font-medium">Nama Mata Pelajaran</th>
-                      <th className="pb-3 font-medium">Jam Pelajaran/Minggu</th>
+                      <th className="pb-3 font-medium">Nama</th>
                       <th className="pb-3 font-medium">Tingkat</th>
+                      <th className="pb-3 font-medium">Jam/Minggu</th>
                       <th className="pb-3 font-medium text-right">Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {data?.data.map((item: any) => (
+                    {(Array.isArray(data) ? data : data?.data || []).map((item: any) => (
                       <tr key={item.id} className="border-b border-white/5 transition hover:bg-muted/40">
-                        <td className="py-4">{item.kode}</td>
-                        <td className="py-4">{item.nama}</td>
-                        <td className="py-4">{item.jamPelajaran}</td>
-                        <td className="py-4">{item.tingkat}</td>
+                        <td className="py-4">
+                          <span className="font-mono text-sm text-muted-foreground">{item.kode}</span>
+                        </td>
+                        <td className="py-4">
+                          <div>
+                            <p className="font-medium">{item.nama}</p>
+                            {item.deskripsi && (
+                              <p className="text-xs text-muted-foreground line-clamp-1">{item.deskripsi}</p>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-4">
+                          <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
+                            {item.tingkat}
+                          </span>
+                        </td>
+                        <td className="py-4">
+                          <span className="text-sm">{item.jamPelajaran} jam</span>
+                        </td>
                         <td className="py-4 text-right">
                           <div className="flex justify-end gap-2">
                             <Button variant="ghost" size="sm" onClick={() => setEditingItem(item)}>
@@ -180,7 +196,7 @@ export default function MataPelajaranPage() {
                 </table>
               </div>
 
-              {data && data.meta.totalPages > 1 && (
+              {data?.meta && data.meta.totalPages > 1 && (
                 <div className="mt-6 flex items-center justify-between">
                   <p className="text-sm text-muted-foreground">
                     Halaman {data.meta.page} dari {data.meta.totalPages}
@@ -246,6 +262,7 @@ function ImportModal({ onClose, onSuccess, token }: { onClose: () => void; onSuc
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -268,10 +285,11 @@ function ImportModal({ onClose, onSuccess, token }: { onClose: () => void; onSuc
       setResult(data);
 
       if (data.success > 0) {
+        toast({ title: "Berhasil!", description: `${data.success} data berhasil diimport` });
         setTimeout(() => onSuccess(), 2000);
       }
     } catch (error: any) {
-      alert(error.message || 'Gagal import data');
+      toast({ title: "Error", description: error.message || 'Gagal import data', variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
