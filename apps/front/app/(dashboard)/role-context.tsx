@@ -88,7 +88,7 @@ const navByRole: Record<Role, NavGroup[]> = {
       collapsible: true,
       items: [
         { label: "Kelola Materi", icon: BookOpen, href: "/materi-management", note: "Upload & edit materi" },
-        { label: "Tugas & PR", icon: ClipboardList, href: "/tugas", note: "Kelola tugas" },
+        { label: "Kelola Tugas", icon: ClipboardList, href: "/tugas-management", note: "Buat & nilai tugas" },
         { label: "Forum Diskusi", icon: Activity, href: "/forum", note: "Monitor diskusi" },
         { label: "Absensi", icon: ClipboardList, href: "/attendance", note: "Scan & laporan" },
         { label: "Absensi Manual", icon: Users2, href: "/attendance/manual", note: "Tandai kehadiran" },
@@ -139,7 +139,7 @@ const navByRole: Record<Role, NavGroup[]> = {
       collapsible: true,
       items: [
         { label: "Kelola Materi", icon: BookOpen, href: "/materi-management", note: "Upload materi" },
-        { label: "Tugas & PR", icon: ClipboardList, href: "/tugas", note: "Buat & nilai tugas" },
+        { label: "Kelola Tugas", icon: ClipboardList, href: "/tugas-management", note: "Buat & nilai tugas" },
         { label: "Forum Diskusi", icon: Activity, href: "/forum", note: "Jawab & moderasi" },
         { label: "Absensi", icon: ClipboardList, href: "/attendance", note: "Scan & laporan" },
         { label: "Absensi Manual", icon: Users2, href: "/attendance/manual", note: "Tandai kehadiran" },

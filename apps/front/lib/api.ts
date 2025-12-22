@@ -102,7 +102,7 @@ export const materiApi = {
 
 // Tugas API
 export const tugasApi = {
-    getAll: (filters?: { mataPelajaranId?: string; kelasId?: string }) =>
+    getAll: (filters?: { mataPelajaranId?: string; kelasId?: string; myAssignments?: string }) =>
         fetchApi(`/tugas?${new URLSearchParams(filters as any)}`),
 
     getOne: (id: string) =>
@@ -114,9 +114,30 @@ export const tugasApi = {
             body: JSON.stringify(data),
         }),
 
+    createWithFiles: async (formData: FormData) => {
+        const token = typeof window !== 'undefined'
+            ? JSON.parse(localStorage.getItem('arunika-auth') || '{}').token
+            : null;
+
+        const response = await fetch(`${API_URL}/tugas`, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ message: 'Upload failed' }));
+            throw new Error(error.message || 'Upload failed');
+        }
+
+        return response.json();
+    },
+
     update: (id: string, data: any) =>
         fetchApi(`/tugas/${id}`, {
-            method: 'PATCH',
+            method: 'PUT',
             body: JSON.stringify(data),
         }),
 
@@ -125,10 +146,58 @@ export const tugasApi = {
             method: 'DELETE',
         }),
 
+    getSubmissions: (tugasId: string) =>
+        fetchApi(`/tugas/${tugasId}/submissions`),
+
+    submit: async (tugasId: string, formData: FormData) => {
+        const token = typeof window !== 'undefined'
+            ? JSON.parse(localStorage.getItem('arunika-auth') || '{}').token
+            : null;
+
+        const response = await fetch(`${API_URL}/tugas/${tugasId}/submit`, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ message: 'Submit failed' }));
+            throw new Error(error.message || 'Submit failed');
+        }
+
+        return response.json();
+    },
+
     grade: (tugasId: string, siswaId: string, data: { score: number; feedback?: string }) =>
         fetchApi(`/tugas/${tugasId}/grade/${siswaId}`, {
-            method: 'POST',
+            method: 'PUT',
             body: JSON.stringify(data),
+        }),
+};
+
+// Notifikasi API
+export const notifikasiApi = {
+    getAll: (filters?: { isRead?: boolean }) =>
+        fetchApi(`/notifikasi${filters?.isRead !== undefined ? `?isRead=${filters.isRead}` : ''}`),
+
+    getUnreadCount: () =>
+        fetchApi('/notifikasi/unread-count'),
+
+    markAsRead: (id: string) =>
+        fetchApi(`/notifikasi/${id}/read`, {
+            method: 'PUT',
+        }),
+
+    markAllAsRead: () =>
+        fetchApi('/notifikasi/mark-all-read', {
+            method: 'PUT',
+        }),
+
+    delete: (id: string) =>
+        fetchApi(`/notifikasi/${id}`, {
+            method: 'DELETE',
         }),
 };
 
@@ -174,5 +243,7 @@ export const kelasApi = {
 // Guru API (for dropdowns)
 export const guruApi = {
     getAll: (params?: { limit?: number; page?: number; search?: string }) =>
-        fetchApi(`/guru?${new URLSearchParams(params as any)}`),
+        fetchApi(`/guru${params ? `?${new URLSearchParams(params as any).toString()}` : ''}`),
+    getById: (id: string) =>
+        fetchApi(`/guru/${id}`),
 };

@@ -26,16 +26,18 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+}
+  from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { type Role, type NavGroup, type NavItem, useRole } from "./role-context";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserAvatar } from "@/components/user-avatar";
+import { NotificationDropdown } from "@/components/notification-dropdown";
+import { useRole, Role, NavItem, NavGroup } from "./role-context";
 
 
 const accessByRole: Record<Role, string[]> = {
-  ADMIN: ["/", "/profile", "/change-password", "/users", "/siswa", "/kenaikan-kelas", "/guru", "/kelas", "/jurusan", "/tahun-ajaran", "/mata-pelajaran", "/jadwal-pelajaran", "/materi", "/materi-management", "/tugas", "/forum", "/attendance", "/database", "/cbt", "/bank-soal", "/paket-soal", "/ujian", "/penilaian", "/laporan", "/keuangan", "/keamanan", "/settings"],
-  GURU: ["/", "/profile", "/change-password", "/kelas", "/mata-pelajaran", "/jadwal-pelajaran", "/materi", "/materi-management", "/tugas", "/forum", "/attendance", "/cbt", "/bank-soal", "/paket-soal", "/ujian", "/penilaian", "/laporan"],
+  ADMIN: ["/", "/profile", "/change-password", "/users", "/siswa", "/kenaikan-kelas", "/guru", "/kelas", "/jurusan", "/tahun-ajaran", "/mata-pelajaran", "/jadwal-pelajaran", "/materi", "/materi-management", "/tugas", "/tugas-management", "/forum", "/attendance", "/database", "/cbt", "/bank-soal", "/paket-soal", "/ujian", "/penilaian", "/laporan", "/keuangan", "/keamanan", "/settings"],
+  GURU: ["/", "/profile", "/change-password", "/kelas", "/mata-pelajaran", "/jadwal-pelajaran", "/materi", "/materi-management", "/tugas", "/tugas-management", "/forum", "/attendance", "/cbt", "/bank-soal", "/paket-soal", "/ujian", "/penilaian", "/laporan"],
   SISWA: ["/", "/profile", "/change-password", "/jadwal-pelajaran", "/materi", "/tugas", "/forum", "/cbt", "/ujian-saya", "/keamanan"],
   PETUGAS_ABSENSI: ["/", "/profile", "/change-password", "/attendance"],
 };
@@ -444,10 +446,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
               </div>
               <div className="flex items-center gap-2">
                 <ThemeToggle />
-                <Button variant="ghost" size="icon" className="relative">
-                  <Bell size={18} />
-                  <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-secondary" />
-                </Button>
+                <NotificationDropdown />
                 <UserAvatar
                   user={user}
                   onLogout={() => {
