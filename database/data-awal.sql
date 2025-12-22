@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict O3XJja99m3iMRLiH6iylEBKybqPP6sF2kytj3qjAbkxgCA4j6vXqciB2Y8bnwSn
+\restrict bWLi8gqEtabbUmkGgZ2KEBsHps6y9NxGq0Kyxo7HGq0EiwvJ29gvUnTE83YZkYH
 
 -- Dumped from database version 17.7
 -- Dumped by pg_dump version 17.7
@@ -51,6 +51,22 @@ CREATE TYPE public."AttendanceStatus" AS ENUM (
 ALTER TYPE public."AttendanceStatus" OWNER TO postgres;
 
 --
+-- Name: Hari; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public."Hari" AS ENUM (
+    'SENIN',
+    'SELASA',
+    'RABU',
+    'KAMIS',
+    'JUMAT',
+    'SABTU'
+);
+
+
+ALTER TYPE public."Hari" OWNER TO postgres;
+
+--
 -- Name: Role; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -91,6 +107,20 @@ CREATE TYPE public."StatusPengerjaan" AS ENUM (
 
 
 ALTER TYPE public."StatusPengerjaan" OWNER TO postgres;
+
+--
+-- Name: StatusPengumpulan; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public."StatusPengumpulan" AS ENUM (
+    'BELUM_DIKUMPULKAN',
+    'DIKUMPULKAN',
+    'TERLAMBAT',
+    'DINILAI'
+);
+
+
+ALTER TYPE public."StatusPengumpulan" OWNER TO postgres;
 
 --
 -- Name: StatusSiswa; Type: TYPE; Schema: public; Owner: postgres
@@ -134,6 +164,51 @@ CREATE TYPE public."StatusUjian" AS ENUM (
 
 
 ALTER TYPE public."StatusUjian" OWNER TO postgres;
+
+--
+-- Name: TipeMateri; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public."TipeMateri" AS ENUM (
+    'DOKUMEN',
+    'VIDEO',
+    'LINK',
+    'TEKS',
+    'GAMBAR'
+);
+
+
+ALTER TYPE public."TipeMateri" OWNER TO postgres;
+
+--
+-- Name: TipeNotifikasi; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public."TipeNotifikasi" AS ENUM (
+    'MATERI_BARU',
+    'TUGAS_BARU',
+    'DEADLINE_REMINDER',
+    'TUGAS_DINILAI',
+    'FORUM_REPLY',
+    'PENGUMUMAN',
+    'SISTEM'
+);
+
+
+ALTER TYPE public."TipeNotifikasi" OWNER TO postgres;
+
+--
+-- Name: TipePenilaian; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public."TipePenilaian" AS ENUM (
+    'MANUAL',
+    'AUTO',
+    'PEER_REVIEW'
+);
+
+
+ALTER TYPE public."TipePenilaian" OWNER TO postgres;
 
 --
 -- Name: TipeSoal; Type: TYPE; Schema: public; Owner: postgres
@@ -197,6 +272,84 @@ CREATE TABLE public."BankSoal" (
 ALTER TABLE public."BankSoal" OWNER TO postgres;
 
 --
+-- Name: ForumKategori; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ForumKategori" (
+    id text NOT NULL,
+    nama text NOT NULL,
+    deskripsi text,
+    icon text,
+    warna text,
+    "mataPelajaranId" text,
+    "kelasId" text,
+    urutan integer DEFAULT 0 NOT NULL,
+    "isActive" boolean DEFAULT true NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."ForumKategori" OWNER TO postgres;
+
+--
+-- Name: ForumPost; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ForumPost" (
+    id text NOT NULL,
+    "threadId" text NOT NULL,
+    "parentId" text,
+    "authorId" text NOT NULL,
+    "authorType" text NOT NULL,
+    konten text NOT NULL,
+    "isEdited" boolean DEFAULT false NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    "deletedAt" timestamp(3) without time zone
+);
+
+
+ALTER TABLE public."ForumPost" OWNER TO postgres;
+
+--
+-- Name: ForumReaction; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ForumReaction" (
+    id text NOT NULL,
+    "postId" text NOT NULL,
+    "userId" text NOT NULL,
+    tipe text NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."ForumReaction" OWNER TO postgres;
+
+--
+-- Name: ForumThread; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ForumThread" (
+    id text NOT NULL,
+    judul text NOT NULL,
+    "isPinned" boolean DEFAULT false NOT NULL,
+    "isLocked" boolean DEFAULT false NOT NULL,
+    "kategoriId" text NOT NULL,
+    "authorId" text NOT NULL,
+    "authorType" text NOT NULL,
+    "viewCount" integer DEFAULT 0 NOT NULL,
+    "replyCount" integer DEFAULT 0 NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    "deletedAt" timestamp(3) without time zone
+);
+
+
+ALTER TABLE public."ForumThread" OWNER TO postgres;
+
+--
 -- Name: Guru; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -215,6 +368,25 @@ CREATE TABLE public."Guru" (
 
 
 ALTER TABLE public."Guru" OWNER TO postgres;
+
+--
+-- Name: JadwalPelajaran; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."JadwalPelajaran" (
+    id text NOT NULL,
+    hari public."Hari" NOT NULL,
+    "jamMulai" text NOT NULL,
+    "jamSelesai" text NOT NULL,
+    "kelasId" text NOT NULL,
+    "mataPelajaranId" text NOT NULL,
+    "guruId" text NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."JadwalPelajaran" OWNER TO postgres;
 
 --
 -- Name: Jurusan; Type: TABLE; Schema: public; Owner: postgres
@@ -272,6 +444,81 @@ CREATE TABLE public."MataPelajaran" (
 ALTER TABLE public."MataPelajaran" OWNER TO postgres;
 
 --
+-- Name: Materi; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."Materi" (
+    id text NOT NULL,
+    judul text NOT NULL,
+    deskripsi text,
+    tipe public."TipeMateri" DEFAULT 'DOKUMEN'::public."TipeMateri" NOT NULL,
+    konten text,
+    "mataPelajaranId" text NOT NULL,
+    "guruId" text NOT NULL,
+    "kelasId" text,
+    "isPinned" boolean DEFAULT false NOT NULL,
+    "isPublished" boolean DEFAULT true NOT NULL,
+    "viewCount" integer DEFAULT 0 NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    "deletedAt" timestamp(3) without time zone
+);
+
+
+ALTER TABLE public."Materi" OWNER TO postgres;
+
+--
+-- Name: MateriAttachment; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."MateriAttachment" (
+    id text NOT NULL,
+    "materiId" text NOT NULL,
+    "namaFile" text NOT NULL,
+    "ukuranFile" integer NOT NULL,
+    "tipeFile" text NOT NULL,
+    "urlFile" text NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."MateriAttachment" OWNER TO postgres;
+
+--
+-- Name: MateriBookmark; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."MateriBookmark" (
+    id text NOT NULL,
+    "materiId" text NOT NULL,
+    "siswaId" text NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."MateriBookmark" OWNER TO postgres;
+
+--
+-- Name: Notifikasi; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."Notifikasi" (
+    id text NOT NULL,
+    "userId" text NOT NULL,
+    tipe public."TipeNotifikasi" NOT NULL,
+    judul text NOT NULL,
+    pesan text NOT NULL,
+    "linkUrl" text,
+    "isRead" boolean DEFAULT false NOT NULL,
+    "readAt" timestamp(3) without time zone,
+    metadata jsonb,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."Notifikasi" OWNER TO postgres;
+
+--
 -- Name: PaketSoal; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -305,6 +552,26 @@ CREATE TABLE public."PaketSoalItem" (
 
 
 ALTER TABLE public."PaketSoalItem" OWNER TO postgres;
+
+--
+-- Name: ProgressSiswa; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ProgressSiswa" (
+    id text NOT NULL,
+    "siswaId" text NOT NULL,
+    "mataPelajaranId" text NOT NULL,
+    "materiDibaca" integer DEFAULT 0 NOT NULL,
+    "tugasSelesai" integer DEFAULT 0 NOT NULL,
+    "forumPosts" integer DEFAULT 0 NOT NULL,
+    "totalScore" double precision DEFAULT 0 NOT NULL,
+    "lastActivity" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."ProgressSiswa" OWNER TO postgres;
 
 --
 -- Name: Settings; Type: TABLE; Schema: public; Owner: postgres
@@ -383,6 +650,86 @@ CREATE TABLE public."TahunAjaran" (
 
 
 ALTER TABLE public."TahunAjaran" OWNER TO postgres;
+
+--
+-- Name: Tugas; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."Tugas" (
+    id text NOT NULL,
+    judul text NOT NULL,
+    deskripsi text NOT NULL,
+    instruksi text,
+    "mataPelajaranId" text NOT NULL,
+    "guruId" text NOT NULL,
+    "kelasId" text,
+    deadline timestamp(3) without time zone NOT NULL,
+    "maxScore" integer DEFAULT 100 NOT NULL,
+    "tipePenilaian" public."TipePenilaian" DEFAULT 'MANUAL'::public."TipePenilaian" NOT NULL,
+    "allowLateSubmit" boolean DEFAULT false NOT NULL,
+    "isPublished" boolean DEFAULT true NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    "deletedAt" timestamp(3) without time zone
+);
+
+
+ALTER TABLE public."Tugas" OWNER TO postgres;
+
+--
+-- Name: TugasAttachment; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."TugasAttachment" (
+    id text NOT NULL,
+    "tugasId" text NOT NULL,
+    "namaFile" text NOT NULL,
+    "ukuranFile" integer NOT NULL,
+    "tipeFile" text NOT NULL,
+    "urlFile" text NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."TugasAttachment" OWNER TO postgres;
+
+--
+-- Name: TugasSiswa; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."TugasSiswa" (
+    id text NOT NULL,
+    "tugasId" text NOT NULL,
+    "siswaId" text NOT NULL,
+    status public."StatusPengumpulan" DEFAULT 'BELUM_DIKUMPULKAN'::public."StatusPengumpulan" NOT NULL,
+    "submittedAt" timestamp(3) without time zone,
+    "gradedAt" timestamp(3) without time zone,
+    konten text,
+    score double precision,
+    feedback text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."TugasSiswa" OWNER TO postgres;
+
+--
+-- Name: TugasSiswaFile; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."TugasSiswaFile" (
+    id text NOT NULL,
+    "tugasSiswaId" text NOT NULL,
+    "namaFile" text NOT NULL,
+    "ukuranFile" integer NOT NULL,
+    "tipeFile" text NOT NULL,
+    "urlFile" text NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."TugasSiswaFile" OWNER TO postgres;
 
 --
 -- Name: Ujian; Type: TABLE; Schema: public; Owner: postgres
@@ -530,6 +877,38 @@ COPY public."BankSoal" (id, kode, pertanyaan, tipe, "mataPelajaranId", "pilihanJ
 
 
 --
+-- Data for Name: ForumKategori; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ForumKategori" (id, nama, deskripsi, icon, warna, "mataPelajaranId", "kelasId", urutan, "isActive", "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ForumPost; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ForumPost" (id, "threadId", "parentId", "authorId", "authorType", konten, "isEdited", "createdAt", "updatedAt", "deletedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ForumReaction; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ForumReaction" (id, "postId", "userId", tipe, "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ForumThread; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ForumThread" (id, judul, "isPinned", "isLocked", "kategoriId", "authorId", "authorType", "viewCount", "replyCount", "createdAt", "updatedAt", "deletedAt") FROM stdin;
+\.
+
+
+--
 -- Data for Name: Guru; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -556,6 +935,17 @@ cmj9z8ykj00325dudk20mdgjx	00000000003444211	Wahyu Mirnawati, S.Ak.	wahyumirnawat
 cmj9z8ynh00365dudxaiuoy08	00000000000000076	Maulida Putri Lesmana	pa717885@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.797	2025-12-17 12:17:54.797	\N	cmj9z8ynd00355dudycn1e6hi
 cmj9z8yox00385dudt5p2uvo1	1234567891	Ila Febti Sherly M., S.E	ilafebtisherly@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.849	2025-12-17 12:25:57.706	\N	cmj9z8you00375dudrf1e71qe
 cmj9z8yly00345dudadjrqvfh	0000000000000044	Zulfi Amaliyah, S.Kom	zulfiamaliyah1306@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.742	2025-12-17 12:26:16.194	\N	cmj9z8ylv00335dudr8tet2na
+\.
+
+
+--
+-- Data for Name: JadwalPelajaran; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."JadwalPelajaran" (id, hari, "jamMulai", "jamSelesai", "kelasId", "mataPelajaranId", "guruId", "createdAt", "updatedAt") FROM stdin;
+cmjh3jl490001cqud3kr1298a	SENIN	07:38	08:16	cmj5ec9zf0000jsudgpxci2hf	cmj9z7qae00205dudqey9zf1h	cmj9z8yox00385dudt5p2uvo1	2025-12-22 11:52:32.168	2025-12-22 11:52:32.168
+cmjh3jv8w0002cqudpqnp8a1z	SENIN	08:16	08:54	cmj5ec9zf0000jsudgpxci2hf	cmj9z7q8c001f5dudtoyt49tx	cmj9z8xzs002a5dudw0c717l2	2025-12-22 11:52:45.296	2025-12-22 11:52:45.296
+cmjh3kyxc0003cqudd8vzybo0	SENIN	08:54	09:32	cmj5ec9zf0000jsudgpxci2hf	cmj9z7qae00205dudqey9zf1h	cmj9z8y2q002e5dud69l0gx00	2025-12-22 11:53:36.719	2025-12-22 11:53:36.719
 \.
 
 
@@ -621,6 +1011,46 @@ cmj9z7qae00205dudqey9zf1h	Seni Budaya	Seni Budaya	4		SEMUA	2025-12-17 12:16:57.3
 
 
 --
+-- Data for Name: Materi; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Materi" (id, judul, deskripsi, tipe, konten, "mataPelajaranId", "guruId", "kelasId", "isPinned", "isPublished", "viewCount", "createdAt", "updatedAt", "deletedAt") FROM stdin;
+cmjfuw7ew0000ysudu7n9x6xw	aaaaaa	aaaaaa	DOKUMEN	file://1766329358202-32b94ae3450dea8b583bf1f464d0390b.html	cmj9z7q8c001f5dudtoyt49tx	cmj9z8yly00345dudadjrqvfh	cmj5ec9zf0000jsudgpxci2hf	f	t	0	2025-12-21 15:02:38.214	2025-12-22 09:42:04.937	2025-12-22 09:42:04.932
+cmjftvqn90001smud4jqjksz2	tik	tik	TEKS	sdsadasdas das da da da da da das asas d a	cmj9z7q8c001f5dudtoyt49tx	cmj9z8yly00345dudadjrqvfh	cmj5ec9zf0000jsudgpxci2hf	f	t	0	2025-12-21 14:34:16.868	2025-12-22 09:42:07.978	2025-12-22 09:42:07.977
+cmjftfdir0000smudc2j2nr57	ASAS	aSAS	DOKUMEN	\N	cmj9z7q8c001f5dudtoyt49tx	cmj9z8yly00345dudadjrqvfh	cmj5ec9zf0000jsudgpxci2hf	f	t	0	2025-12-21 14:21:33.361	2025-12-22 09:51:50.737	2025-12-22 09:51:50.732
+cmjh2hfwj00006nudambm0s7b	INFORMATIKA	Informatika	DOKUMEN	file://1766402572470-b247b71dcd534a9ee1071c6382b35dcc4.html	cmj9z7q8c001f5dudtoyt49tx	cmj9z8yly00345dudadjrqvfh	cmj5ec9zf0000jsudgpxci2hf	f	t	0	2025-12-22 11:22:52.481	2025-12-22 11:22:52.481	\N
+\.
+
+
+--
+-- Data for Name: MateriAttachment; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."MateriAttachment" (id, "materiId", "namaFile", "ukuranFile", "tipeFile", "urlFile", "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: MateriBookmark; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."MateriBookmark" (id, "materiId", "siswaId", "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: Notifikasi; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Notifikasi" (id, "userId", tipe, judul, pesan, "linkUrl", "isRead", "readAt", metadata, "createdAt") FROM stdin;
+cmjh9si5z0001rvud4s6mycgj	cmj5gwzqp001b35udoas61cxe	TUGAS_BARU	Tugas Baru: Konsentrasi Keahlian AK	Ila Febti Sherly M., S.E memberi tugas baru dengan deadline 26/12/2025	/tugas	f	\N	{"tugasId": "cmjh9si5a0000rvud0p28ibep"}	2025-12-22 14:47:25.943
+cmjh9si640002rvudgmtam2b6	cmj5gx2c1004r35udtqywx9eq	TUGAS_BARU	Tugas Baru: Konsentrasi Keahlian AK	Ila Febti Sherly M., S.E memberi tugas baru dengan deadline 26/12/2025	/tugas	f	\N	{"tugasId": "cmjh9si5a0000rvud0p28ibep"}	2025-12-22 14:47:25.948
+cmjh9si690003rvud1niaqp1r	cmj5gx2zz005n35udbo6v7qv9	TUGAS_BARU	Tugas Baru: Konsentrasi Keahlian AK	Ila Febti Sherly M., S.E memberi tugas baru dengan deadline 26/12/2025	/tugas	f	\N	{"tugasId": "cmjh9si5a0000rvud0p28ibep"}	2025-12-22 14:47:25.953
+cmjh9si6d0004rvudxalztiik	cmj5gx04g001t35udknq3yqoe	TUGAS_BARU	Tugas Baru: Konsentrasi Keahlian AK	Ila Febti Sherly M., S.E memberi tugas baru dengan deadline 26/12/2025	/tugas	t	2025-12-22 14:49:15.585	{"tugasId": "cmjh9si5a0000rvud0p28ibep"}	2025-12-22 14:47:25.957
+\.
+
+
+--
 -- Data for Name: PaketSoal; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -633,6 +1063,14 @@ COPY public."PaketSoal" (id, kode, nama, deskripsi, "mataPelajaranId", "totalSoa
 --
 
 COPY public."PaketSoalItem" (id, "paketSoalId", "bankSoalId", urutan, "createdAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: ProgressSiswa; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ProgressSiswa" (id, "siswaId", "mataPelajaranId", "materiDibaca", "tugasSelesai", "forumPosts", "totalScore", "lastActivity", "createdAt", "updatedAt") FROM stdin;
 \.
 
 
@@ -681,7 +1119,6 @@ cmj5gwz58000j35ud2jgpgotd	86817502	AHMAD RIAN ZUHRI AFANDI	1970-01-01 00:00:38.4
 cmj5gwyyw000b35udpo5b2m4t	76544902	ADRIANO DWI PRADHITA	1970-01-01 00:00:38.431	Jl. Sudirman No. 49	81234567895	adrianodwipradhita@cbt.com	AKTIF	2025-12-14 08:33:37.543	2025-12-16 12:33:21.091	\N	cmj5eca170008jsudb4r1h58n	cmj5gwyyq000a35udwqnc8ohp	cmj5cxv7e00014iudyynxuvmc	\N
 cmj5gwzcy000t35ud1wibxk47	78367595	ALFA TRI EFENDI	1970-01-01 00:00:38.431	Jl. Sudirman No. 58	81234567904	alfatriefendi@cbt.com	AKTIF	2025-12-14 08:33:38.049	2025-12-16 12:33:11.1	\N	cmj5eca170008jsudb4r1h58n	cmj5gwzct000s35udllh69h8u	cmj5cxv7e00014iudyynxuvmc	\N
 cmj5gx02w001r35ud6qdfidog	86514583	DENDI BAYU PRATAMA	1970-01-01 00:00:38.431	Jl. Sudirman No. 75	81234567921	dendibayupratama@cbt.com	AKTIF	2025-12-14 08:33:38.983	2025-12-14 08:33:38.983	\N	cmj5eca130007jsudvzwt5rjx	cmj5gx02s001q35udsc32mvtz	cmj5cxv7e00014iudyynxuvmc	\N
-cmj5gx04g001t35udknq3yqoe	3093967437	DESY MUSTIKA MAYA SARI	1970-01-01 00:00:38.431	Jl. Sudirman No. 76	81234567922	example26@cbt.com	AKTIF	2025-12-14 08:33:39.039	2025-12-14 08:33:39.039	\N	cmj5ec9zf0000jsudgpxci2hf	cmj5gx04c001s35udal7y6kqp	cmj5cxv7e00014iudyynxuvmc	\N
 cmj5gx05x001v35udwd5nk8nj	71300771	DEWI WAHYUNI	1970-01-01 00:00:38.431	Jl. Sudirman No. 77	81234567923	dewiwahyuni@cbt.com	AKTIF	2025-12-14 08:33:39.093	2025-12-14 08:33:39.093	\N	cmj5eca0o0005jsud0ambwla7	cmj5gx05t001u35ud56w1gpg0	cmj5cxv7e00014iudyynxuvmc	\N
 cmj5gx07f001x35udj3ispkx8	74612857	DINA RIZA AYU MATUSSHOLEHA	1970-01-01 00:00:38.431	Jl. Sudirman No. 78	81234567924	dinarizaayumatussholeha@cbt.com	AKTIF	2025-12-14 08:33:39.147	2025-12-14 08:33:39.147	\N	cmj5eca050002jsudq5rc3oa3	cmj5gx07b001w35ud6uy774vt	cmj5cxv7e00014iudyynxuvmc	\N
 cmj5gx08y001z35udsqo698l8	88236354	DINO ABI PRATAMA	1970-01-01 00:00:38.431	Jl. Sudirman No. 79	81234567925	dinoabipratama@cbt.com	AKTIF	2025-12-14 08:33:39.201	2025-12-14 08:33:39.201	\N	cmj5eca0k0004jsuddjewnal1	cmj5gx08u001y35udh95b095v	cmj5cxv7e00014iudyynxuvmc	\N
@@ -753,6 +1190,7 @@ cmj5gx1al003d35udbg9vhv2a	72745125	KHAIRUL RIZAL FAUZI TUKIMIN	1970-01-01 00:00:
 cmj5gwzyc001l35udnzueuy9e	69853933	DANU BAGUS PRAYOGO	1970-01-01 00:00:38.431	Jl. Sudirman No. 72	81234567918	danubagusprayogo@cbt.com	AKTIF	2025-12-14 08:33:38.819	2025-12-16 12:33:07.513	\N	cmj5eca170008jsudb4r1h58n	cmj5gwzy7001k35udjqgqcye1	cmj5cxv7e00014iudyynxuvmc	\N
 cmj5gx31i005p35ud17ebh91g	71347347	YULI YATIMAH	1970-01-01 00:00:38.431	Jl. Sudirman No. 146	81234567992	yuliyatimah@cbt.com	AKTIF	2025-12-14 08:33:42.821	2025-12-16 12:33:27.522	\N	cmj5eca050002jsudq5rc3oa3	cmj5gx31d005o35udqv3tt8vd	cmj5cxv7e00014iudyynxuvmc	\N
 cmj5gx2wz005j35ud2ivwa2j0	88579651	YEHEZKIEL KEVIN RAHARJO	1970-01-01 00:00:38.431	Jl. Sudirman No. 143	81234567989	yehezkielkevinraharjo@cbt.com	AKTIF	2025-12-14 08:33:42.658	2025-12-16 12:33:30.953	\N	cmj5eca0o0005jsud0ambwla7	cmj5gx2ww005i35udmbp9bp8d	cmj5cxv7e00014iudyynxuvmc	\N
+cmj5gx04g001t35udknq3yqoe	3093967437	DESY MUSTIKA MAYA SARI	1970-01-01 00:00:38.431	Jl. Sudirman No. 76	81234567922	desimustika@esgriba.com	AKTIF	2025-12-14 08:33:39.039	2025-12-22 11:46:56.003	\N	cmj5ec9zf0000jsudgpxci2hf	cmj5gx04c001s35udal7y6kqp	cmj5cxv7e00014iudyynxuvmc	\N
 \.
 
 
@@ -770,7 +1208,66 @@ COPY public."SiswaKelasHistory" (id, "siswaId", "kelasId", "tahunAjaranId", "tan
 
 COPY public."TahunAjaran" (id, tahun, "tanggalMulai", "tanggalSelesai", status, "createdAt", "updatedAt", "deletedAt") FROM stdin;
 cmj5cxv7e00014iudyynxuvmc	2025/2026	2025-12-16 00:00:00	2026-02-19 00:00:00	AKTIF	2025-12-14 06:42:20.858	2025-12-17 07:23:20.52	\N
-cmj9op5l00000etudz0lci1fo	2026/2027	2026-03-31 00:00:00	2027-01-17 00:00:00	AKAN_DATANG	2025-12-17 07:22:34.5	2025-12-17 07:23:20.512	\N
+\.
+
+
+--
+-- Data for Name: Tugas; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Tugas" (id, judul, deskripsi, instruksi, "mataPelajaranId", "guruId", "kelasId", deadline, "maxScore", "tipePenilaian", "allowLateSubmit", "isPublished", "createdAt", "updatedAt", "deletedAt") FROM stdin;
+cmjh88n52000021udce7b91f8	asdasd	asdasd	asdasda	cmj9z7q8c001f5dudtoyt49tx	cmj9z8yly00345dudadjrqvfh	cmj5ec9zf0000jsudgpxci2hf	2025-12-25 14:03:00	100	MANUAL	f	t	2025-12-22 14:03:59.651	2025-12-22 14:04:48.566	2025-12-22 14:04:48.565
+cmjh8a6ns000621udz9fucu3a	sdfdf	sfsf	dfsdf	cmj9z7qae00205dudqey9zf1h	cmj9z8y2q002e5dud69l0gx00	cmj5ec9zf0000jsudgpxci2hf	2025-12-26 14:05:00	100	MANUAL	f	t	2025-12-22 14:05:11.607	2025-12-22 14:07:54.24	2025-12-22 14:07:54.239
+cmjh8nwy6000c21udaifw4sok	dasdasd	asdasd	asdasd	cmj9z7q8c001f5dudtoyt49tx	cmj9z8yly00345dudadjrqvfh	\N	2025-12-26 14:15:00	100	MANUAL	f	t	2025-12-22 14:15:52.205	2025-12-22 14:18:07.018	2025-12-22 14:18:07.014
+cmjh8r6kj0000ipudzukknbpt	asd	asdas	das	cmj9z7q9i001r5dudnscpl8q0	cmj9z8yox00385dudt5p2uvo1	cmj5ec9zf0000jsudgpxci2hf	2025-12-25 14:18:00	100	MANUAL	t	t	2025-12-22 14:18:24.642	2025-12-22 14:20:04.083	2025-12-22 14:20:04.077
+cmjh8totv000068udkizshhjp	asdasd	asd	asdasd	cmj9z7q9i001r5dudnscpl8q0	cmj9z8yox00385dudt5p2uvo1	cmj5ec9zf0000jsudgpxci2hf	2025-12-25 14:20:00	100	MANUAL	f	t	2025-12-22 14:20:21.617	2025-12-22 14:22:36.103	2025-12-22 14:22:36.099
+cmjh8wyqo0000kbudfa3co2b4	sadas	dasdas	dasdasdas	cmj9z7q9i001r5dudnscpl8q0	cmj9z8yox00385dudt5p2uvo1	cmj5ec9zf0000jsudgpxci2hf	2025-12-25 14:22:00	100	MANUAL	f	t	2025-12-22 14:22:54.431	2025-12-22 14:24:33.406	2025-12-22 14:24:33.401
+cmjh8zjp70000itudpps4ygdv	dasdas	dasd	asdasd	cmj9z7q8c001f5dudtoyt49tx	cmj9z8yly00345dudadjrqvfh	cmj5ec9zf0000jsudgpxci2hf	2025-12-25 14:24:00	100	MANUAL	f	t	2025-12-22 14:24:54.906	2025-12-22 14:27:21.184	2025-12-22 14:27:21.184
+cmjh95r3d00000oud9dflc4ek	asdas	dasdasd	asdasda	cmj9z7q9i001r5dudnscpl8q0	cmj9z8yox00385dudt5p2uvo1	cmj5ec9zf0000jsudgpxci2hf	2025-12-24 14:29:00	100	MANUAL	f	t	2025-12-22 14:29:44.423	2025-12-22 14:34:29.989	2025-12-22 14:34:29.985
+cmjh933f00006itudx55dsnz3	asdasd	asdasd	asdad	cmj9z7q9i001r5dudnscpl8q0	cmj9z8yox00385dudt5p2uvo1	cmj5ec9zf0000jsudgpxci2hf	2025-12-25 14:27:00	100	MANUAL	f	t	2025-12-22 14:27:40.428	2025-12-22 14:34:32.064	2025-12-22 14:34:32.063
+cmjh9cbiu000057udo994scza	asdasd	asdasd	dasdasd	cmj9z7q9i001r5dudnscpl8q0	cmj9z8yox00385dudt5p2uvo1	cmj5ec9zf0000jsudgpxci2hf	2025-12-25 14:34:00	100	MANUAL	f	t	2025-12-22 14:34:50.837	2025-12-22 14:37:22.443	2025-12-22 14:37:22.439
+cmjh9iltz0002djudlqkzkgom	asd	asdas	dasd	cmj9z7q8c001f5dudtoyt49tx	cmj9z8yly00345dudadjrqvfh	cmj5ec9zf0000jsudgpxci2hf	2025-12-25 14:39:00	100	MANUAL	f	t	2025-12-22 14:39:44.134	2025-12-22 14:41:58.482	2025-12-22 14:41:58.48
+cmjh9fxkd0000djudrab7yzlj	asdas	dasdasd	asdasda	cmj9z7q9i001r5dudnscpl8q0	cmj9z8yox00385dudt5p2uvo1	\N	2025-12-26 14:37:00	100	MANUAL	f	t	2025-12-22 14:37:39.372	2025-12-22 14:41:59.692	2025-12-22 14:41:59.691
+cmjh9mblt0008djudbkpmcsaa	asdasd	asdasd	asdasd	cmj9z7q9i001r5dudnscpl8q0	cmj9z8yox00385dudt5p2uvo1	cmj5ec9zf0000jsudgpxci2hf	2025-12-26 14:42:00	100	MANUAL	f	t	2025-12-22 14:42:37.504	2025-12-22 14:46:49.424	2025-12-22 14:46:49.419
+cmjh9si5a0000rvud0p28ibep	dasd	asdas	dasdasd	cmj9z7q9i001r5dudnscpl8q0	cmj9z8yox00385dudt5p2uvo1	cmj5ec9zf0000jsudgpxci2hf	2025-12-26 14:47:00	100	MANUAL	f	t	2025-12-22 14:47:25.916	2025-12-22 14:47:25.916	\N
+\.
+
+
+--
+-- Data for Name: TugasAttachment; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."TugasAttachment" (id, "tugasId", "namaFile", "ukuranFile", "tipeFile", "urlFile", "createdAt") FROM stdin;
+cmjh88n5x000521udmqcob9lw	cmjh88n52000021udce7b91f8	Soal BIN CBT Ganjil XI.docx	23626	application/wps-office.docx	tugas-1766412239637-770508782.docx	2025-12-22 14:03:59.685
+cmjh8a6ob000b21ud013oxiug	cmjh8a6ns000621udz9fucu3a	Soal BIN CBT Ganjil XI.docx	23626	application/wps-office.docx	tugas-1766412311604-567596361.docx	2025-12-22 14:05:11.627
+cmjh8nwz5003821udezy69556	cmjh8nwy6000c21udaifw4sok	Soal BIN CBT Ganjil XI.docx	23626	application/wps-office.docx	tugas-1766412952203-184294672.docx	2025-12-22 14:15:52.241
+cmjh8r6l20005ipudahab7lg6	cmjh8r6kj0000ipudzukknbpt	Soal BIN CBT Ganjil XI.docx	23626	application/wps-office.docx	tugas-1766413104631-809052411.docx	2025-12-22 14:18:24.662
+cmjh8toul000568ud7cq5g8hv	cmjh8totv000068udkizshhjp	Soal BIN CBT Ganjil XI.docx	23626	application/wps-office.docx	tugas-1766413221605-39198461.docx	2025-12-22 14:20:21.645
+cmjh8wyrb0005kbudwa3o9k4s	cmjh8wyqo0000kbudfa3co2b4	Soal BIN CBT Ganjil XI.docx	23626	application/wps-office.docx	tugas-1766413374422-255049911.docx	2025-12-22 14:22:54.455
+cmjh8zjso0005itud1ck15l7q	cmjh8zjp70000itudpps4ygdv	Soal BIN CBT Ganjil XI.docx	23626	application/wps-office.docx	tugas-1766413494897-94766682.docx	2025-12-22 14:24:55.032
+cmjh933fi000bitudlrw71ij7	cmjh933f00006itudx55dsnz3	Soal BIN CBT Ganjil XI.docx	23626	application/wps-office.docx	tugas-1766413660424-668538990.docx	2025-12-22 14:27:40.446
+cmjh95r4h00050oud9z00xbfo	cmjh95r3d00000oud9dflc4ek	Soal BIN CBT Ganjil XI.docx	23626	application/wps-office.docx	tugas-1766413784411-687031427.docx	2025-12-22 14:29:44.465
+cmjh9cbjy000557udcxizw7dg	cmjh9cbiu000057udo994scza	Soal BIN CBT Ganjil XI.docx	23626	application/wps-office.docx	tugas-1766414090827-351663904.docx	2025-12-22 14:34:50.878
+cmjh9fxkp0001djudb8e2z5dr	cmjh9fxkd0000djudrab7yzlj	SOAL SAS MTK GANJIL 2025 FIKS.docx	87002	application/wps-office.docx	tugas-1766414259361-950763850.docx	2025-12-22 14:37:39.385
+cmjh9ilvb0007djudinrj9non	cmjh9iltz0002djudlqkzkgom	Soal BIN CBT Ganjil XI.docx	23626	application/wps-office.docx	tugas-1766414384130-834631013.docx	2025-12-22 14:39:44.183
+cmjh9mbmu000ddjudw3hiqa04	cmjh9mblt0008djudbkpmcsaa	SOAL SAS MTK GANJIL 2025 FIKS.docx	87002	application/wps-office.docx	tugas-1766414557499-679778985.docx	2025-12-22 14:42:37.542
+cmjh9si6i0005rvudwsbnmn12	cmjh9si5a0000rvud0p28ibep	Soal BIN CBT Ganjil XI.docx	23626	application/wps-office.docx	tugas-1766414845906-17171548.docx	2025-12-22 14:47:25.962
+\.
+
+
+--
+-- Data for Name: TugasSiswa; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."TugasSiswa" (id, "tugasId", "siswaId", status, "submittedAt", "gradedAt", konten, score, feedback, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: TugasSiswaFile; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."TugasSiswaFile" (id, "tugasSiswaId", "namaFile", "ukuranFile", "tipeFile", "urlFile", "createdAt") FROM stdin;
 \.
 
 
@@ -844,7 +1341,6 @@ cmj5gwzy7001k35udjqgqcye1	danubagusprayogo@cbt.com	DANU BAGUS PRAYOGO	2025-12-14
 cmj5gwzzr001m35udpblpr5c0	davaputraprasetya@cbt.com	DAVA PUTRA PRASETYA	2025-12-14 08:33:38.871	2025-12-14 08:33:38.871	$2b$10$qh5M4U1WeNtmQ86yvJbk7eCOiMsrfcLduBCgyT7mpIT/vInmGUtU2	SISWA
 cmj5gx01a001o35udcz1uye9r	definingtyas@cbt.com	DEFI NINGTYAS	2025-12-14 08:33:38.926	2025-12-14 08:33:38.926	$2b$10$QvqW3hyijv6G4lX5Tko1a.RYB49oEyz2oUB.YA/TrYJe9xT.SkgQm	SISWA
 cmj5gx02s001q35udsc32mvtz	dendibayupratama@cbt.com	DENDI BAYU PRATAMA	2025-12-14 08:33:38.98	2025-12-14 08:33:38.98	$2b$10$2dqNuMhEz8Db286yFTgC5.4YFTEBXQNxeZKKfTzdB3hWZTZSGBuN.	SISWA
-cmj5gx04c001s35udal7y6kqp	example26@cbt.com	DESY MUSTIKA MAYA SARI	2025-12-14 08:33:39.036	2025-12-14 08:33:39.036	$2b$10$3jQRaSnP98o8PW5gvylwS.jWEtKhUduhoi.mhyGyHB85ps8f.SKYm	SISWA
 cmj5gx05t001u35ud56w1gpg0	dewiwahyuni@cbt.com	DEWI WAHYUNI	2025-12-14 08:33:39.089	2025-12-14 08:33:39.089	$2b$10$TmPC2a4wfh18AxF58kqaAe/XJHtTO4oq9AEM9gvo8dcblKKMOcbiG	SISWA
 cmj5gx07b001w35ud6uy774vt	dinarizaayumatussholeha@cbt.com	DINA RIZA AYU MATUSSHOLEHA	2025-12-14 08:33:39.143	2025-12-14 08:33:39.143	$2b$10$N9CmxnGuK.o.mrQI64mixuWu7ICbZaMv4YK8I7ExYgrQGHnWruzJu	SISWA
 cmj5gx08u001y35udh95b095v	dinoabipratama@cbt.com	DINO ABI PRATAMA	2025-12-14 08:33:39.198	2025-12-14 08:33:39.198	$2b$10$h5YihryfOT0xv40z4Ti27eQRdk04gfJ3qm78v7tjWQUC52ud4z9Y.	SISWA
@@ -938,6 +1434,7 @@ cmj9z8ykf00315duda3u6niqb	wahyumirnawati30@gmail.com	Wahyu Mirnawati, S.Ak.	2025
 cmj9z8ylv00335dudr8tet2na	zulfiamaliyah1306@gmail.com	Zulfi Amaliyah, S.Kom	2025-12-17 12:17:54.739	2025-12-17 12:17:54.739	$2b$10$omDJgN/uuRUALC8q7tkF3u2wsOfixVBy2EL4lORTiM7GO3yLU6Kci	GURU
 cmj9z8ynd00355dudycn1e6hi	pa717885@gmail.com	Maulida Putri Lesmana	2025-12-17 12:17:54.793	2025-12-17 12:17:54.793	$2b$10$tYhChWCpdqZ/5A1bzHFtcu9LZpKS2bIDhETwVIwgDSN0yRbWdggTG	GURU
 cmj9z8you00375dudrf1e71qe	ilafebtisherly@gmail.com	Ila Febti Sherly M., S.E	2025-12-17 12:17:54.846	2025-12-17 12:17:54.846	$2b$10$UB2xcYNx90qbDQQ3LlMkHOCSfQj.XWLldNJ9bmn4LW59GLZvbrYkm	GURU
+cmj5gx04c001s35udal7y6kqp	desimustika@esgriba.com	DESY MUSTIKA MAYA SARI	2025-12-14 08:33:39.036	2025-12-22 11:46:55.996	$2b$10$nOCUVw8yH97gwAqDSQhuV.EQOBRd45gtsB79vTyNrDe3dOTi3IP/y	SISWA
 \.
 
 
@@ -1000,11 +1497,51 @@ ALTER TABLE ONLY public."BankSoal"
 
 
 --
+-- Name: ForumKategori ForumKategori_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ForumKategori"
+    ADD CONSTRAINT "ForumKategori_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: ForumPost ForumPost_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ForumPost"
+    ADD CONSTRAINT "ForumPost_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: ForumReaction ForumReaction_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ForumReaction"
+    ADD CONSTRAINT "ForumReaction_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: ForumThread ForumThread_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ForumThread"
+    ADD CONSTRAINT "ForumThread_pkey" PRIMARY KEY (id);
+
+
+--
 -- Name: Guru Guru_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public."Guru"
     ADD CONSTRAINT "Guru_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: JadwalPelajaran JadwalPelajaran_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."JadwalPelajaran"
+    ADD CONSTRAINT "JadwalPelajaran_pkey" PRIMARY KEY (id);
 
 
 --
@@ -1032,6 +1569,38 @@ ALTER TABLE ONLY public."MataPelajaran"
 
 
 --
+-- Name: MateriAttachment MateriAttachment_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."MateriAttachment"
+    ADD CONSTRAINT "MateriAttachment_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: MateriBookmark MateriBookmark_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."MateriBookmark"
+    ADD CONSTRAINT "MateriBookmark_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: Materi Materi_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Materi"
+    ADD CONSTRAINT "Materi_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: Notifikasi Notifikasi_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Notifikasi"
+    ADD CONSTRAINT "Notifikasi_pkey" PRIMARY KEY (id);
+
+
+--
 -- Name: PaketSoalItem PaketSoalItem_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1045,6 +1614,14 @@ ALTER TABLE ONLY public."PaketSoalItem"
 
 ALTER TABLE ONLY public."PaketSoal"
     ADD CONSTRAINT "PaketSoal_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: ProgressSiswa ProgressSiswa_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ProgressSiswa"
+    ADD CONSTRAINT "ProgressSiswa_pkey" PRIMARY KEY (id);
 
 
 --
@@ -1077,6 +1654,38 @@ ALTER TABLE ONLY public."Siswa"
 
 ALTER TABLE ONLY public."TahunAjaran"
     ADD CONSTRAINT "TahunAjaran_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: TugasAttachment TugasAttachment_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."TugasAttachment"
+    ADD CONSTRAINT "TugasAttachment_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: TugasSiswaFile TugasSiswaFile_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."TugasSiswaFile"
+    ADD CONSTRAINT "TugasSiswaFile_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: TugasSiswa TugasSiswa_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."TugasSiswa"
+    ADD CONSTRAINT "TugasSiswa_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: Tugas Tugas_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Tugas"
+    ADD CONSTRAINT "Tugas_pkey" PRIMARY KEY (id);
 
 
 --
@@ -1171,6 +1780,83 @@ CREATE INDEX "BankSoal_mataPelajaranId_idx" ON public."BankSoal" USING btree ("m
 
 
 --
+-- Name: ForumKategori_kelasId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ForumKategori_kelasId_idx" ON public."ForumKategori" USING btree ("kelasId");
+
+
+--
+-- Name: ForumKategori_mataPelajaranId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ForumKategori_mataPelajaranId_idx" ON public."ForumKategori" USING btree ("mataPelajaranId");
+
+
+--
+-- Name: ForumPost_authorId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ForumPost_authorId_idx" ON public."ForumPost" USING btree ("authorId");
+
+
+--
+-- Name: ForumPost_parentId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ForumPost_parentId_idx" ON public."ForumPost" USING btree ("parentId");
+
+
+--
+-- Name: ForumPost_threadId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ForumPost_threadId_idx" ON public."ForumPost" USING btree ("threadId");
+
+
+--
+-- Name: ForumReaction_postId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ForumReaction_postId_idx" ON public."ForumReaction" USING btree ("postId");
+
+
+--
+-- Name: ForumReaction_postId_userId_tipe_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "ForumReaction_postId_userId_tipe_key" ON public."ForumReaction" USING btree ("postId", "userId", tipe);
+
+
+--
+-- Name: ForumReaction_userId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ForumReaction_userId_idx" ON public."ForumReaction" USING btree ("userId");
+
+
+--
+-- Name: ForumThread_authorId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ForumThread_authorId_idx" ON public."ForumThread" USING btree ("authorId");
+
+
+--
+-- Name: ForumThread_createdAt_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ForumThread_createdAt_idx" ON public."ForumThread" USING btree ("createdAt");
+
+
+--
+-- Name: ForumThread_kategoriId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ForumThread_kategoriId_idx" ON public."ForumThread" USING btree ("kategoriId");
+
+
+--
 -- Name: Guru_email_key; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1192,6 +1878,20 @@ CREATE UNIQUE INDEX "Guru_userId_key" ON public."Guru" USING btree ("userId");
 
 
 --
+-- Name: JadwalPelajaran_hari_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "JadwalPelajaran_hari_idx" ON public."JadwalPelajaran" USING btree (hari);
+
+
+--
+-- Name: JadwalPelajaran_kelasId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "JadwalPelajaran_kelasId_idx" ON public."JadwalPelajaran" USING btree ("kelasId");
+
+
+--
 -- Name: Jurusan_kode_key; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1203,6 +1903,76 @@ CREATE UNIQUE INDEX "Jurusan_kode_key" ON public."Jurusan" USING btree (kode);
 --
 
 CREATE UNIQUE INDEX "MataPelajaran_kode_key" ON public."MataPelajaran" USING btree (kode);
+
+
+--
+-- Name: MateriAttachment_materiId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "MateriAttachment_materiId_idx" ON public."MateriAttachment" USING btree ("materiId");
+
+
+--
+-- Name: MateriBookmark_materiId_siswaId_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "MateriBookmark_materiId_siswaId_key" ON public."MateriBookmark" USING btree ("materiId", "siswaId");
+
+
+--
+-- Name: MateriBookmark_siswaId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "MateriBookmark_siswaId_idx" ON public."MateriBookmark" USING btree ("siswaId");
+
+
+--
+-- Name: Materi_guruId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Materi_guruId_idx" ON public."Materi" USING btree ("guruId");
+
+
+--
+-- Name: Materi_isPublished_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Materi_isPublished_idx" ON public."Materi" USING btree ("isPublished");
+
+
+--
+-- Name: Materi_kelasId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Materi_kelasId_idx" ON public."Materi" USING btree ("kelasId");
+
+
+--
+-- Name: Materi_mataPelajaranId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Materi_mataPelajaranId_idx" ON public."Materi" USING btree ("mataPelajaranId");
+
+
+--
+-- Name: Notifikasi_createdAt_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Notifikasi_createdAt_idx" ON public."Notifikasi" USING btree ("createdAt");
+
+
+--
+-- Name: Notifikasi_isRead_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Notifikasi_isRead_idx" ON public."Notifikasi" USING btree ("isRead");
+
+
+--
+-- Name: Notifikasi_userId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Notifikasi_userId_idx" ON public."Notifikasi" USING btree ("userId");
 
 
 --
@@ -1238,6 +2008,27 @@ CREATE UNIQUE INDEX "PaketSoal_kode_key" ON public."PaketSoal" USING btree (kode
 --
 
 CREATE INDEX "PaketSoal_mataPelajaranId_idx" ON public."PaketSoal" USING btree ("mataPelajaranId");
+
+
+--
+-- Name: ProgressSiswa_mataPelajaranId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ProgressSiswa_mataPelajaranId_idx" ON public."ProgressSiswa" USING btree ("mataPelajaranId");
+
+
+--
+-- Name: ProgressSiswa_siswaId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "ProgressSiswa_siswaId_idx" ON public."ProgressSiswa" USING btree ("siswaId");
+
+
+--
+-- Name: ProgressSiswa_siswaId_mataPelajaranId_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "ProgressSiswa_siswaId_mataPelajaranId_key" ON public."ProgressSiswa" USING btree ("siswaId", "mataPelajaranId");
 
 
 --
@@ -1280,6 +2071,76 @@ CREATE UNIQUE INDEX "Siswa_userId_key" ON public."Siswa" USING btree ("userId");
 --
 
 CREATE UNIQUE INDEX "TahunAjaran_tahun_key" ON public."TahunAjaran" USING btree (tahun);
+
+
+--
+-- Name: TugasAttachment_tugasId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "TugasAttachment_tugasId_idx" ON public."TugasAttachment" USING btree ("tugasId");
+
+
+--
+-- Name: TugasSiswaFile_tugasSiswaId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "TugasSiswaFile_tugasSiswaId_idx" ON public."TugasSiswaFile" USING btree ("tugasSiswaId");
+
+
+--
+-- Name: TugasSiswa_siswaId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "TugasSiswa_siswaId_idx" ON public."TugasSiswa" USING btree ("siswaId");
+
+
+--
+-- Name: TugasSiswa_status_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "TugasSiswa_status_idx" ON public."TugasSiswa" USING btree (status);
+
+
+--
+-- Name: TugasSiswa_tugasId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "TugasSiswa_tugasId_idx" ON public."TugasSiswa" USING btree ("tugasId");
+
+
+--
+-- Name: TugasSiswa_tugasId_siswaId_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "TugasSiswa_tugasId_siswaId_key" ON public."TugasSiswa" USING btree ("tugasId", "siswaId");
+
+
+--
+-- Name: Tugas_deadline_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Tugas_deadline_idx" ON public."Tugas" USING btree (deadline);
+
+
+--
+-- Name: Tugas_guruId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Tugas_guruId_idx" ON public."Tugas" USING btree ("guruId");
+
+
+--
+-- Name: Tugas_kelasId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Tugas_kelasId_idx" ON public."Tugas" USING btree ("kelasId");
+
+
+--
+-- Name: Tugas_mataPelajaranId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "Tugas_mataPelajaranId_idx" ON public."Tugas" USING btree ("mataPelajaranId");
 
 
 --
@@ -1411,11 +2272,83 @@ ALTER TABLE ONLY public."BankSoal"
 
 
 --
+-- Name: ForumKategori ForumKategori_kelasId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ForumKategori"
+    ADD CONSTRAINT "ForumKategori_kelasId_fkey" FOREIGN KEY ("kelasId") REFERENCES public."Kelas"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: ForumKategori ForumKategori_mataPelajaranId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ForumKategori"
+    ADD CONSTRAINT "ForumKategori_mataPelajaranId_fkey" FOREIGN KEY ("mataPelajaranId") REFERENCES public."MataPelajaran"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: ForumPost ForumPost_parentId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ForumPost"
+    ADD CONSTRAINT "ForumPost_parentId_fkey" FOREIGN KEY ("parentId") REFERENCES public."ForumPost"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: ForumPost ForumPost_threadId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ForumPost"
+    ADD CONSTRAINT "ForumPost_threadId_fkey" FOREIGN KEY ("threadId") REFERENCES public."ForumThread"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: ForumReaction ForumReaction_postId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ForumReaction"
+    ADD CONSTRAINT "ForumReaction_postId_fkey" FOREIGN KEY ("postId") REFERENCES public."ForumPost"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: ForumThread ForumThread_kategoriId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ForumThread"
+    ADD CONSTRAINT "ForumThread_kategoriId_fkey" FOREIGN KEY ("kategoriId") REFERENCES public."ForumKategori"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
 -- Name: Guru Guru_userId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public."Guru"
     ADD CONSTRAINT "Guru_userId_fkey" FOREIGN KEY ("userId") REFERENCES public."User"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: JadwalPelajaran JadwalPelajaran_guruId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."JadwalPelajaran"
+    ADD CONSTRAINT "JadwalPelajaran_guruId_fkey" FOREIGN KEY ("guruId") REFERENCES public."Guru"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: JadwalPelajaran JadwalPelajaran_kelasId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."JadwalPelajaran"
+    ADD CONSTRAINT "JadwalPelajaran_kelasId_fkey" FOREIGN KEY ("kelasId") REFERENCES public."Kelas"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: JadwalPelajaran JadwalPelajaran_mataPelajaranId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."JadwalPelajaran"
+    ADD CONSTRAINT "JadwalPelajaran_mataPelajaranId_fkey" FOREIGN KEY ("mataPelajaranId") REFERENCES public."MataPelajaran"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
 --
@@ -1432,6 +2365,54 @@ ALTER TABLE ONLY public."Kelas"
 
 ALTER TABLE ONLY public."Kelas"
     ADD CONSTRAINT "Kelas_waliKelasId_fkey" FOREIGN KEY ("waliKelasId") REFERENCES public."Guru"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: MateriAttachment MateriAttachment_materiId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."MateriAttachment"
+    ADD CONSTRAINT "MateriAttachment_materiId_fkey" FOREIGN KEY ("materiId") REFERENCES public."Materi"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: MateriBookmark MateriBookmark_materiId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."MateriBookmark"
+    ADD CONSTRAINT "MateriBookmark_materiId_fkey" FOREIGN KEY ("materiId") REFERENCES public."Materi"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: MateriBookmark MateriBookmark_siswaId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."MateriBookmark"
+    ADD CONSTRAINT "MateriBookmark_siswaId_fkey" FOREIGN KEY ("siswaId") REFERENCES public."Siswa"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: Materi Materi_guruId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Materi"
+    ADD CONSTRAINT "Materi_guruId_fkey" FOREIGN KEY ("guruId") REFERENCES public."Guru"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: Materi Materi_kelasId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Materi"
+    ADD CONSTRAINT "Materi_kelasId_fkey" FOREIGN KEY ("kelasId") REFERENCES public."Kelas"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: Materi Materi_mataPelajaranId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Materi"
+    ADD CONSTRAINT "Materi_mataPelajaranId_fkey" FOREIGN KEY ("mataPelajaranId") REFERENCES public."MataPelajaran"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
 --
@@ -1464,6 +2445,22 @@ ALTER TABLE ONLY public."PaketSoal"
 
 ALTER TABLE ONLY public."PaketSoal"
     ADD CONSTRAINT "PaketSoal_mataPelajaranId_fkey" FOREIGN KEY ("mataPelajaranId") REFERENCES public."MataPelajaran"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: ProgressSiswa ProgressSiswa_mataPelajaranId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ProgressSiswa"
+    ADD CONSTRAINT "ProgressSiswa_mataPelajaranId_fkey" FOREIGN KEY ("mataPelajaranId") REFERENCES public."MataPelajaran"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: ProgressSiswa ProgressSiswa_siswaId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ProgressSiswa"
+    ADD CONSTRAINT "ProgressSiswa_siswaId_fkey" FOREIGN KEY ("siswaId") REFERENCES public."Siswa"(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -1512,6 +2509,62 @@ ALTER TABLE ONLY public."Siswa"
 
 ALTER TABLE ONLY public."Siswa"
     ADD CONSTRAINT "Siswa_userId_fkey" FOREIGN KEY ("userId") REFERENCES public."User"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: TugasAttachment TugasAttachment_tugasId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."TugasAttachment"
+    ADD CONSTRAINT "TugasAttachment_tugasId_fkey" FOREIGN KEY ("tugasId") REFERENCES public."Tugas"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: TugasSiswaFile TugasSiswaFile_tugasSiswaId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."TugasSiswaFile"
+    ADD CONSTRAINT "TugasSiswaFile_tugasSiswaId_fkey" FOREIGN KEY ("tugasSiswaId") REFERENCES public."TugasSiswa"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: TugasSiswa TugasSiswa_siswaId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."TugasSiswa"
+    ADD CONSTRAINT "TugasSiswa_siswaId_fkey" FOREIGN KEY ("siswaId") REFERENCES public."Siswa"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: TugasSiswa TugasSiswa_tugasId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."TugasSiswa"
+    ADD CONSTRAINT "TugasSiswa_tugasId_fkey" FOREIGN KEY ("tugasId") REFERENCES public."Tugas"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: Tugas Tugas_guruId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Tugas"
+    ADD CONSTRAINT "Tugas_guruId_fkey" FOREIGN KEY ("guruId") REFERENCES public."Guru"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: Tugas Tugas_kelasId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Tugas"
+    ADD CONSTRAINT "Tugas_kelasId_fkey" FOREIGN KEY ("kelasId") REFERENCES public."Kelas"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: Tugas Tugas_mataPelajaranId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Tugas"
+    ADD CONSTRAINT "Tugas_mataPelajaranId_fkey" FOREIGN KEY ("mataPelajaranId") REFERENCES public."MataPelajaran"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
 --
@@ -1622,5 +2675,5 @@ GRANT CREATE ON SCHEMA public TO PUBLIC;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict O3XJja99m3iMRLiH6iylEBKybqPP6sF2kytj3qjAbkxgCA4j6vXqciB2Y8bnwSn
+\unrestrict bWLi8gqEtabbUmkGgZ2KEBsHps6y9NxGq0Kyxo7HGq0EiwvJ29gvUnTE83YZkYH
 
