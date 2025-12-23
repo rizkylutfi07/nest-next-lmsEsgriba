@@ -32,188 +32,45 @@ import {
 import { cn } from "@/lib/utils";
 import { useRole } from "./role-context";
 import StudentDashboard from "@/components/student-dashboard";
+import { useEffect, useState } from "react";
+import { analyticsApi } from "@/lib/api";
 
-const highlights = [
-  {
-    title: "Aktif hari ini",
-    value: "1.284 siswa",
-    trend: "+12% vs kemarin",
-    accent: "from-cyan-400/30 to-sky-500/20",
-  },
-  {
-    title: "Guru siap mengajar",
-    value: "68/74",
-    trend: "91% kehadiran",
-    accent: "from-emerald-400/25 to-teal-500/15",
-  },
-  {
-    title: "Kepuasan belajar",
-    value: "4.82/5",
-    trend: "268 feedback minggu ini",
-    accent: "from-purple-400/30 to-indigo-500/10",
-  },
-];
 
-const schedule = [
-  {
-    time: "08:00",
-    title: "Aljabar Lanjut",
-    mentor: "Bu Diah",
-    room: "Lab Matematika 02",
-    mode: "Hybrid",
-  },
-  {
-    time: "10:15",
-    title: "UI/UX Creative Sprint",
-    mentor: "Pak Bram",
-    room: "Studio Desain",
-    mode: "On-site",
-  },
-  {
-    time: "13:30",
-    title: "Bahasa Inggris Academic",
-    mentor: "Ms. Evelyn",
-    room: "Zoom - 482 221",
-    mode: "Online",
-  },
-];
 
-const courses = [
-  {
-    title: "Data Science for School",
-    progress: 76,
-    badge: "STEM",
-    mentor: "Mentor Rania",
-    tone: "info" as const,
-  },
-  {
-    title: "Creative Writing Lab",
-    progress: 52,
-    badge: "Literasi",
-    mentor: "Mentor Iman",
-    tone: "success" as const,
-  },
-  {
-    title: "Leadership & Softskill",
-    progress: 34,
-    badge: "Karakter",
-    mentor: "Mentor Sari",
-    tone: "warning" as const,
-  },
-];
 
-const announcements = [
-  {
-    title: "Rapat kurikulum lintas jurusan",
-    detail: "Kolaborasi guru IPA, IPS, Bahasa untuk semester baru.",
-    time: "Hari ini - 16.00",
-  },
-  {
-    title: "Pembukaan program microlearning",
-    detail: "Modul 15 menit untuk skill digital siswa.",
-    time: "Besok - 09.30",
-  },
-  {
-    title: "Upgrade infrastruktur jaringan",
-    detail: "Downtime server perpustakaan pukul 21.00-22.00.",
-    time: "Jumat - 21.00",
-  },
-];
-
-const tasks = [
-  { title: "Approve pengajuan kelas baru", owner: "Koordinator Akademik", status: "Segera" },
-  { title: "Review laporan kehadiran guru", owner: "HR School", status: "Progres" },
-  { title: "Kirim pengumuman ujian tengah", owner: "Admin", status: "Dijadwalkan" },
-];
-
-const cbtItems = [
-  {
-    title: "Data Soal",
-    detail: "Bank soal adaptif dengan tagging kompetensi dan tingkat kesulitan.",
-    stat: "1.240 soal aktif",
-    icon: Layers,
-    badge: "Bank Soal",
-  },
-  {
-    title: "Data Ujian",
-    detail: "Template ujian, mata pelajaran, dan aturan kelulusan.",
-    stat: "32 jadwal minggu ini",
-    icon: FileCheck,
-    badge: "Ujian",
-  },
-  {
-    title: "Data Sesi",
-    detail: "Kelola slot, durasi, token akses, dan perangkat yang diizinkan.",
-    stat: "14 sesi berjalan",
-    icon: Timer,
-    badge: "Sesi",
-  },
-  {
-    title: "Data Monitoring Ujian",
-    detail: "Pantau live, perangkat ganda, dan status submit siswa.",
-    stat: "Stabil - 0 insiden",
-    icon: Activity,
-    badge: "Monitoring",
-  },
-  {
-    title: "Penilaian",
-    detail: "Auto-scoring, essay rubric, dan publish nilai ke portal.",
-    stat: "78% sudah dinilai",
-    icon: Star,
-    badge: "Nilai",
-  },
-];
-
-const essentialData = [
-  {
-    title: "Data Siswa",
-    detail: "Profil, kehadiran, dan histori kelas.",
-    stat: "8.420 siswa aktif",
-    action: "Kelola siswa",
-    href: "/siswa",
-    icon: Users2,
-  },
-  {
-    title: "Data Guru",
-    detail: "Penugasan, beban mengajar, dan sertifikasi.",
-    stat: "312 guru",
-    action: "Kelola guru",
-    href: "/guru",
-    icon: Users2,
-  },
-  {
-    title: "Data Kelas",
-    detail: "Struktur kelas, wali, dan kapasitas.",
-    stat: "246 kelas",
-    action: "Kelola kelas",
-    href: "/kelas",
-    icon: Layers,
-  },
-  {
-    title: "Tahun Ajaran Aktif",
-    detail: "Periode berjalan, kalender akademik, dan status aktif.",
-    stat: "2025 / 2026",
-    action: "Setel tahun ajaran",
-    href: "/tahun-ajaran",
-    icon: CalendarRange,
-  },
-  {
-    title: "Mata Pelajaran",
-    detail: "Silabus, pemetaan kompetensi, dan penanggung jawab.",
-    stat: "58 mapel",
-    action: "Kelola mapel",
-    href: "/mata-pelajaran",
-    icon: BookOpen,
-  },
-];
 
 export default function HomePage() {
   const { role } = useRole();
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   // Show student dashboard for SISWA role
   if (role === "SISWA") {
     return <StudentDashboard />;
   }
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        setLoading(true);
+        if (role === "ADMIN") {
+          const data = await analyticsApi.getAdminDashboard();
+          setDashboardData(data);
+        } else if (role === "GURU") {
+          const data = await analyticsApi.getGuruDashboard();
+          setDashboardData(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    if (role) {
+      fetchData();
+    }
+  }, [role]);
 
   const roleHeadline =
     role === "ADMIN"
@@ -230,7 +87,145 @@ export default function HomePage() {
         : "Lihat jadwal, materi, CBT, dan pengumuman terbaru.";
 
   const showManagement = role === "ADMIN";
-  const showGuruTasks = role !== "SISWA";
+  const showGuruTasks = true; // Since SISWA returns early, this is always true for remaining roles (ADMIN, GURU, etc) unless intended otherwise.
+
+  // ADMIN HIGHLIGHTS
+  const adminHighlights = [
+    {
+      title: "Total Siswa",
+      value: loading ? "..." : `${dashboardData?.siswaCount || 0} siswa`,
+      trend: "Data aktif",
+      accent: "from-cyan-400/30 to-sky-500/20",
+    },
+    {
+      title: "Total Guru",
+      value: loading ? "..." : `${dashboardData?.guruCount || 0} guru`,
+      trend: "Data aktif",
+      accent: "from-emerald-400/25 to-teal-500/15",
+    },
+    {
+      title: "Ujian Berjalan",
+      value: loading ? "..." : `${dashboardData?.activeExams || 0} sesi`,
+      trend: "Realtime monitoring",
+      accent: "from-purple-400/30 to-indigo-500/10",
+    },
+  ];
+
+  // GURU HIGHLIGHTS
+  const guruHighlights = [
+    {
+      title: "Kelas Saya",
+      value: loading ? "..." : `${dashboardData?.stats?.totalClasses || 0} kelas`,
+      trend: "Diampu saat ini",
+      accent: "from-cyan-400/30 to-sky-500/20",
+    },
+    {
+      title: "Total Siswa",
+      value: loading ? "..." : `${dashboardData?.stats?.totalStudents || 0} siswa`,
+      trend: "Dalam jangkauan",
+      accent: "from-emerald-400/25 to-teal-500/15",
+    },
+    {
+      title: "Perlu Dinilai",
+      value: loading ? "..." : `${dashboardData?.stats?.tasksToGrade || 0} tugas`,
+      trend: "Menunggu review",
+      accent: "from-purple-400/30 to-indigo-500/10",
+    },
+  ];
+
+  const highlights = role === "ADMIN" ? adminHighlights : guruHighlights;
+
+  // GURU SCHEDULE
+  const schedule = role === "GURU" && dashboardData?.todaySchedule ? dashboardData.todaySchedule.map((s: any) => ({
+    time: s.time,
+    title: s.className, // Fallback reuse UI field
+    mentor: s.subject,
+    room: s.room,
+    mode: "On-site"
+  })) : [];
+
+  // CBT ITEMS - Dynamic based on real data
+  const cbtItems = [
+    {
+      title: "Data Soal",
+      detail: "Bank soal adaptif dengan tagging kompetensi dan tingkat kesulitan.",
+      stat: loading ? "..." : `${dashboardData?.totalSoal || 0} soal aktif`,
+      icon: Layers,
+      badge: "Bank Soal",
+    },
+    {
+      title: "Data Ujian",
+      detail: "Template ujian, mata pelajaran, dan aturan kelulusan.",
+      stat: loading ? "..." : `${dashboardData?.totalUjian || 0} ujian terdaftar`,
+      icon: FileCheck,
+      badge: "Ujian",
+    },
+    {
+      title: "Data Paket Soal",
+      detail: "Kelola paket soal yang siap untuk ujian.",
+      stat: loading ? "..." : `${dashboardData?.totalPaketSoal || 0} paket`,
+      icon: Timer,
+      badge: "Paket",
+    },
+    {
+      title: "Tugas Dikumpulkan",
+      detail: "Tugas siswa yang menunggu penilaian.",
+      stat: loading ? "..." : `${dashboardData?.tugasDikumpulkan || 0} tugas`,
+      icon: Activity,
+      badge: "Menunggu",
+    },
+    {
+      title: "Penilaian",
+      detail: "Tugas yang telah dinilai.",
+      stat: loading ? "..." : `${dashboardData?.tugasDinilai || 0} sudah dinilai`,
+      icon: Star,
+      badge: "Nilai",
+    },
+  ];
+
+  // ESSENTIAL DATA - Dynamic based on real data
+  const essentialData = [
+    {
+      title: "Data Siswa",
+      detail: "Profil, kehadiran, dan histori kelas.",
+      stat: loading ? "..." : `${dashboardData?.siswaCount || 0} siswa aktif`,
+      action: "Kelola siswa",
+      href: "/siswa",
+      icon: Users2,
+    },
+    {
+      title: "Data Guru",
+      detail: "Penugasan, beban mengajar, dan sertifikasi.",
+      stat: loading ? "..." : `${dashboardData?.guruCount || 0} guru`,
+      action: "Kelola guru",
+      href: "/guru",
+      icon: Users2,
+    },
+    {
+      title: "Data Kelas",
+      detail: "Struktur kelas, wali, dan kapasitas.",
+      stat: loading ? "..." : `${dashboardData?.kelasCount || 0} kelas`,
+      action: "Kelola kelas",
+      href: "/kelas",
+      icon: Layers,
+    },
+    {
+      title: "Tahun Ajaran Aktif",
+      detail: "Periode berjalan, kalender akademik, dan status aktif.",
+      stat: loading ? "..." : dashboardData?.tahunAjaranAktif || "N/A",
+      action: "Setel tahun ajaran",
+      href: "/tahun-ajaran",
+      icon: CalendarRange,
+    },
+    {
+      title: "Mata Pelajaran",
+      detail: "Silabus, pemetaan kompetensi, dan penanggung jawab.",
+      stat: loading ? "..." : `${dashboardData?.mapelCount || 0} mapel`,
+      action: "Kelola mapel",
+      href: "/mata-pelajaran",
+      icon: BookOpen,
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -273,6 +268,7 @@ export default function HomePage() {
               ))}
             </div>
             <div className="flex flex-wrap items-center gap-2">
+              {/* Quick Actions based on Role */}
               {role === "ADMIN" && (
                 <>
                   <Button size="sm" variant="secondary" className="gap-2">
@@ -297,18 +293,6 @@ export default function HomePage() {
                   </Button>
                 </>
               )}
-              {role === "SISWA" && (
-                <>
-                  <Button size="sm" variant="secondary" className="gap-2">
-                    <ClipboardCheck size={16} />
-                    Lanjutkan belajar
-                  </Button>
-                  <Button size="sm" variant="outline" className="gap-2">
-                    <MessageSquare size={16} />
-                    Hubungi wali kelas
-                  </Button>
-                </>
-              )}
               <Button size="sm" variant="ghost" className="gap-2 text-muted-foreground">
                 <Globe2 size={16} />
                 Lihat portal siswa
@@ -317,39 +301,46 @@ export default function HomePage() {
           </CardContent>
         </Card>
 
-        <Card className="border-border bg-card/70 backdrop-blur">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2">
-              <CalendarRange size={18} />
-              Jadwal live hari ini
-            </CardTitle>
-            <CardDescription>Responsif untuk kelas online maupun on-site.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {schedule.map((item) => (
-              <div
-                key={item.title}
-                className="flex flex-col gap-2 rounded-lg border border-white/5 bg-muted/40 p-3 md:flex-row md:items-center md:justify-between"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/15 text-primary">
-                    <Clock size={16} />
+        {/* Schedule Card - Only for GURU */}
+        {role === "GURU" && (
+          <Card className="border-border bg-card/70 backdrop-blur">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2">
+                <CalendarRange size={18} />
+                Jadwal Mengajar Hari Ini
+              </CardTitle>
+              <CardDescription>
+                Agenda kelas anda hari ini.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {loading ? <p className="text-sm text-muted-foreground">Memuat jadwal...</p> :
+                schedule.length > 0 ? schedule.map((item: any, idx: number) => (
+                  <div
+                    key={idx}
+                    className="flex flex-col gap-2 rounded-lg border border-white/5 bg-muted/40 p-3 md:flex-row md:items-center md:justify-between"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                        <Clock size={16} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold">{item.title}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {item.mentor} - {item.room}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                      <Badge tone="info">{item.mode}</Badge>
+                      <span className="text-muted-foreground">{item.time} WIB</span>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold">{item.title}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {item.mentor} - {item.room}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex flex-wrap items-center gap-2 text-sm">
-                  <Badge tone="info">{item.mode}</Badge>
-                  <span className="text-muted-foreground">{item.time} WIB</span>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+                )) : <p className="text-sm text-muted-foreground">Tidak ada jadwal mengajar hari ini.</p>
+              }
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       <Card className="border-primary/30 bg-card/70">
@@ -397,17 +388,15 @@ export default function HomePage() {
           <div className="flex flex-wrap items-center gap-2">
             <Button size="sm" className="gap-2">
               <ClipboardCheck size={16} />
-              {role === "SISWA" ? "Lihat jadwal ujian" : "Masuk ke menu CBT"}
+              Masuk ke menu CBT
             </Button>
-            {role !== "SISWA" && (
-              <Button size="sm" variant="outline" className="gap-2">
-                <Activity size={16} />
-                Pantau ujian live
-              </Button>
-            )}
+            <Button size="sm" variant="outline" className="gap-2">
+              <Activity size={16} />
+              Pantau ujian live
+            </Button>
             <Button size="sm" variant="ghost" className="gap-2 text-muted-foreground">
               <FileCheck size={16} />
-              {role === "SISWA" ? "Hasil ujian" : "Lihat template ujian"}
+              Lihat template ujian
             </Button>
           </div>
         </CardContent>
@@ -452,172 +441,7 @@ export default function HomePage() {
           </CardContent>
         </Card>
       )}
-
-      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-        <Card className="border-border bg-card/70">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Progress course utama</CardTitle>
-              <CardDescription>Perkembangan modul inti lintas kelas.</CardDescription>
-            </div>
-            <Badge tone="success">Realtime</Badge>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {courses.map((course) => (
-              <div
-                key={course.title}
-                className="rounded-xl border border-white/5 bg-muted/40 p-4"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="space-y-1">
-                    <p className="text-sm font-semibold">{course.title}</p>
-                    <p className="text-xs text-muted-foreground">{course.mentor}</p>
-                  </div>
-                  <Badge tone={course.tone}>{course.badge}</Badge>
-                </div>
-                <div className="mt-3 h-2 w-full rounded-full bg-white/10">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-primary via-secondary to-accent"
-                    style={{ width: `${course.progress}%` }}
-                  />
-                </div>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  {course.progress}% selesai
-                </p>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        {showGuruTasks && (
-          <Card className="border-border bg-card/70">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>
-                  {role === "ADMIN" ? "Rencana & tugas manajemen" : "Agenda guru"}
-                </CardTitle>
-                <CardDescription>
-                  {role === "ADMIN"
-                    ? "Prioritas singkat untuk admin."
-                    : "Checklist kelas & CBT yang perlu dibuka."}
-                </CardDescription>
-              </div>
-              <Badge tone="warning">3 tugas</Badge>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {tasks.map((task) => (
-                <div
-                  key={task.title}
-                  className="flex items-center justify-between rounded-lg border border-white/5 bg-muted/40 px-3 py-2"
-                >
-                  <div>
-                    <p className="text-sm font-semibold">{task.title}</p>
-                    <p className="text-xs text-muted-foreground">{task.owner}</p>
-                  </div>
-                  <Badge tone="info" className="text-[11px]">
-                    {task.status}
-                  </Badge>
-                </div>
-              ))}
-              {role === "ADMIN" && (
-                <div className="flex items-center justify-between rounded-lg border border-dashed border-primary/30 bg-primary/5 px-3 py-3">
-                  <div>
-                    <p className="text-sm font-semibold">Tambah automasi</p>
-                    <p className="text-xs text-muted-foreground">
-                      Kirim notifikasi & laporan berkala
-                    </p>
-                  </div>
-                  <Button size="sm" variant="secondary" className="gap-2">
-                    <Sparkles size={16} />
-                    Mulai
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-        <Card className="border-border bg-card/70">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Pengumuman & broadcast</CardTitle>
-              <CardDescription>Jangkau siswa, guru, dan orang tua.</CardDescription>
-            </div>
-            <Button size="sm" variant="outline" className="gap-2">
-              <MessageSquare size={16} />
-              Buat baru
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {announcements.map((announcement) => (
-              <div
-                key={announcement.title}
-                className="rounded-lg border border-white/5 bg-muted/40 p-4"
-              >
-                <p className="font-semibold">{announcement.title}</p>
-                <p className="text-sm text-muted-foreground">{announcement.detail}</p>
-                <div className="mt-2 flex items-center gap-2 text-xs text-primary">
-                  <Circle size={6} />
-                  {announcement.time}
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        {role !== "SISWA" && (
-          <Card className="border-border bg-card/70">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Aktivitas terbaru</CardTitle>
-                <CardDescription>Rekap lintas modul & pengguna.</CardDescription>
-              </div>
-              <Badge tone="success" className="gap-1">
-                <Sparkles size={14} />
-                Stabil
-              </Badge>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/15 text-primary">
-                  <Users2 size={18} />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold">156 siswa menyelesaikan modul</p>
-                  <p className="text-xs text-muted-foreground">30 menit terakhir</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary/20 text-secondary-foreground">
-                  <ShieldCheck size={18} />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold">Audit login multi-device aman</p>
-                  <p className="text-xs text-muted-foreground">SSO + OTP aktif</p>
-                </div>
-              </div>
-              <div className="rounded-xl border border-white/5 bg-muted/40 p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-semibold">Bandwidth penggunaan video</p>
-                    <p className="text-xs text-muted-foreground">Diukur per 30 menit</p>
-                  </div>
-                  <Badge tone="warning">Streaming</Badge>
-                </div>
-                <div className="mt-3 h-2 w-full rounded-full bg-white/10">
-                  <div className="h-full w-[68%] rounded-full bg-gradient-to-r from-secondary via-primary to-accent" />
-                </div>
-                <div className="mt-2 flex justify-between text-xs text-muted-foreground">
-                  <span>3.2 TB digunakan</span>
-                  <span>Kuota aman</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
     </div>
   );
 }
+

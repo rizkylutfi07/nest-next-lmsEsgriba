@@ -23,4 +23,20 @@ export class AnalyticsController {
         const siswaId = req.user.siswa?.id;
         return this.analyticsService.getUpcomingTasks(siswaId);
     }
+
+    @Get('admin')
+    @Roles(Role.ADMIN)
+    getAdminDashboard() {
+        return this.analyticsService.getAdminDashboard();
+    }
+
+    @Get('guru')
+    @Roles(Role.GURU)
+    getGuruDashboard(@Req() req: any) {
+        const guruId = req.user.guruId;
+        if (!guruId) {
+            throw new Error('User is not linked to a Guru profile');
+        }
+        return this.analyticsService.getGuruDashboard(guruId);
+    }
 }

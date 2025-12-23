@@ -19,7 +19,7 @@ async function fetchApi<T>(
         ? JSON.parse(localStorage.getItem('arunika-auth') || '{}').token
         : null;
 
-    const headers: HeadersInit = {
+    const headers: any = {
         'Content-Type': 'application/json',
         ...options.headers,
     };
@@ -246,4 +246,15 @@ export const guruApi = {
         fetchApi(`/guru${params ? `?${new URLSearchParams(params as any).toString()}` : ''}`),
     getById: (id: string) =>
         fetchApi(`/guru/${id}`),
+};
+
+export const analyticsApi = {
+    getStudentDashboard: () =>
+        fetchApi('/analytics/dashboard'),
+    getUpcomingTasks: () =>
+        fetchApi('/analytics/upcoming-tasks'),
+    getAdminDashboard: () =>
+        fetchApi('/analytics/admin'),
+    getGuruDashboard: () =>
+        fetchApi('/analytics/guru'),
 };
