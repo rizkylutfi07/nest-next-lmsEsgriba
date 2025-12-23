@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
     AlertCircle,
@@ -42,7 +42,7 @@ import { useToast } from "@/hooks/use-toast";
 const getStatusBadge = (status: string, isLate: boolean) => {
     if (status === "DINILAI") {
         return (
-            <Badge tone="success" className="gap-1">
+            <Badge className="gap-1 bg-green-100 text-green-700 hover:bg-green-100 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800">
                 <CheckCircle2 size={12} />
                 Dinilai
             </Badge>
@@ -50,7 +50,7 @@ const getStatusBadge = (status: string, isLate: boolean) => {
     }
     if (status === "DIKUMPULKAN") {
         return (
-            <Badge tone="info" className="gap-1">
+            <Badge className="gap-1 bg-blue-100 text-blue-700 hover:bg-blue-100 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800">
                 <Upload size={12} />
                 Dikumpulkan
             </Badge>
@@ -58,14 +58,14 @@ const getStatusBadge = (status: string, isLate: boolean) => {
     }
     if (status === "TERLAMBAT") {
         return (
-            <Badge tone="warning" className="gap-1">
+            <Badge className="gap-1 bg-red-100 text-red-700 hover:bg-red-100 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800">
                 <AlertCircle size={12} />
                 Terlambat
             </Badge>
         );
     }
     return (
-        <Badge tone="warning" className="gap-1">
+        <Badge className="gap-1 bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800">
             <Clock size={12} />
             Belum Dikumpulkan
         </Badge>
@@ -219,7 +219,7 @@ export default function TugasPage() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 pb-24">
             {/* Header */}
             <Card className="border-primary/30 bg-gradient-to-br from-primary/10 via-card/60 to-background/80">
                 <CardHeader>
@@ -238,58 +238,58 @@ export default function TugasPage() {
             </Card>
 
             {/* Stats Cards */}
-            <div className="grid gap-4 sm:grid-cols-4">
-                <Card className="bg-gradient-to-br from-amber-500/10 to-orange-500/5">
-                    <CardContent className="pt-6">
-                        <div className="flex items-center gap-3">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/20">
-                                <Clock className="h-6 w-6 text-amber-500" />
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-4">
+                <Card className="bg-gradient-to-br from-amber-500/10 to-orange-500/5 shadow-sm">
+                    <CardContent className="p-4 sm:pt-6">
+                        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2 sm:gap-3 text-center sm:text-left">
+                            <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-amber-500/20 shrink-0">
+                                <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-amber-500" />
                             </div>
-                            <div>
-                                <p className="text-2xl font-bold">{upcoming.length}</p>
-                                <p className="text-sm text-muted-foreground">Belum Selesai</p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="bg-gradient-to-br from-blue-500/10 to-cyan-500/5">
-                    <CardContent className="pt-6">
-                        <div className="flex items-center gap-3">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/20">
-                                <Upload className="h-6 w-6 text-blue-500" />
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold">{submitted.length}</p>
-                                <p className="text-sm text-muted-foreground">Dikumpulkan</p>
+                            <div className="min-w-0">
+                                <p className="text-xl sm:text-2xl font-bold truncate">{upcoming.length}</p>
+                                <p className="text-[10px] sm:text-sm text-muted-foreground truncate">Belum Selesai</p>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-gradient-to-br from-green-500/10 to-emerald-500/5">
-                    <CardContent className="pt-6">
-                        <div className="flex items-center gap-3">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-500/20">
-                                <CheckCircle2 className="h-6 w-6 text-green-500" />
+                <Card className="bg-gradient-to-br from-blue-500/10 to-cyan-500/5 shadow-sm">
+                    <CardContent className="p-4 sm:pt-6">
+                        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2 sm:gap-3 text-center sm:text-left">
+                            <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-blue-500/20 shrink-0">
+                                <Upload className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />
                             </div>
-                            <div>
-                                <p className="text-2xl font-bold">{graded.length}</p>
-                                <p className="text-sm text-muted-foreground">Sudah Dinilai</p>
+                            <div className="min-w-0">
+                                <p className="text-xl sm:text-2xl font-bold truncate">{submitted.length}</p>
+                                <p className="text-[10px] sm:text-sm text-muted-foreground truncate">Dikumpulkan</p>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-gradient-to-br from-purple-500/10 to-pink-500/5">
-                    <CardContent className="pt-6">
-                        <div className="flex items-center gap-3">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/20">
-                                <Award className="h-6 w-6 text-purple-500" />
+                <Card className="bg-gradient-to-br from-green-500/10 to-emerald-500/5 shadow-sm">
+                    <CardContent className="p-4 sm:pt-6">
+                        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2 sm:gap-3 text-center sm:text-left">
+                            <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-green-500/20 shrink-0">
+                                <CheckCircle2 className="h-5 w-5 sm:h-6 sm:w-6 text-green-500" />
                             </div>
-                            <div>
-                                <p className="text-2xl font-bold">{avgScore.toFixed(0)}</p>
-                                <p className="text-sm text-muted-foreground">Rata-rata Nilai</p>
+                            <div className="min-w-0">
+                                <p className="text-xl sm:text-2xl font-bold truncate">{graded.length}</p>
+                                <p className="text-[10px] sm:text-sm text-muted-foreground truncate">Sudah Dinilai</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-purple-500/10 to-pink-500/5 shadow-sm">
+                    <CardContent className="p-4 sm:pt-6">
+                        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2 sm:gap-3 text-center sm:text-left">
+                            <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-purple-500/20 shrink-0">
+                                <Award className="h-5 w-5 sm:h-6 sm:w-6 text-purple-500" />
+                            </div>
+                            <div className="min-w-0">
+                                <p className="text-xl sm:text-2xl font-bold truncate">{avgScore.toFixed(0)}</p>
+                                <p className="text-[10px] sm:text-sm text-muted-foreground truncate">Rata-rata Nilai</p>
                             </div>
                         </div>
                     </CardContent>
@@ -298,20 +298,22 @@ export default function TugasPage() {
 
             {/* Tugas Tabs */}
             <Tabs defaultValue="upcoming" className="space-y-4">
-                <TabsList>
-                    <TabsTrigger value="upcoming" className="gap-2">
-                        <Clock size={16} />
-                        Belum Selesai ({upcoming.length})
-                    </TabsTrigger>
-                    <TabsTrigger value="submitted" className="gap-2">
-                        <Upload size={16} />
-                        Dikumpulkan ({submitted.length})
-                    </TabsTrigger>
-                    <TabsTrigger value="graded" className="gap-2">
-                        <CheckCircle2 size={16} />
-                        Sudah Dinilai ({graded.length})
-                    </TabsTrigger>
-                </TabsList>
+                <div className="w-full overflow-x-auto pb-2">
+                    <TabsList className="w-full justify-start h-auto p-1">
+                        <TabsTrigger value="upcoming" className="gap-2">
+                            <Clock size={16} />
+                            Belum Selesai ({upcoming.length})
+                        </TabsTrigger>
+                        <TabsTrigger value="submitted" className="gap-2">
+                            <Upload size={16} />
+                            Dikumpulkan ({submitted.length})
+                        </TabsTrigger>
+                        <TabsTrigger value="graded" className="gap-2">
+                            <CheckCircle2 size={16} />
+                            Sudah Dinilai ({graded.length})
+                        </TabsTrigger>
+                    </TabsList>
+                </div>
 
                 <TabsContent value="upcoming" className="space-y-4">
                     {upcoming.length === 0 ? (
@@ -454,41 +456,43 @@ export default function TugasPage() {
                     {graded.map((tugas: any) => {
                         const submission = tugas.submissions[0];
                         return (
-                            <Card key={tugas.id} className="border-green-500/30">
-                                <CardHeader>
-                                    <div className="flex items-start justify-between gap-4">
-                                        <div className="flex-1 space-y-2">
-                                            <div className="flex items-center gap-2">
-                                                <CardTitle className="text-xl">{tugas.judul}</CardTitle>
+                            <Card key={tugas.id} className="border-green-500/30 overflow-hidden">
+                                <CardHeader className="p-4 sm:p-6">
+                                    <div className="flex items-start justify-between gap-3 sm:gap-4">
+                                        <div className="flex-1 space-y-1 sm:space-y-2 min-w-0">
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <CardTitle className="text-lg sm:text-xl truncate w-full sm:w-auto">{tugas.judul}</CardTitle>
                                                 {getStatusBadge(submission.status, false)}
                                             </div>
-                                            <CardDescription>{tugas.deskripsi}</CardDescription>
+                                            <CardDescription className="line-clamp-2 text-xs sm:text-sm">{tugas.deskripsi}</CardDescription>
                                         </div>
-                                        <div className="flex flex-col items-center gap-1 rounded-lg border-2 border-primary bg-primary/10 px-4 py-3">
-                                            <Award size={24} className="text-primary" />
-                                            <p className="text-3xl font-bold text-primary">
+                                        <div className="flex flex-col items-center gap-0.5 sm:gap-1 rounded-lg border-2 border-primary bg-primary/10 px-2 py-2 sm:px-4 sm:py-3 shrink-0">
+                                            <Award size={20} className="text-primary sm:w-6 sm:h-6" />
+                                            <p className="text-xl sm:text-3xl font-bold text-primary leading-none">
                                                 {submission.score}
                                             </p>
-                                            <p className="text-xs text-muted-foreground">/ {tugas.maxScore}</p>
+                                            <p className="text-[10px] sm:text-xs text-muted-foreground whitespace-nowrap">/ {tugas.maxScore}</p>
                                         </div>
                                     </div>
                                 </CardHeader>
-                                <CardContent className="space-y-4">
+                                <CardContent className="space-y-4 p-4 sm:p-6 sm:pt-0 pt-0 pb-6 sm:pb-6">
                                     {submission.feedback && (
-                                        <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-3">
-                                            <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                                        <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-3 sm:p-4">
+                                            <p className="text-xs sm:text-sm font-semibold text-blue-600 dark:text-blue-400 mb-1">
                                                 Feedback Guru:
                                             </p>
-                                            <p className="mt-1 text-sm">{submission.feedback}</p>
+                                            <p className="text-xs sm:text-sm leading-relaxed">{submission.feedback}</p>
                                         </div>
                                     )}
-                                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                                        <span>
-                                            Dikumpulkan:{" "}
-                                            {new Date(submission.submittedAt).toLocaleDateString("id-ID")}
+                                    <div className="flex flex-wrap items-center justify-between gap-y-2 gap-x-4 text-xs sm:text-sm text-muted-foreground border-t pt-3">
+                                        <span className="flex items-center gap-1.5">
+                                            <Clock size={12} className="sm:w-3.5 sm:h-3.5" />
+                                            Dikumpulkan: {new Date(submission.submittedAt).toLocaleDateString("id-ID")}
                                         </span>
-                                        <span>•</span>
-                                        <span>{tugas.mataPelajaran?.nama}</span>
+                                        <span className="flex items-center gap-1.5">
+                                            <FileText size={12} className="sm:w-3.5 sm:h-3.5" />
+                                            {tugas.mataPelajaran?.nama}
+                                        </span>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -629,35 +633,62 @@ export default function TugasPage() {
                             </div>
                         </div>
 
-                        {selectedTugas?.attachments && selectedTugas.attachments.length > 0 && (
-                            <div>
-                                <h4 className="font-semibold mb-2">Lampiran dari Guru</h4>
+                        {/* Attachments section */}
+                        <div>
+                            <h4 className="font-semibold mb-2">Lampiran dari Guru</h4>
+                            {!selectedTugas?.attachments || selectedTugas.attachments.length === 0 ? (
+                                <p className="text-sm text-muted-foreground italic">
+                                    Tidak ada lampiran
+                                </p>
+                            ) : (
                                 <div className="space-y-2">
-                                    {selectedTugas.attachments.map((file: any) => (
-                                        <div
-                                            key={file.id}
-                                            className="flex items-center justify-between p-3 bg-muted rounded-lg"
-                                        >
-                                            <div className="flex items-center gap-2">
-                                                <Download size={16} />
-                                                <span className="text-sm">{file.namaFile}</span>
-                                            </div>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => {
-                                                    // Download file logic
-                                                    const url = `${process.env.NEXT_PUBLIC_API_URL}/uploads/tugas/${file.urlFile}`;
-                                                    window.open(url, "_blank");
-                                                }}
+                                    {selectedTugas.attachments.map((file: any) => {
+                                        const fileUrl = `http://localhost:3001/uploads/tugas/${file.urlFile}`;
+                                        const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(file.namaFile);
+                                        const isPdf = /\.pdf$/i.test(file.namaFile);
+                                        const canPreview = isImage || isPdf;
+
+                                        return (
+                                            <div
+                                                key={file.id}
+                                                className="flex items-center justify-between p-3 bg-muted rounded-lg"
                                             >
-                                                Download
-                                            </Button>
-                                        </div>
-                                    ))}
+                                                <div className="flex items-center gap-2 flex-1">
+                                                    <Download size={16} />
+                                                    <span className="text-sm truncate">{file.namaFile}</span>
+                                                    <span className="text-xs text-muted-foreground">
+                                                        ({(file.ukuranFile / 1024).toFixed(1)} KB)
+                                                    </span>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    {canPreview && (
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => window.open(fileUrl, "_blank")}
+                                                        >
+                                                            Lihat
+                                                        </Button>
+                                                    )}
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => {
+                                                            const link = document.createElement('a');
+                                                            link.href = fileUrl;
+                                                            link.download = file.namaFile;
+                                                            link.click();
+                                                        }}
+                                                    >
+                                                        Download
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
-                            </div>
-                        )}
+                            )}
+                        </div>
 
                         <Button onClick={() => setIsDetailOpen(false)} className="w-full">
                             Tutup

@@ -41,6 +41,10 @@ export type AuthUser = {
   name: string | null;
   role: Role;
   createdAt?: string;
+  guru?: {
+    id: string;
+    nama: string;
+  } | null;
 };
 
 export type AuthResponse = {

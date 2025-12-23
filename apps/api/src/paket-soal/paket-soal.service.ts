@@ -627,7 +627,7 @@ export class PaketSoalService {
                     text = this.cleanHtmlContent(text);
 
                     // Remove any leading A., B., C. pattern if present
-                    text = text.replace(/^[A-E][\.\)]\s*/i, '').trim();
+                    text = text.replace(/^[A-E][\.)\s]*/i, '').trim();
 
                     options.push({
                         id: optionLabels[i],
@@ -639,7 +639,7 @@ export class PaketSoalService {
             return options;
         }
 
-        // STRATEGY 2: Try regex-based parsing (manual A., B., C. format)
+        // STRATEGY 2: Try regex-based parsing (manual A., B., C. format with line breaks)
         // Split by lines and try to match A., B., C. patterns
         const lines = html
             .replace(/<[^>]*>/g, ' ') // Strip all HTML tags
@@ -648,8 +648,8 @@ export class PaketSoalService {
             .filter(line => line.length > 0);
 
         for (const line of lines) {
-            // Match patterns: A. text, A) text, or just A text
-            const optionMatch = line.match(/^([A-E])[\.\)\s]+(.+)/i);
+            // Match patterns: A. text, A) text, or just A text at start of line
+            const optionMatch = line.match(/^([A-E])[\.)\s]+(.+)/i);
 
             if (optionMatch) {
                 const label = optionMatch[1].toUpperCase();
@@ -662,6 +662,50 @@ export class PaketSoalService {
                         text: text || '[Jawaban dengan gambar]',
                         isCorrect: false,
                     });
+                }
+            }
+        }
+
+        // If we found options with Strategy 2, return them
+        if (options.length >= 2) {
+            return options;
+        }
+
+        // STRATEGY 3: Handle inline options in a single line (e.g., "Word B.Excel C.PowerPoint D.Corel Draw E.Paint")
+        // or "A.Word B.Excel C.PowerPoint D.Corel Draw E.Paint"
+        const cleanText = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+
+        // Pattern: Split by space followed by B., C., D., E. (with optional preceding A.)
+        // This captures: "A.Word B.Excel C.PowerPoint..." or "Word B.Excel C.PowerPoint..."
+        const inlinePattern = /(?:^A[\.)]?\s*)?(.+?)(?=\s+B[\.)]|\s*$)/i;
+        const optionAMatch = cleanText.match(inlinePattern);
+
+        if (optionAMatch) {
+            // Split all options using regex lookahead
+            // Match pattern: text before " B." or " C." etc
+            const splitPattern = /\s+(?=[A-E][\.)])/gi;
+            const parts = cleanText.split(splitPattern).filter(p => p.trim());
+
+            if (parts.length >= 2) {
+                options.length = 0; // Clear any previous attempts
+
+                for (let i = 0; i < parts.length && i < optionLabels.length; i++) {
+                    let part = parts[i].trim();
+
+                    // Remove leading label like "A.", "B)" etc if present
+                    part = part.replace(/^[A-E][\.)\s]+/i, '').trim();
+
+                    if (part) {
+                        options.push({
+                            id: optionLabels[i],
+                            text: part,
+                            isCorrect: false,
+                        });
+                    }
+                }
+
+                if (options.length >= 2) {
+                    return options;
                 }
             }
         }

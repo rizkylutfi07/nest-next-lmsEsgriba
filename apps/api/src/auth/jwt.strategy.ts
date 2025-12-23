@@ -28,8 +28,20 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
       include: {
-        siswa: { select: { id: true } },
-        guru: { select: { id: true } },
+        siswa: {
+          select: {
+            id: true,
+            kelasId: true,
+            nama: true,
+            nisn: true,
+          }
+        },
+        guru: {
+          select: {
+            id: true,
+            nama: true,
+          }
+        },
       },
     });
 
@@ -37,6 +49,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       userId: payload.sub,
       email: payload.email,
       role: payload.role,
+      siswa: user?.siswa ?? null,
+      guru: user?.guru ?? null,
+      // Keep legacy fields for backward compatibility
       siswaId: user?.siswa?.id ?? null,
       guruId: user?.guru?.id ?? null,
     };

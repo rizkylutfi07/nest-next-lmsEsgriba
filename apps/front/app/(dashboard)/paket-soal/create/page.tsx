@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 
 export default function CreatePaketSoalPage() {
-    const { token } = useRole();
+    const { token, role } = useRole();
     const { toast } = useToast();
     const router = useRouter();
     const [formData, setFormData] = useState({
@@ -38,10 +38,13 @@ export default function CreatePaketSoalPage() {
         enabled: !!token,
     });
 
+
+
     const { data: mataPelajaranList } = useQuery({
-        queryKey: ["mata-pelajaran-list"],
+        queryKey: ["mata-pelajaran-list", role],
         queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/mata-pelajaran?limit=100`, {
+            const queryParams = role === "GURU" ? "?mySubjects=true&limit=100" : "?limit=100";
+            const res = await fetch(`http://localhost:3001/mata-pelajaran${queryParams}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             return res.json();
@@ -56,6 +59,7 @@ export default function CreatePaketSoalPage() {
             });
             return res.json();
         },
+        enabled: role === "ADMIN", // Only fetch if admin
     });
 
     const createMutation = useMutation({
@@ -243,27 +247,29 @@ export default function CreatePaketSoalPage() {
                             )}
                         </div>
 
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Guru Mata Pelajaran
-                            </label>
-                            <SearchableSelect
-                                options={filteredGuruOptions.map((guru: any) => ({
-                                    value: guru.id,
-                                    label: guru.nama,
-                                }))}
-                                value={formData.guruId}
-                                onChange={handleGuruChange}
-                                placeholder="Pilih Guru"
-                                searchPlaceholder="Cari guru..."
-                                emptyMessage={formData.mataPelajaranId ? "Tidak ada guru yang mengajar mapel ini" : "Guru tidak ditemukan"}
-                            />
-                            {formData.guruId && selectedGuru && !selectedGuru.mataPelajaran?.length && (
-                                <p className="mt-1 text-xs text-muted-foreground">
-                                    Guru belum memiliki mata pelajaran terhubung.
-                                </p>
-                            )}
-                        </div>
+                        {role === "ADMIN" && (
+                            <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                    Guru Mata Pelajaran
+                                </label>
+                                <SearchableSelect
+                                    options={filteredGuruOptions.map((guru: any) => ({
+                                        value: guru.id,
+                                        label: guru.nama,
+                                    }))}
+                                    value={formData.guruId}
+                                    onChange={handleGuruChange}
+                                    placeholder="Pilih Guru"
+                                    searchPlaceholder="Cari guru..."
+                                    emptyMessage={formData.mataPelajaranId ? "Tidak ada guru yang mengajar mapel ini" : "Guru tidak ditemukan"}
+                                />
+                                {formData.guruId && selectedGuru && !selectedGuru.mataPelajaran?.length && (
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                        Guru belum memiliki mata pelajaran terhubung.
+                                    </p>
+                                )}
+                            </div>
+                        )}
 
                         <div className="flex gap-2 pt-4">
                             <Button

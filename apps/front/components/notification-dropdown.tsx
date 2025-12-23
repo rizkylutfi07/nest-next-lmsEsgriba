@@ -190,17 +190,17 @@ export function NotificationDropdown() {
             </PopoverTrigger>
             <PopoverContent
                 align="end"
-                className="w-[420px] max-h-[600px] overflow-hidden p-0 shadow-2xl border bg-card"
+                className="w-screen sm:w-[420px] max-h-[85vh] sm:max-h-[600px] overflow-hidden p-0 shadow-2xl border bg-card"
                 sideOffset={8}
             >
                 {/* Header with solid background */}
-                <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-card px-4 py-4">
-                    <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/20">
-                            <Bell size={18} className="text-primary" />
+                <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-card px-3 sm:px-4 py-3 sm:py-4">
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                        <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-primary/20 flex-shrink-0">
+                            <Bell size={16} className="text-primary sm:h-[18px] sm:w-[18px]" />
                         </div>
-                        <div>
-                            <h3 className="font-bold text-base">Notifikasi</h3>
+                        <div className="min-w-0">
+                            <h3 className="font-bold text-sm sm:text-base truncate">Notifikasi</h3>
                             {unreadCount > 0 && (
                                 <p className="text-xs text-muted-foreground">
                                     {unreadCount} belum dibaca
@@ -212,18 +212,18 @@ export function NotificationDropdown() {
                         <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 gap-1.5 text-xs hover:bg-primary/10 hover:text-primary"
+                            className="h-7 sm:h-8 gap-1 sm:gap-1.5 text-xs hover:bg-primary/10 hover:text-primary flex-shrink-0 px-2 sm:px-3"
                             onClick={handleMarkAllRead}
                             disabled={markAllAsReadMutation.isPending}
                         >
-                            <CheckCheck size={14} />
-                            Tandai dibaca
+                            <CheckCheck size={14} className="hidden sm:block" />
+                            <span className="text-xs">Tandai</span>
                         </Button>
                     )}
                 </div>
 
                 {/* Notifications List with custom scrollbar */}
-                <div className="max-h-[520px] overflow-y-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
+                <div className="max-h-[calc(85vh-80px)] sm:max-h-[520px] overflow-y-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
                     {notifications.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-16 px-6">
                             <div className="relative mb-6">
@@ -242,8 +242,8 @@ export function NotificationDropdown() {
                             ([group, groupNotifications]) =>
                                 groupNotifications.length > 0 && (
                                     <div key={group} className="border-b last:border-0">
-                                        <div className="sticky top-0 z-10 px-4 py-2 bg-muted/80 backdrop-blur-sm">
-                                            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
+                                        <div className="sticky top-0 z-10 px-3 sm:px-4 py-1.5 sm:py-2 bg-muted/80 backdrop-blur-sm">
+                                            <p className="text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-wide">
                                                 {group}
                                             </p>
                                         </div>
@@ -253,14 +253,14 @@ export function NotificationDropdown() {
                                                     key={notification.id}
                                                     onClick={() => handleNotificationClick(notification)}
                                                     className={cn(
-                                                        "group relative flex gap-3 px-4 py-4 hover:bg-accent/50 cursor-pointer transition-all duration-200",
+                                                        "group relative flex gap-2 sm:gap-3 px-3 sm:px-4 py-3 sm:py-4 hover:bg-accent/50 cursor-pointer transition-all duration-200",
                                                         !notification.isRead && "bg-primary/10 border-l-2 border-l-primary"
                                                     )}
                                                 >
                                                     {/* Icon with background */}
-                                                    <div className="flex-shrink-0 mt-1">
+                                                    <div className="flex-shrink-0">
                                                         <div className={cn(
-                                                            "flex h-10 w-10 items-center justify-center rounded-full transition-transform group-hover:scale-110",
+                                                            "flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full transition-transform group-hover:scale-110",
                                                             notification.tipe === "TUGAS_BARU" && "bg-blue-500/10",
                                                             notification.tipe === "TUGAS_DINILAI" && "bg-green-500/10",
                                                             notification.tipe === "DEADLINE_REMINDER" && "bg-amber-500/10",
@@ -272,39 +272,39 @@ export function NotificationDropdown() {
                                                     </div>
 
                                                     {/* Content */}
-                                                    <div className="flex-1 min-w-0 space-y-1">
+                                                    <div className="flex-1 min-w-0 space-y-0.5 sm:space-y-1 pr-7 sm:pr-8">
                                                         <div className="flex items-start justify-between gap-2">
                                                             <p
                                                                 className={cn(
-                                                                    "text-sm leading-snug pr-6",
+                                                                    "text-xs sm:text-sm leading-snug break-words flex-1",
                                                                     !notification.isRead && "font-bold text-foreground"
                                                                 )}
                                                             >
                                                                 {notification.judul}
                                                             </p>
                                                             {!notification.isRead && (
-                                                                <span className="flex-shrink-0 h-2.5 w-2.5 rounded-full bg-gradient-to-br from-primary to-primary/70 mt-1.5 shadow-lg shadow-primary/50" />
+                                                                <span className="flex-shrink-0 h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-gradient-to-br from-primary to-primary/70 mt-1 shadow-lg shadow-primary/50" />
                                                             )}
                                                         </div>
-                                                        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                                                        <p className="text-[11px] sm:text-xs text-muted-foreground leading-relaxed line-clamp-2 break-words">
                                                             {notification.pesan}
                                                         </p>
-                                                        <div className="flex items-center gap-2 pt-0.5">
-                                                            <Clock size={11} className="text-muted-foreground/70" />
-                                                            <p className="text-xs text-muted-foreground/70 font-medium">
+                                                        <div className="flex items-center gap-1.5 sm:gap-2 pt-0.5">
+                                                            <Clock size={10} className="text-muted-foreground/70 sm:h-[11px] sm:w-[11px]" />
+                                                            <p className="text-[10px] sm:text-xs text-muted-foreground/70 font-medium">
                                                                 {getRelativeTime(notification.createdAt)}
                                                             </p>
                                                         </div>
                                                     </div>
 
-                                                    {/* Delete button (on hover) */}
+                                                    {/* Delete button (on hover/touch) */}
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
-                                                        className="absolute right-2 top-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 hover:text-destructive"
+                                                        className="absolute right-2 top-2 h-6 w-6 sm:h-7 sm:w-7 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 hover:text-destructive"
                                                         onClick={(e) => handleDelete(e, notification.id)}
                                                     >
-                                                        <X size={14} />
+                                                        <X size={12} className="sm:h-[14px] sm:w-[14px]" />
                                                     </Button>
                                                 </div>
                                             ))}

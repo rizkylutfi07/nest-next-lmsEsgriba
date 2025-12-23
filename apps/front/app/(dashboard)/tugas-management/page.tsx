@@ -96,14 +96,38 @@ export default function TugasManagementPage() {
         queryFn: () => tugasApi.getAll({ myAssignments: "true" }),
     });
 
-    // Fetch mata pelajaran
-    const { data: mataPelajaranResponse } = useQuery({
-        queryKey: ["mata-pelajaran"],
-        queryFn: () => mataPelajaranApi.getAll({ limit: 100 }),
+    // Fetch mata pelajaran (filtered by guru if role is GURU)
+    const { data: mataPelajaranResponse, error: mataPelajaranError, isError: isMataPelajaranError } = useQuery({
+        queryKey: ["mata-pelajaran", role],
+        queryFn: async () => {
+            const params = {
+                limit: 100,
+                ...(role === "GURU" ? { mySubjects: "true" } : {})
+            };
+            console.log('[FRONTEND] Fetching mata pelajaran with params:', params);
+            console.log('[FRONTEND] Role:', role);
+            try {
+                const result = await mataPelajaranApi.getAll(params);
+                console.log('[FRONTEND] Mata pelajaran result:', result);
+                return result;
+            } catch (error) {
+                console.error('[FRONTEND] Error fetching mata pelajaran:', error);
+                throw error;
+            }
+        },
+        staleTime: 0, // Disable cache for debugging
+        gcTime: 0,
     });
+
+    if (isMataPelajaranError) {
+        console.error('[FRONTEND] Mata pelajaran query error:', mataPelajaranError);
+    }
+
     const mataPelajaranList = Array.isArray(mataPelajaranResponse)
         ? mataPelajaranResponse
         : (mataPelajaranResponse?.data || []);
+
+    console.log('[FRONTEND] Final mataPelajaranList:', mataPelajaranList);
 
     // Fetch kelas
     const { data: kelasResponse } = useQuery({
@@ -293,6 +317,13 @@ export default function TugasManagementPage() {
 
     const handleEdit = (tugas: any) => {
         setSelectedTugas(tugas);
+
+        // Convert deadline to local datetime-local format (YYYY-MM-DDTHH:mm)
+        const deadlineDate = new Date(tugas.deadline);
+        const localDeadline = new Date(deadlineDate.getTime() - deadlineDate.getTimezoneOffset() * 60000)
+            .toISOString()
+            .slice(0, 16);
+
         setFormData({
             judul: tugas.judul,
             deskripsi: tugas.deskripsi,
@@ -301,7 +332,7 @@ export default function TugasManagementPage() {
             // Convert 'all' or empty strings to undefined for optional foreign key fields
             kelasId: (tugas.kelasId === 'all' || tugas.kelasId === '') ? '' : tugas.kelasId,
             guruId: (tugas.guruId === 'all' || tugas.guruId === '') ? '' : tugas.guruId,
-            deadline: new Date(tugas.deadline).toISOString().slice(0, 16),
+            deadline: localDeadline,
             maxScore: tugas.maxScore,
             allowLateSubmit: tugas.allowLateSubmit,
             isPublished: tugas.isPublished,
@@ -311,9 +342,11 @@ export default function TugasManagementPage() {
 
     const handleUpdate = () => {
         if (!selectedTugas) return;
+        // Exclude guruId from update payload as it's not allowed by the backend
+        const { guruId, ...updateData } = formData;
         updateMutation.mutate({
             id: selectedTugas.id,
-            data: formData,
+            data: updateData,
         });
     };
 
@@ -417,71 +450,71 @@ export default function TugasManagementPage() {
             </Card>
 
             {/* Stats Cards */}
-            <div className="grid gap-4 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
                 <Card className="bg-gradient-to-br from-blue-500/10 to-cyan-500/5">
-                    <CardContent className="pt-6">
-                        <div className="flex items-center gap-3">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/20">
-                                <FileText className="h-6 w-6 text-blue-500" />
+                    <CardContent className="p-4">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                            <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-lg sm:rounded-xl bg-blue-500/20 flex-shrink-0">
+                                <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />
                             </div>
-                            <div>
-                                <p className="text-2xl font-bold">{tugasList.length}</p>
-                                <p className="text-sm text-muted-foreground">Total Tugas</p>
+                            <div className="min-w-0">
+                                <p className="text-xl sm:text-2xl font-bold truncate">{tugasList.length}</p>
+                                <p className="text-xs sm:text-sm text-muted-foreground">Total Tugas</p>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
 
                 <Card className="bg-gradient-to-br from-green-500/10 to-emerald-500/5">
-                    <CardContent className="pt-6">
-                        <div className="flex items-center gap-3">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-500/20">
-                                <CheckCircle2 className="h-6 w-6 text-green-500" />
+                    <CardContent className="p-4">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                            <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-lg sm:rounded-xl bg-green-500/20 flex-shrink-0">
+                                <CheckCircle2 className="h-5 w-5 sm:h-6 sm:w-6 text-green-500" />
                             </div>
-                            <div>
-                                <p className="text-2xl font-bold">
+                            <div className="min-w-0">
+                                <p className="text-xl sm:text-2xl font-bold truncate">
                                     {
                                         tugasList.filter((t: any) => new Date(t.deadline) > new Date())
                                             .length
                                     }
                                 </p>
-                                <p className="text-sm text-muted-foreground">Aktif</p>
+                                <p className="text-xs sm:text-sm text-muted-foreground">Aktif</p>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
 
                 <Card className="bg-gradient-to-br from-amber-500/10 to-orange-500/5">
-                    <CardContent className="pt-6">
-                        <div className="flex items-center gap-3">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/20">
-                                <Upload className="h-6 w-6 text-amber-500" />
+                    <CardContent className="p-4">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                            <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-lg sm:rounded-xl bg-amber-500/20 flex-shrink-0">
+                                <Upload className="h-5 w-5 sm:h-6 sm:w-6 text-amber-500" />
                             </div>
-                            <div>
-                                <p className="text-2xl font-bold">
+                            <div className="min-w-0">
+                                <p className="text-xl sm:text-2xl font-bold truncate">
                                     {tugasList.reduce((sum: number, t: any) => sum + (t._count?.submissions || 0), 0)}
                                 </p>
-                                <p className="text-sm text-muted-foreground">Pengumpulan</p>
+                                <p className="text-xs sm:text-sm text-muted-foreground">Pengumpulan</p>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
 
                 <Card className="bg-gradient-to-br from-purple-500/10 to-pink-500/5">
-                    <CardContent className="pt-6">
-                        <div className="flex items-center gap-3">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/20">
-                                <Users className="h-6 w-6 text-purple-500" />
+                    <CardContent className="p-4">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                            <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-lg sm:rounded-xl bg-purple-500/20 flex-shrink-0">
+                                <Users className="h-5 w-5 sm:h-6 sm:w-6 text-purple-500" />
                             </div>
-                            <div>
-                                <p className="text-2xl font-bold">
+                            <div className="min-w-0">
+                                <p className="text-xl sm:text-2xl font-bold truncate">
                                     {
                                         tugasList.filter(
                                             (t: any) => t._count?.submissions > 0
                                         ).length
                                     }
                                 </p>
-                                <p className="text-sm text-muted-foreground">Ada Pengumpulan</p>
+                                <p className="text-xs sm:text-sm text-muted-foreground">Ada Pengumpulan</p>
                             </div>
                         </div>
                     </CardContent>
@@ -490,10 +523,10 @@ export default function TugasManagementPage() {
 
             {/* Filters and Create Button */}
             <Card>
-                <CardContent className="pt-6">
-                    <div className="flex flex-wrap gap-4">
+                <CardContent className="p-4">
+                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                         <Select value={filterSubject} onValueChange={setFilterSubject}>
-                            <SelectTrigger className="w-[200px]">
+                            <SelectTrigger className="w-full sm:w-[180px]">
                                 <SelectValue placeholder="Semua Mata Pelajaran" />
                             </SelectTrigger>
                             <SelectContent>
@@ -507,7 +540,7 @@ export default function TugasManagementPage() {
                         </Select>
 
                         <Select value={filterClass} onValueChange={setFilterClass}>
-                            <SelectTrigger className="w-[200px]">
+                            <SelectTrigger className="w-full sm:w-[180px]">
                                 <SelectValue placeholder="Semua Kelas" />
                             </SelectTrigger>
                             <SelectContent>
@@ -520,10 +553,10 @@ export default function TugasManagementPage() {
                             </SelectContent>
                         </Select>
 
-                        <div className="ml-auto">
+                        <div className="sm:ml-auto">
                             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                                 <DialogTrigger asChild>
-                                    <Button className="gap-2">
+                                    <Button className="gap-2 w-full sm:w-auto">
                                         <Plus size={16} />
                                         Buat Tugas Baru
                                     </Button>
@@ -863,10 +896,10 @@ export default function TugasManagementPage() {
 
             {/* Submissions Dialog */}
             <Dialog open={isSubmissionsOpen} onOpenChange={setIsSubmissionsOpen}>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 rounded-lg">
                     <DialogHeader>
-                        <DialogTitle>Pengumpulan: {selectedTugas?.judul}</DialogTitle>
-                        <DialogDescription>
+                        <DialogTitle className="text-base sm:text-lg">Pengumpulan: {selectedTugas?.judul}</DialogTitle>
+                        <DialogDescription className="text-sm">
                             Daftar siswa yang telah mengumpulkan tugas
                         </DialogDescription>
                     </DialogHeader>
@@ -1002,16 +1035,16 @@ export default function TugasManagementPage() {
                             <div>
                                 <Label>Kelas</Label>
                                 <Select
-                                    value={formData.kelasId}
+                                    value={formData.kelasId || "all"}
                                     onValueChange={(value) =>
-                                        setFormData({ ...formData, kelasId: value })
+                                        setFormData({ ...formData, kelasId: value === "all" ? "" : value })
                                     }
                                 >
                                     <SelectTrigger>
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="">Semua Kelas</SelectItem>
+                                        <SelectItem value="all">Semua Kelas</SelectItem>
                                         {kelasList.map((kelas: any) => (
                                             <SelectItem key={kelas.id} value={kelas.id}>
                                                 {kelas.nama}
@@ -1139,71 +1172,122 @@ function SubmissionsView({
         <div className="space-y-4">
             {submissions.map((submission: any) => (
                 <Card key={submission.id}>
-                    <CardContent className="pt-6">
-                        <div className="flex items-start justify-between gap-4">
-                            <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-2">
-                                    <p className="font-semibold">{submission.siswa.nama}</p>
-                                    <Badge tone="info">{submission.siswa.nisn}</Badge>
-                                    <Badge
-                                        tone={
-                                            submission.status === "DINILAI"
-                                                ? "success"
-                                                : submission.status === "TERLAMBAT"
-                                                    ? "warning"
-                                                    : "info"
-                                        }
-                                    >
-                                        {submission.status}
-                                    </Badge>
-                                </div>
-                                <p className="text-sm text-muted-foreground mb-2">
-                                    Kelas: {submission.siswa.kelas?.nama}
-                                </p>
-                                {submission.submittedAt && (
-                                    <p className="text-sm text-muted-foreground">
-                                        Dikumpulkan:{" "}
-                                        {new Date(submission.submittedAt).toLocaleString("id-ID")}
-                                    </p>
-                                )}
-                                {submission.konten && (
-                                    <p className="text-sm mt-2 p-3 bg-muted rounded-lg">
-                                        {submission.konten}
-                                    </p>
-                                )}
-                                {submission.files && submission.files.length > 0 && (
-                                    <div className="mt-2">
-                                        <p className="text-sm font-semibold mb-1">
-                                            File ({submission.files.length}):
-                                        </p>
-                                        <div className="flex flex-wrap gap-2">
-                                            {submission.files.map((file: any) => (
-                                                <Badge key={file.id}>
-                                                    <Download size={12} className="mr-1" />
-                                                    {file.namaFile}
-                                                </Badge>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                                {submission.score !== null && submission.score !== undefined && (
-                                    <div className="mt-3 p-3 bg-green-500/10 rounded-lg">
-                                        <p className="text-sm font-semibold text-green-600 dark:text-green-400">
-                                            Nilai: {submission.score}
-                                        </p>
-                                        {submission.feedback && (
-                                            <p className="text-sm mt-1">{submission.feedback}</p>
-                                        )}
-                                    </div>
-                                )}
+                    <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6">
+                        <div className="space-y-3">
+                            {/* Header with name and badges */}
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <p className="font-semibold text-sm sm:text-base truncate">{submission.siswa.nama}</p>
+                                <Badge tone="info" className="text-xs">{submission.siswa.nisn}</Badge>
+                                <Badge
+                                    tone={
+                                        submission.status === "DINILAI"
+                                            ? "success"
+                                            : submission.status === "TERLAMBAT"
+                                                ? "warning"
+                                                : "info"
+                                    }
+                                    className="text-xs"
+                                >
+                                    {submission.status}
+                                </Badge>
                             </div>
+
+                            {/* Info */}
+                            <p className="text-xs sm:text-sm text-muted-foreground">
+                                Kelas: {submission.siswa.kelas?.nama}
+                            </p>
+                            {submission.submittedAt && (
+                                <p className="text-xs sm:text-sm text-muted-foreground">
+                                    Dikumpulkan:{" "}
+                                    {new Date(submission.submittedAt).toLocaleString("id-ID")}
+                                </p>
+                            )}
+
+                            {/* Konten */}
+                            {submission.konten && (
+                                <p className="text-xs sm:text-sm p-3 bg-muted rounded-lg">
+                                    {submission.konten}
+                                </p>
+                            )}
+
+                            {/* Files */}
+                            {submission.files && submission.files.length > 0 && (
+                                <div>
+                                    <p className="text-xs sm:text-sm font-semibold mb-2">
+                                        File Pengumpulan ({submission.files.length}):
+                                    </p>
+                                    <div className="space-y-2">
+                                        {submission.files.map((file: any) => {
+                                            const fileUrl = `http://localhost:3001/uploads/submissions/${file.urlFile}`;
+                                            const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(file.namaFile);
+                                            const isPdf = /\.pdf$/i.test(file.namaFile);
+                                            const canPreview = isImage || isPdf;
+
+                                            return (
+                                                <div
+                                                    key={file.id}
+                                                    className="flex flex-col sm:flex-row sm:items-center gap-2 p-2 bg-muted/50 rounded"
+                                                >
+                                                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                        <Download size={14} className="flex-shrink-0" />
+                                                        <div className="flex flex-col min-w-0 flex-1">
+                                                            <span className="text-xs sm:text-sm truncate">{file.namaFile}</span>
+                                                            <span className="text-xs text-muted-foreground">
+                                                                {(file.ukuranFile / 1024).toFixed(1)} KB
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex gap-2 sm:gap-1">
+                                                        {canPreview && (
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                className="h-8 px-3 text-xs flex-1 sm:flex-none"
+                                                                onClick={() => window.open(fileUrl, "_blank")}
+                                                            >
+                                                                Lihat
+                                                            </Button>
+                                                        )}
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="h-8 px-3 text-xs flex-1 sm:flex-none"
+                                                            onClick={() => {
+                                                                const link = document.createElement('a');
+                                                                link.href = fileUrl;
+                                                                link.download = file.namaFile;
+                                                                link.click();
+                                                            }}
+                                                        >
+                                                            Download
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Score/Feedback */}
+                            {submission.score !== null && submission.score !== undefined && (
+                                <div className="p-3 bg-green-500/10 rounded-lg">
+                                    <p className="text-sm font-semibold text-green-600 dark:text-green-400">
+                                        Nilai: {submission.score}
+                                    </p>
+                                    {submission.feedback && (
+                                        <p className="text-sm mt-1">{submission.feedback}</p>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Grade Button - moved to bottom */}
                             <Button
                                 size="sm"
-                                variant="outline"
-                                className="gap-2"
+                                className="w-full gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-md hover:shadow-lg transition-all"
                                 onClick={() => onGrade(submission)}
                             >
-                                <Award size={14} />
+                                <Award size={16} />
                                 {submission.status === "DINILAI" ? "Edit Nilai" : "Beri Nilai"}
                             </Button>
                         </div>

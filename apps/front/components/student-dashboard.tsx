@@ -1,5 +1,6 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import {
     BookOpen,
     Calendar,
@@ -13,82 +14,14 @@ import {
     Zap,
     ArrowRight,
     BookMarked,
+    Bell,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-
-// Student Dashboard Data
-const studentStats = {
-    materiBookmarked: 5,
-    tugasPending: 3,
-    tugasCompleted: 12,
-    forumPosts: 8,
-    avgScore: 87,
-};
-
-const upcomingTasks = [
-    {
-        id: "1",
-        judul: "Tugas Algoritma Sorting",
-        mataPelajaran: "Struktur Data",
-        deadline: "2025-01-25T23:59:00",
-        urgent: true,
-    },
-    {
-        id: "2",
-        judul: "Essay: Dampak AI",
-        mataPelajaran: "Bahasa Indonesia",
-        deadline: "2025-01-22T15:00:00",
-        urgent: true,
-    },
-    {
-        id: "3",
-        judul: "Quiz Database",
-        mataPelajaran: "Database",
-        deadline: "2025-01-28T18:00:00",
-        urgent: false,
-    },
-];
-
-const recentActivities = [
-    {
-        type: "grade",
-        title: "Nilai tugas Database telah keluar",
-        score: 85,
-        time: "2 jam yang lalu",
-        icon: Award,
-        color: "text-green-500",
-        bg: "bg-green-500/10",
-    },
-    {
-        type: "material",
-        title: "Materi baru: Tutorial React Hooks",
-        subject: "Pemrograman Web",
-        time: "5 jam yang lalu",
-        icon: BookOpen,
-        color: "text-blue-500",
-        bg: "bg-blue-500/10",
-    },
-    {
-        type: "forum",
-        title: "Pak Rizky menjawab pertanyaan Anda",
-        thread: "Cara Optimal Belajar Algoritma",
-        time: "1 hari yang lalu",
-        icon: MessageSquare,
-        color: "text-purple-500",
-        bg: "bg-purple-500/10",
-    },
-];
-
-const progressBySubject = [
-    { subject: "Pemrograman", progress: 75, color: "bg-blue-500" },
-    { subject: "Database", progress: 60, color: "bg-purple-500" },
-    { subject: "Matematika", progress: 85, color: "bg-green-500" },
-    { subject: "Bahasa Indonesia", progress: 70, color: "bg-amber-500" },
-];
+import { tugasApi, materiApi, notifikasiApi } from "@/lib/api";
 
 const getDaysRemaining = (deadline: string) => {
     const now = new Date();
@@ -103,7 +36,93 @@ const getDaysRemaining = (deadline: string) => {
     return { text: `${days} hari`, urgent: false };
 };
 
+const getTimeAgo = (dateString: string) => {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diff = now.getTime() - date.getTime();
+
+    const minutes = Math.floor(diff / (1000 * 60));
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+    if (minutes < 60) return `${minutes} menit yang lalu`;
+    if (hours < 24) return `${hours} jam yang lalu`;
+    if (days === 1) return "Kemarin";
+    return `${days} hari yang lalu`;
+};
+
 export default function StudentDashboard() {
+    // Fetch tugas for student (backend filters by student's class)
+    const { data: tugasList = [], isLoading: tugasLoading } = useQuery({
+        queryKey: ["tugas", "student"],
+        queryFn: () => tugasApi.getAll({}),
+    });
+
+    // Fetch materi
+    const { data: materiResponse, isLoading: materiLoading } = useQuery({
+        queryKey: ["materi", "student"],
+        queryFn: () => materiApi.getAll({}),
+    });
+    const materiList = Array.isArray(materiResponse) ? materiResponse : (materiResponse as any)?.data || [];
+
+    // Fetch notifications for recent activity
+    const { data: notifikasiList = [], isLoading: notifikasiLoading } = useQuery({
+        queryKey: ["notifikasi", "student-dashboard"],
+        queryFn: () => notifikasiApi.getAll({}),
+    });
+
+    // Calculate stats from real data
+    const now = new Date();
+    const tugasArray = Array.isArray(tugasList) ? tugasList : [];
+
+    const tugasPending = tugasArray.filter((t: any) => {
+        const deadline = new Date(t.deadline);
+        const hasSubmitted = t.submissions?.length > 0;
+        return deadline > now && !hasSubmitted;
+    }).length;
+
+    const tugasCompleted = tugasArray.filter((t: any) => {
+        return t.submissions?.length > 0;
+    }).length;
+
+    // Calculate average score from graded submissions
+    const gradedSubmissions = tugasArray.flatMap((t: any) =>
+        (t.submissions || []).filter((s: any) => s.status === "DINILAI" && s.score !== null)
+    );
+    const avgScore = gradedSubmissions.length > 0
+        ? Math.round(gradedSubmissions.reduce((sum: number, s: any) => sum + (s.score || 0), 0) / gradedSubmissions.length)
+        : 0;
+
+    const studentStats = {
+        materiCount: materiList.length,
+        tugasPending,
+        tugasCompleted,
+        avgScore,
+    };
+
+    // Get upcoming tasks (pending assignments sorted by deadline)
+    const upcomingTasks = tugasArray
+        .filter((t: any) => {
+            const deadline = new Date(t.deadline);
+            const hasSubmitted = t.submissions?.length > 0;
+            return deadline > now && !hasSubmitted;
+        })
+        .sort((a: any, b: any) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
+        .slice(0, 5);
+
+    // Get recent notifications for activity feed
+    const notifikasiArray = Array.isArray(notifikasiList) ? notifikasiList : [];
+    const recentActivities = notifikasiArray.slice(0, 5).map((n: any) => ({
+        id: n.id,
+        title: n.judul,
+        message: n.pesan,
+        time: getTimeAgo(n.createdAt),
+        isRead: n.isRead,
+        type: n.tipe,
+    }));
+
+    const isLoading = tugasLoading || materiLoading || notifikasiLoading;
+
     return (
         <div className="space-y-6">
             {/* Welcome Card */}
@@ -131,11 +150,13 @@ export default function StudentDashboard() {
                     <CardContent className="pt-6">
                         <div className="flex items-center gap-3">
                             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/20">
-                                <BookMarked className="h-6 w-6 text-blue-500" />
+                                <BookOpen className="h-6 w-6 text-blue-500" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold">{studentStats.materiBookmarked}</p>
-                                <p className="text-sm text-muted-foreground">Materi Tersimpan</p>
+                                <p className="text-2xl font-bold">
+                                    {isLoading ? "..." : studentStats.materiCount}
+                                </p>
+                                <p className="text-sm text-muted-foreground">Total Materi</p>
                             </div>
                         </div>
                     </CardContent>
@@ -148,7 +169,9 @@ export default function StudentDashboard() {
                                 <Clock className="h-6 w-6 text-amber-500" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold">{studentStats.tugasPending}</p>
+                                <p className="text-2xl font-bold">
+                                    {isLoading ? "..." : studentStats.tugasPending}
+                                </p>
                                 <p className="text-sm text-muted-foreground">Tugas Pending</p>
                             </div>
                         </div>
@@ -162,7 +185,9 @@ export default function StudentDashboard() {
                                 <CheckCircle2 className="h-6 w-6 text-green-500" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold">{studentStats.tugasCompleted}</p>
+                                <p className="text-2xl font-bold">
+                                    {isLoading ? "..." : studentStats.tugasCompleted}
+                                </p>
                                 <p className="text-sm text-muted-foreground">Tugas Selesai</p>
                             </div>
                         </div>
@@ -176,7 +201,9 @@ export default function StudentDashboard() {
                                 <Award className="h-6 w-6 text-purple-500" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold">{studentStats.avgScore}</p>
+                                <p className="text-2xl font-bold">
+                                    {isLoading ? "..." : studentStats.avgScore || "-"}
+                                </p>
                                 <p className="text-sm text-muted-foreground">Rata-rata Nilai</p>
                             </div>
                         </div>
@@ -203,58 +230,82 @@ export default function StudentDashboard() {
                         </Link>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                        {upcomingTasks.map((task) => {
-                            const daysInfo = getDaysRemaining(task.deadline);
-                            return (
-                                <div
-                                    key={task.id}
-                                    className="flex items-center justify-between rounded-lg border border-white/5 bg-muted/40 p-3"
-                                >
-                                    <div className="flex-1">
-                                        <p className="text-sm font-semibold">{task.judul}</p>
-                                        <p className="text-xs text-muted-foreground">{task.mataPelajaran}</p>
-                                    </div>
+                        {isLoading ? (
+                            <div className="text-center py-4 text-muted-foreground">
+                                Memuat data...
+                            </div>
+                        ) : upcomingTasks.length === 0 ? (
+                            <div className="text-center py-8">
+                                <CheckCircle2 className="h-12 w-12 mx-auto text-green-500 mb-2" />
+                                <p className="text-sm text-muted-foreground">
+                                    Tidak ada tugas yang menunggu 🎉
+                                </p>
+                            </div>
+                        ) : (
+                            upcomingTasks.map((task: any) => {
+                                const daysInfo = getDaysRemaining(task.deadline);
+                                return (
                                     <div
-                                        className={cn(
-                                            "flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-semibold",
-                                            daysInfo.urgent
-                                                ? "bg-red-500/20 text-red-500"
-                                                : "bg-blue-500/20 text-blue-500"
-                                        )}
+                                        key={task.id}
+                                        className="flex items-center justify-between rounded-lg border border-white/5 bg-muted/40 p-3"
                                     >
-                                        <Clock size={14} />
-                                        {daysInfo.text}
+                                        <div className="flex-1">
+                                            <p className="text-sm font-semibold">{task.judul}</p>
+                                            <p className="text-xs text-muted-foreground">
+                                                {task.mataPelajaran?.nama || "Mata Pelajaran"}
+                                            </p>
+                                        </div>
+                                        <div
+                                            className={cn(
+                                                "flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-semibold",
+                                                daysInfo.urgent
+                                                    ? "bg-red-500/20 text-red-500"
+                                                    : "bg-blue-500/20 text-blue-500"
+                                            )}
+                                        >
+                                            <Clock size={14} />
+                                            {daysInfo.text}
+                                        </div>
                                     </div>
-                                </div>
-                            );
-                        })}
+                                );
+                            })
+                        )}
                     </CardContent>
                 </Card>
 
-                {/* Progress by Subject */}
+                {/* Recent Materi */}
                 <Card className="border-border bg-card/70">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            <TrendingUp size={18} />
-                            Progress Mata Pelajaran
+                            <BookOpen size={18} />
+                            Materi Terbaru
                         </CardTitle>
-                        <CardDescription>Pantau kemajuan belajarmu</CardDescription>
+                        <CardDescription>Materi pelajaran terbaru untuk kamu</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                        {progressBySubject.map((item) => (
-                            <div key={item.subject} className="space-y-2">
-                                <div className="flex items-center justify-between text-sm">
-                                    <span className="font-medium">{item.subject}</span>
-                                    <span className="text-muted-foreground">{item.progress}%</span>
-                                </div>
-                                <div className="h-2 w-full rounded-full bg-white/10">
-                                    <div
-                                        className={cn("h-full rounded-full transition-all", item.color)}
-                                        style={{ width: `${item.progress}%` }}
-                                    />
-                                </div>
+                    <CardContent className="space-y-3">
+                        {isLoading ? (
+                            <div className="text-center py-4 text-muted-foreground">
+                                Memuat data...
                             </div>
-                        ))}
+                        ) : materiList.length === 0 ? (
+                            <div className="text-center py-8">
+                                <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                                <p className="text-sm text-muted-foreground">
+                                    Belum ada materi tersedia
+                                </p>
+                            </div>
+                        ) : (
+                            materiList.slice(0, 4).map((item: any) => (
+                                <Link key={item.id} href={`/materi/${item.id}`}>
+                                    <div className="rounded-lg border border-white/5 bg-muted/40 p-3 hover:bg-muted/60 transition-colors cursor-pointer">
+                                        <p className="text-sm font-semibold line-clamp-1">{item.judul}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            {item.mataPelajaran?.nama || "Mata Pelajaran"}
+                                        </p>
+                                    </div>
+                                </Link>
+                            ))
+                        )}
                     </CardContent>
                 </Card>
             </div>
@@ -263,40 +314,48 @@ export default function StudentDashboard() {
             <Card className="border-border bg-card/70">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                        <Zap size={18} />
+                        <Bell size={18} />
                         Aktivitas Terbaru
                     </CardTitle>
-                    <CardDescription>Update terbaru dari kelas Anda</CardDescription>
+                    <CardDescription>Notifikasi dan update terbaru</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                    {recentActivities.map((activity, index) => {
-                        const Icon = activity.icon;
-                        return (
+                    {isLoading ? (
+                        <div className="text-center py-4 text-muted-foreground">
+                            Memuat data...
+                        </div>
+                    ) : recentActivities.length === 0 ? (
+                        <div className="text-center py-8">
+                            <Bell className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                            <p className="text-sm text-muted-foreground">
+                                Belum ada aktivitas terbaru
+                            </p>
+                        </div>
+                    ) : (
+                        recentActivities.map((activity: any) => (
                             <div
-                                key={index}
-                                className="flex items-start gap-3 rounded-lg border border-white/5 bg-muted/40 p-3"
+                                key={activity.id}
+                                className={cn(
+                                    "flex items-start gap-3 rounded-lg border border-white/5 bg-muted/40 p-3",
+                                    !activity.isRead && "border-primary/30 bg-primary/5"
+                                )}
                             >
-                                <div className={cn("flex h-10 w-10 items-center justify-center rounded-lg", activity.bg)}>
-                                    <Icon size={18} className={activity.color} />
+                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                                    <Bell size={18} className="text-primary" />
                                 </div>
                                 <div className="flex-1">
                                     <p className="text-sm font-semibold">{activity.title}</p>
-                                    {activity.type === "grade" && (
-                                        <p className="text-xs text-green-600 dark:text-green-400">
-                                            Nilai: {activity.score}/100
-                                        </p>
-                                    )}
-                                    {activity.type === "material" && (
-                                        <p className="text-xs text-muted-foreground">{activity.subject}</p>
-                                    )}
-                                    {activity.type === "forum" && (
-                                        <p className="text-xs text-muted-foreground">{activity.thread}</p>
-                                    )}
+                                    <p className="text-xs text-muted-foreground line-clamp-1">
+                                        {activity.message}
+                                    </p>
                                     <p className="mt-1 text-xs text-muted-foreground">{activity.time}</p>
                                 </div>
+                                {!activity.isRead && (
+                                    <Badge tone="info" className="text-xs">Baru</Badge>
+                                )}
                             </div>
-                        );
-                    })}
+                        ))
+                    )}
                 </CardContent>
             </Card>
 

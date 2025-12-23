@@ -12,7 +12,10 @@ import * as bcrypt from 'bcrypt';
 
 type TokenResponse = {
   accessToken: string;
-  user: Pick<User, 'id' | 'email' | 'name' | 'role' | 'createdAt'>;
+  user: Pick<User, 'id' | 'email' | 'name' | 'role' | 'createdAt'> & {
+    guru?: { id: string; nama: string } | null;
+    siswa?: { id: string; nama: string; kelasId: string | null } | null;
+  };
 };
 
 @Injectable()
@@ -40,12 +43,28 @@ export class AuthService {
       },
     });
 
-    return this.buildToken(user);
+    // New users don't have guru/siswa relations yet
+    return this.buildToken({ ...user, guru: null, siswa: null });
   }
 
   async login(dto: LoginDto): Promise<TokenResponse> {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email.toLowerCase() },
+      include: {
+        guru: {
+          select: {
+            id: true,
+            nama: true,
+          },
+        },
+        siswa: {
+          select: {
+            id: true,
+            nama: true,
+            kelasId: true,
+          },
+        },
+      },
     });
     if (!user) {
       throw new UnauthorizedException('Email atau password salah');
@@ -64,7 +83,7 @@ export class AuthService {
     return bcrypt.hash(password, saltRounds);
   }
 
-  private async buildToken(user: User): Promise<TokenResponse> {
+  private async buildToken(user: User & { guru?: { id: string; nama: string } | null; siswa?: { id: string; nama: string; kelasId: string | null } | null }): Promise<TokenResponse> {
     const payload = {
       sub: user.id,
       email: user.email,

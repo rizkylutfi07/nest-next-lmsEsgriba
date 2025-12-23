@@ -68,6 +68,7 @@ export class GuruController {
   }
 
   @Get(':id')
+  @Roles(Role.ADMIN, Role.GURU)
   findOne(@Param('id') id: string) {
     return this.guruService.findOne(id);
   }

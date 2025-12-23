@@ -16,6 +16,45 @@ type PilihanJawaban = {
     value: string;
 };
 
+/**
+ * Parse inline concatenated options like "Word B.Excel C.PowerPoint D.Corel Draw E.Paint"
+ */
+const parseInlineOptions = (text: string): PilihanJawaban[] => {
+    const optionLabels = ['A', 'B', 'C', 'D', 'E'];
+
+    // Check if text contains inline option markers like " B.", " C." etc.
+    if (!/ [B-E]\./i.test(text)) {
+        return [];
+    }
+
+    // Split by space followed by B., C., D., E.
+    const splitPattern = /\s+(?=[A-E]\.)/gi;
+    const parts = text.split(splitPattern).filter(p => p.trim());
+
+    if (parts.length < 2) {
+        return [];
+    }
+
+    const options: PilihanJawaban[] = [];
+
+    for (let i = 0; i < parts.length && i < optionLabels.length; i++) {
+        let part = parts[i]!.trim();
+
+        // Remove leading label like "A.", "B." etc if present
+        part = part.replace(/^[A-E]\.\s*/i, '').trim();
+
+        if (part) {
+            options.push({
+                id: optionLabels[i]!,
+                text: part,
+                value: optionLabels[i]!,
+            });
+        }
+    }
+
+    return options.length >= 2 ? options : [];
+};
+
 const normalizePilihanData = (source: any): PilihanJawaban[] => {
     if (!source) return [];
     let data = source;
@@ -23,10 +62,58 @@ const normalizePilihanData = (source: any): PilihanJawaban[] => {
         try {
             data = JSON.parse(data);
         } catch {
+            // If parsing fails, try inline parsing
+            const inlineOptions = parseInlineOptions(data);
+            if (inlineOptions.length >= 2) {
+                return inlineOptions;
+            }
             return [];
         }
     }
     if (Array.isArray(data)) {
+        // Check if this looks like properly formatted options
+        const firstItem = data[0];
+
+        // Case: Array has valid option objects [{id: "A", text: "..."}, ...]
+        if (firstItem && typeof firstItem === 'object' && (firstItem.id || firstItem.text)) {
+            return data.map((item: any, idx: number) => {
+                const id = item?.id ?? item?.value ?? `${idx}`;
+                return {
+                    id,
+                    text: item?.text ?? item?.label ?? item?.value ?? "",
+                    value: id,
+                };
+            });
+        }
+
+        // Case: Array has single string element with concatenated options
+        if (data.length === 1 && typeof firstItem === 'string') {
+            const inlineOptions = parseInlineOptions(firstItem);
+            if (inlineOptions.length >= 2) {
+                return inlineOptions;
+            }
+        }
+
+        // Case: Array of strings - try to parse each as option text
+        if (data.every((item: any) => typeof item === 'string')) {
+            // Check if first item contains inline options
+            if (data.length === 1 && data[0]) {
+                const inlineOptions = parseInlineOptions(data[0]);
+                if (inlineOptions.length >= 2) {
+                    return inlineOptions;
+                }
+            }
+
+            // Otherwise, treat each string as a separate option
+            const optionLabels = ['A', 'B', 'C', 'D', 'E'];
+            return data.map((text: string, idx: number) => ({
+                id: optionLabels[idx] || `${idx}`,
+                text: text.replace(/^[A-E][\.)\s]+/i, '').trim(),
+                value: optionLabels[idx] || `${idx}`,
+            }));
+        }
+
+        // Default array handling
         return data.map((item: any, idx: number) => {
             const id = item?.id ?? item?.value ?? `${idx}`;
             return {
@@ -383,7 +470,7 @@ export default function KerjakanUjianPage() {
     const handleSubmit = () => {
         const unanswered = soalList
             .map((soal: any, idx: number) => ({ key: soal.bankSoalId ?? soal.id, idx }))
-            .filter(({ key }) => !jawaban[key]);
+            .filter(({ key }: { key: string }) => !jawaban[key]);
 
         setUnansweredList(unanswered);
         setShowSubmitConfirm(true);

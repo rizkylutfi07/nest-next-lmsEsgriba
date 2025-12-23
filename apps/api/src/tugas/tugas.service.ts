@@ -60,14 +60,35 @@ export class TugasService {
             where.isPublished = filters.isPublished === 'true' || filters.isPublished === true;
         }
 
+        // Build include object - include student's own submissions if siswaId provided
+        const include: any = {
+            mataPelajaran: { select: { id: true, nama: true } },
+            guru: { select: { id: true, nama: true } },
+            kelas: { select: { id: true, nama: true } },
+            _count: { select: { submissions: true } },
+        };
+
+
+        // If siswaId is provided, include attachments and student's submissions
+        if (filters?.siswaId) {
+            include.attachments = true; // Include teacher's attachments for students
+            include.submissions = {
+                where: { siswaId: filters.siswaId },
+                select: {
+                    id: true,
+                    status: true,
+                    score: true,
+                    submittedAt: true,
+                    gradedAt: true,
+                    feedback: true,
+                    konten: true,
+                },
+            };
+        }
+
         return this.prisma.tugas.findMany({
             where,
-            include: {
-                mataPelajaran: { select: { id: true, nama: true } },
-                guru: { select: { id: true, nama: true } },
-                kelas: { select: { id: true, nama: true } },
-                _count: { select: { submissions: true } },
-            },
+            include,
             orderBy: { deadline: 'asc' },
         });
     }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { Loader2, ArrowLeft, Search, Filter, Users, Check } from "lucide-react";
@@ -11,7 +11,7 @@ import { useRole } from "../../role-context";
 import { useToast } from "@/hooks/use-toast";
 
 export default function CreateUjianPage() {
-    const { token } = useRole();
+    const { token, role, user } = useRole();
     const { toast } = useToast();
     const router = useRouter();
 
@@ -39,11 +39,19 @@ export default function CreateUjianPage() {
     const [filterAgama, setFilterAgama] = useState<string>("ALL");
     const [searchStudent, setSearchStudent] = useState("");
 
-    // Search state for guru and mata pelajaran - no longer needed with SearchableSelect
-    // const [searchGuru, setSearchGuru] = useState<string>("");
-    // const [searchMataPelajaran, setSearchMataPelajaran] = useState<string>("");
+    // Effect to auto-set guruId when user data is ready (for GURU role)
+    useEffect(() => {
+        if (role === "GURU" && user?.guru?.id) {
+            setFormData(prev => {
+                if (prev.guruId !== user.guru!.id) {
+                    return { ...prev, guruId: user.guru!.id };
+                }
+                return prev;
+            });
+        }
+    }, [role, user]);
 
-    // Fetch guru
+    // Fetch guru (Only for admin)
     const { data: guruList } = useQuery({
         queryKey: ["guru-list"],
         queryFn: async () => {
@@ -52,10 +60,13 @@ export default function CreateUjianPage() {
             });
             return res.json();
         },
+        enabled: role === "ADMIN",
     });
 
     // Fetch guru detail with mata pelajaran when guru is selected
-    const { data: selectedGuru } = useQuery({
+    // If role is GURU, we might need to fetch our own details if not fully in context, 
+    // or we can rely on what we have. Let's fetch to be safe and consistent.
+    const { data: selectedGuru, isLoading: isLoadingGuru } = useQuery({
         queryKey: ["guru-detail", formData.guruId],
         queryFn: async () => {
             if (!formData.guruId) return null;
@@ -336,39 +347,46 @@ export default function CreateUjianPage() {
                                 />
                             </div>
 
-                            <div>
-                                <label className="mb-2 block text-sm font-medium">
-                                    Guru *
-                                </label>
-                                <SearchableSelect
-                                    options={guruList?.data?.map((guru: any) => ({
-                                        value: guru.id,
-                                        label: guru.nama,
-                                    })) || []}
-                                    value={formData.guruId}
-                                    onChange={(value) => {
-                                        setFormData({
-                                            ...formData,
-                                            guruId: value,
-                                            mataPelajaranId: "", // Reset mata pelajaran when guru changes
-                                        });
-                                    }}
-                                    placeholder="Pilih Guru"
-                                    searchPlaceholder="Cari guru..."
-                                    emptyMessage="Guru tidak ditemukan"
-                                />
-                                {!formData.guruId && (
-                                    <p className="mt-1 text-xs text-muted-foreground">
-                                        Pilih guru terlebih dahulu untuk melihat mata pelajaran
-                                    </p>
-                                )}
-                            </div>
+                            {role === "ADMIN" && (
+                                <div>
+                                    <label className="mb-2 block text-sm font-medium">
+                                        Guru *
+                                    </label>
+                                    <SearchableSelect
+                                        options={guruList?.data?.map((guru: any) => ({
+                                            value: guru.id,
+                                            label: guru.nama,
+                                        })) || []}
+                                        value={formData.guruId}
+                                        onChange={(value) => {
+                                            setFormData({
+                                                ...formData,
+                                                guruId: value,
+                                                mataPelajaranId: "", // Reset mata pelajaran when guru changes
+                                            });
+                                        }}
+                                        placeholder="Pilih Guru"
+                                        searchPlaceholder="Cari guru..."
+                                        emptyMessage="Guru tidak ditemukan"
+                                    />
+                                    {!formData.guruId && (
+                                        <p className="mt-1 text-xs text-muted-foreground">
+                                            Pilih guru terlebih dahulu untuk melihat mata pelajaran
+                                        </p>
+                                    )}
+                                </div>
+                            )}
 
                             <div>
                                 <label className="mb-2 block text-sm font-medium">
                                     Mata Pelajaran
                                 </label>
-                                {formData.guruId && selectedGuru?.mataPelajaran ? (
+                                {isLoadingGuru ? (
+                                    <div className="w-full rounded-lg border border-border bg-background px-4 py-2 text-sm text-muted-foreground flex items-center gap-2">
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                        Memuat mata pelajaran...
+                                    </div>
+                                ) : (role === "GURU" || formData.guruId) && selectedGuru?.mataPelajaran ? (
                                     <>
                                         <SearchableSelect
                                             options={selectedGuru?.mataPelajaran?.map((mp: any) => ({
@@ -395,7 +413,7 @@ export default function CreateUjianPage() {
                                     </>
                                 ) : (
                                     <div className="w-full rounded-lg border border-border bg-background px-4 py-2 text-sm text-muted-foreground">
-                                        Pilih guru terlebih dahulu
+                                        {role === "GURU" && formData.guruId ? "Memuat mata pelajaran..." : role === "GURU" ? "Menunggu data guru..." : "Pilih guru terlebih dahulu"}
                                     </div>
                                 )}
                             </div>

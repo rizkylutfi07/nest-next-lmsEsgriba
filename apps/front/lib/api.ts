@@ -230,7 +230,7 @@ export const forumApi = {
 
 // Mata Pelajaran API (for dropdowns)
 export const mataPelajaranApi = {
-    getAll: (params?: { limit?: number; page?: number; search?: string }) =>
+    getAll: (params?: { limit?: number; page?: number; search?: string; mySubjects?: string }) =>
         fetchApi(`/mata-pelajaran?${new URLSearchParams(params as any)}`),
 };
 

@@ -12,7 +12,7 @@ export class NotifikasiController {
     // For GURU/ADMIN: use userId (for future use if needed)
     private getUserIdForNotifications(req: any): string {
         // Notifications are sent to siswa.id, so use siswaId for students
-        return req.user.siswaId || req.user.userId;
+        return req.user.siswa?.id || req.user.guru?.id || req.user.userId;
     }
 
     @Get()

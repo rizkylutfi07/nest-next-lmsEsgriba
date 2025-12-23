@@ -12,6 +12,7 @@ import {
   UploadedFile,
   BadRequestException,
   Res,
+  Req,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -32,7 +33,18 @@ export class MataPelajaranController {
   constructor(private readonly matapelajaranService: MataPelajaranService) { }
 
   @Get()
-  findAll(@Query() query: QueryMataPelajaranDto) {
+  findAll(@Query() query: QueryMataPelajaranDto, @Req() req?: any) {
+    console.log('[MATA PELAJARAN] Query params:', query);
+    console.log('[MATA PELAJARAN] User:', req?.user);
+    console.log('[MATA PELAJARAN] Guru ID:', req?.user?.guru?.id);
+
+    // If mySubjects=true and user is GURU, filter by their mata pelajaran
+    if (query['mySubjects'] === 'true' && req?.user?.guru?.id) {
+      console.log('[MATA PELAJARAN] Filtering by guru ID:', req.user.guru.id);
+      return this.matapelajaranService.findByGuruId(req.user.guru.id, query);
+    }
+
+    console.log('[MATA PELAJARAN] Returning all mata pelajaran');
     return this.matapelajaranService.findAll(query);
   }
 

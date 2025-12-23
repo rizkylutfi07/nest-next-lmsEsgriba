@@ -53,6 +53,56 @@ export class MataPelajaranService {
     return item;
   }
 
+  async findByGuruId(guruId: string, query: QueryMataPelajaranDto) {
+    console.log('[MATA PELAJARAN SERVICE] Finding by guru ID:', guruId);
+
+    const { page = 1, limit = 10, search } = query;
+    const skip = (page - 1) * limit;
+
+    const where: any = {
+      deletedAt: null,
+      guru: {
+        some: {
+          id: guruId,
+        },
+      },
+    };
+
+    if (search) {
+      where.OR = [
+        { nama: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.mataPelajaran.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.mataPelajaran.count({ where }),
+    ]);
+
+    console.log('[MATA PELAJARAN SERVICE] Found', total, 'mata pelajaran for guru');
+
+    // If no subjects found for this guru, return all subjects as fallback
+    if (total === 0) {
+      console.log('[MATA PELAJARAN SERVICE] No subjects assigned to guru, returning all subjects');
+      return this.findAll(query);
+    }
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
   async create(dto: CreateMataPelajaranDto) {
     return this.prisma.mataPelajaran.create({
       data: dto as any,

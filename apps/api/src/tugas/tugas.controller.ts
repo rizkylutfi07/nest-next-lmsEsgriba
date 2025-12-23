@@ -100,11 +100,19 @@ export class TugasController {
     @Roles(Role.ADMIN, Role.GURU, Role.SISWA)
     findAll(@Query() filters?: any, @Req() req?: any) {
         // If student, only show published assignments for their class
+        // Also include their own submissions for dashboard stats
         if (req.user.role === Role.SISWA) {
             const kelasId = req.user.siswa?.kelasId;
+            const siswaId = req.user.siswa?.id;
+
+            console.log('[TUGAS CONTROLLER] Student request:');
+            console.log('  kelasId:', kelasId);
+            console.log('  siswaId:', siswaId);
+
             return this.tugasService.findAll({
                 ...filters,
                 kelasId,
+                siswaId,
                 isPublished: true,
             });
         }

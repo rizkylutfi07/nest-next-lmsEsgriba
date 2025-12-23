@@ -27,6 +27,9 @@ export class UjianController {
     @Post()
     @Roles(Role.ADMIN, Role.GURU)
     create(@Body() createUjianDto: CreateUjianDto, @Request() req) {
+        if (req.user.role === Role.GURU) {
+            createUjianDto.guruId = req.user.guruId;
+        }
         return this.ujianService.create(createUjianDto, req.user.userId);
     }
 

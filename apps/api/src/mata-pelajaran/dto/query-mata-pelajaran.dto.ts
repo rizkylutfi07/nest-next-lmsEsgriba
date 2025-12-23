@@ -17,4 +17,8 @@ export class QueryMataPelajaranDto {
   @IsString()
   @IsOptional()
   search?: string;
+
+  @IsString()
+  @IsOptional()
+  mySubjects?: string;
 }

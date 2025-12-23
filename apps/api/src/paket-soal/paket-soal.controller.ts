@@ -10,6 +10,7 @@ import {
     UseGuards,
     UseInterceptors,
     UploadedFile,
+    Req,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { PaketSoalService } from './paket-soal.service';
@@ -29,7 +30,11 @@ export class PaketSoalController {
 
     @Post()
     @Roles(Role.ADMIN, Role.GURU)
-    create(@Body() createPaketSoalDto: CreatePaketSoalDto) {
+    create(@Body() createPaketSoalDto: CreatePaketSoalDto, @Req() req: any) {
+        // If user is GURU, potential security check or auto-fill guruId
+        if (req.user.role === Role.GURU) {
+            createPaketSoalDto.guruId = req.user.guruId;
+        }
         return this.paketSoalService.create(createPaketSoalDto);
     }
 
