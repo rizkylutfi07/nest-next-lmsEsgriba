@@ -44,16 +44,19 @@ export class UjianSiswaService {
             const bobot = soal?.bankSoal?.bobot ?? soal?.bobot ?? 1;
             maxScore += bobot;
 
+            // jawaban uses bankSoalId as soalId
             const jawabanSiswa = jawaban.find((j) => j.soalId === soal.bankSoalId);
-            if (!jawabanSiswa) continue;
 
-            if (overrides && overrides.hasOwnProperty(soal.bankSoalId)) {
-                const overrideScore = overrides[soal.bankSoalId];
+            // Manual grade overrides from frontend use UjianSoal.id
+            if (overrides && overrides.hasOwnProperty(soal.id)) {
+                const overrideScore = overrides[soal.id];
                 if (overrideScore !== null && overrideScore !== undefined) {
                     totalScore += Math.min(Math.max(overrideScore, 0), bobot);
                 }
                 continue;
             }
+
+            if (!jawabanSiswa) continue;
 
             if (soal.bankSoal.tipe === TipeSoal.PILIHAN_GANDA || soal.bankSoal.tipe === TipeSoal.BENAR_SALAH) {
                 const pilihanJawaban = soal.bankSoal.pilihanJawaban as any[];
@@ -62,9 +65,8 @@ export class UjianSiswaService {
                     totalScore += bobot;
                 }
             } else if (soal.bankSoal.tipe === TipeSoal.ESSAY || soal.bankSoal.tipe === TipeSoal.ISIAN_SINGKAT) {
-                if (this.isEssayCorrect(soal.bankSoal.jawabanBenar, jawabanSiswa.jawaban)) {
-                    totalScore += bobot;
-                }
+                // Essay/Isian: only count if manually graded (via overrides)
+                // Don't auto-grade essays - they require manual grading
             }
         }
 
@@ -659,17 +661,22 @@ export class UjianSiswaService {
             throw new NotFoundException('Sesi ujian tidak ditemukan');
         }
 
-        const overrides: Record<string, number | null> = {};
+        // Load existing manual grades
+        const existingManualGrades = (ujianSiswa.manualGrades as Record<string, number>) || {};
+
+        // Merge with new grades (new grades override existing)
+        const mergedGrades: Record<string, number | null> = { ...existingManualGrades };
         gradeDto.grades.forEach((g) => {
-            overrides[g.soalId] = g.score;
+            mergedGrades[g.soalId] = g.score;
         });
 
         const jawabanArr = Array.isArray(ujianSiswa.jawaban) ? ujianSiswa.jawaban as any[] : [];
-        const { score, totalScore, maxScore } = this.computeScore(ujianSiswa.ujian.ujianSoal, jawabanArr, overrides);
+        const { score, totalScore, maxScore } = this.computeScore(ujianSiswa.ujian.ujianSoal, jawabanArr, mergedGrades);
 
         const updated = await this.prisma.ujianSiswa.update({
             where: { id: ujianSiswaId },
             data: {
+                manualGrades: mergedGrades,
                 nilaiTotal: score,
                 isPassed: ujianSiswa.ujian.nilaiMinimal ? score >= ujianSiswa.ujian.nilaiMinimal : null,
                 updatedAt: new Date(),
