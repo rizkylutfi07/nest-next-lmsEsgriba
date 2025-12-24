@@ -17,6 +17,7 @@ import {
   ClipboardList,
   Package,
   Settings,
+  MessageSquare,
 } from "lucide-react";
 
 export type Role = "ADMIN" | "GURU" | "SISWA" | "PETUGAS_ABSENSI";
@@ -116,6 +117,7 @@ const navByRole: Record<Role, NavGroup[]> = {
       items: [
         { label: "Pengaturan", icon: Settings, href: "/settings", note: "Konfigurasi sistem" },
         { label: "Kelola User", icon: Users2, href: "/users", note: "Manajemen pengguna" },
+        { label: "Pengumuman", icon: MessageSquare, href: "/pengumuman", note: "Info sekolah" },
         { label: "Database", icon: Database, href: "/database", note: "Backup & restore" },
         { label: "Keamanan", icon: ShieldCheck, href: "/keamanan", note: "Role & audit" },
         { label: "Keuangan", icon: CreditCard, href: "/keuangan", note: "Tagihan, SPP" },

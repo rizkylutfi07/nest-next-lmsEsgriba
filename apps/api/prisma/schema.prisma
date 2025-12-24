@@ -18,6 +18,7 @@ model User {
   // Relations to Siswa and Guru
   siswa Siswa?
   guru  Guru?
+  pengumuman Pengumuman[]
 }
 
 enum Role {
@@ -736,6 +737,19 @@ enum TipeNotifikasi {
   FORUM_REPLY
   PENGUMUMAN
   SISTEM
+}
+
+model Pengumuman {
+  id          String   @id @default(cuid())
+  judul       String
+  konten      String   @db.Text
+  targetRoles Role[]   @default([]) // Empty array means visible to everyone
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime? // Soft delete
 }
 
 // Progress Siswa (Student Progress Tracking)

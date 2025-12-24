@@ -29,6 +29,7 @@ import { TugasModule } from './tugas/tugas.module';
 import { ForumModule } from './forum/forum.module';
 import { NotifikasiModule } from './notifikasi/notifikasi.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { PengumumanModule } from './pengumuman/pengumuman.module';
 
 @Module({
   imports: [
@@ -65,7 +66,9 @@ import { AnalyticsModule } from './analytics/analytics.module';
     TugasModule,
     ForumModule,
     NotifikasiModule,
+    NotifikasiModule,
     AnalyticsModule,
+    PengumumanModule,
   ],
   controllers: [AppController],
   providers: [AppService],

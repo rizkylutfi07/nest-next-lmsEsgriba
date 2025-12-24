@@ -32,8 +32,11 @@ import {
 import { cn } from "@/lib/utils";
 import { useRole } from "./role-context";
 import StudentDashboard from "@/components/student-dashboard";
+import { AnnouncementWidget } from "@/components/announcement-widget";
 import { useEffect, useState } from "react";
 import { analyticsApi } from "@/lib/api";
+import { apiFetch } from "@/lib/api-client";
+import Link from "next/link";
 
 
 
@@ -275,9 +278,11 @@ export default function HomePage() {
                     <ClipboardCheck size={16} />
                     Tinjau performa
                   </Button>
-                  <Button size="sm" variant="outline" className="gap-2">
-                    <MessageSquare size={16} />
-                    Kirim pengumuman
+                  <Button size="sm" variant="outline" className="gap-2" asChild>
+                    <Link href="/pengumuman">
+                      <MessageSquare size={16} />
+                      Kirim pengumuman
+                    </Link>
                   </Button>
                 </>
               )}
@@ -441,7 +446,14 @@ export default function HomePage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Announcements Widget */}
+      <div className="md:col-span-1 xl:col-span-1">
+        <AnnouncementWidget role={role} />
+      </div>
     </div>
   );
 }
+
+
 

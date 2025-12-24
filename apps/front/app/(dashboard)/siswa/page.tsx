@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Pencil, Trash2, Plus, Upload, Download, X, ArrowUp, ArrowDown, ChevronRight, ChevronLeft } from "lucide-react";
+import { Loader2, Pencil, Trash2, Plus, Upload, Download, X, ArrowUp, ArrowDown, ChevronRight, ChevronLeft, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -142,16 +142,16 @@ export default function SiswaPage() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <div className="md:flex items-center justify-between">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold">Data Siswa</h1>
               <p className="text-sm text-muted-foreground">Kelola data siswa</p>
             </div>
 
-            <div className="flex gap-2 mt-4 md:mt-0">
-              <Button onClick={() => setIsImportModalOpen(true)} variant="outline">
-                <Upload size={16} />
-                Import Excel
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={() => setIsImportModalOpen(true)} variant="outline" size="sm" className="flex-1 md:flex-none">
+                <Upload size={16} className="mr-2" />
+                Import
               </Button>
               <Button
                 onClick={async () => {
@@ -166,61 +166,68 @@ export default function SiswaPage() {
                   a.click();
                 }}
                 variant="outline"
+                size="sm"
+                className="flex-1 md:flex-none"
               >
-                <Download size={16} />
+                <Download size={16} className="mr-2" />
                 Export
               </Button>
-              <Button onClick={() => setIsCreateModalOpen(true)}>
-                <Plus size={16} />
-                Tambah Siswa
+              <Button onClick={() => setIsCreateModalOpen(true)} size="sm" className="flex-1 md:flex-none w-full md:w-auto">
+                <Plus size={16} className="mr-2" />
+                Tambah
               </Button>
             </div>
           </div>
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Cari..."
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              className="w-full rounded-lg border border-border bg-background py-2 pl-10 pr-4 text-sm outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-            />
-          </div>
-          <div className="flex gap-2">
-            <select
-              value={filterKelas}
-              onChange={(e) => { setFilterKelas(e.target.value); setPage(1); }}
-              className="rounded-lg border border-border bg-background px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-            >
-              <option value="">Semua Kelas</option>
-              {kelasList?.data?.map((kelas: any) => (
-                <option key={kelas.id} value={kelas.id}>
-                  {kelas.nama}
-                </option>
-              ))}
-            </select>
-            <select
-              value={filterStatus}
-              onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
-              className="rounded-lg border border-border bg-background px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-            >
-              <option value="">Semua Status</option>
-              <option value="AKTIF">AKTIF</option>
-              <option value="PKL">PKL</option>
-              <option value="PINDAH">PINDAH</option>
-              <option value="ALUMNI">ALUMNI</option>
-            </select>
-            <select
-              value={filterTahunAjaran}
-              onChange={(e) => { setFilterTahunAjaran(e.target.value); setPage(1); }}
-              className="hidden md:block rounded-lg border border-border bg-background px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-            >
-              <option value="">Semua Tahun Ajaran</option>
-              {activeTahunAjaran && (
-                <option value={activeTahunAjaran.id}>
-                  {activeTahunAjaran.tahun} (Aktif)
-                </option>
-              )}
-            </select>
+
+          <div className="space-y-3 pt-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Cari nama atau NISN..."
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-4 text-sm outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+
+            <div className="flex flex-col md:flex-row gap-2">
+              <select
+                value={filterKelas}
+                onChange={(e) => { setFilterKelas(e.target.value); setPage(1); }}
+                className="w-full md:w-auto rounded-lg border border-border bg-background px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+              >
+                <option value="">Semua Kelas</option>
+                {kelasList?.data?.map((kelas: any) => (
+                  <option key={kelas.id} value={kelas.id}>
+                    {kelas.nama}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={filterStatus}
+                onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
+                className="w-full md:w-auto rounded-lg border border-border bg-background px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+              >
+                <option value="">Semua Status</option>
+                <option value="AKTIF">AKTIF</option>
+                <option value="PKL">PKL</option>
+                <option value="PINDAH">PINDAH</option>
+                <option value="ALUMNI">ALUMNI</option>
+              </select>
+              <select
+                value={filterTahunAjaran}
+                onChange={(e) => { setFilterTahunAjaran(e.target.value); setPage(1); }}
+                className="w-full md:w-auto rounded-lg border border-border bg-background px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+              >
+                <option value="">Semua Tahun Ajaran</option>
+                {activeTahunAjaran && (
+                  <option value={activeTahunAjaran.id}>
+                    {activeTahunAjaran.tahun} ({activeTahunAjaran.semester})
+                  </option>
+                )}
+              </select>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="p-2 md:p-4">
@@ -296,7 +303,7 @@ export default function SiswaPage() {
                       </td>
                       <td className="px-6 py-4 text-muted-foreground">{item.email}</td>
                       <td className="px-6 py-4">
-                        <Badge variant="outline" className="bg-background">
+                        <Badge className="bg-background">
                           {item.kelas?.nama ?? "-"}
                         </Badge>
                       </td>
@@ -410,7 +417,7 @@ export default function SiswaPage() {
           title="Tambah Siswa"
           item={null}
           onClose={() => setIsCreateModalOpen(false)}
-          onSubmit={(data) => createMutation.mutate(data)}
+          onSubmit={(data: any) => createMutation.mutate(data)}
           isLoading={createMutation.isPending}
         />
       )}
@@ -420,7 +427,7 @@ export default function SiswaPage() {
           title="Edit Siswa"
           item={editingItem}
           onClose={() => setEditingItem(null)}
-          onSubmit={(data) => updateMutation.mutate({ id: editingItem.id, data })}
+          onSubmit={(data: any) => updateMutation.mutate({ id: editingItem.id, data })}
           isLoading={updateMutation.isPending}
         />
       )}

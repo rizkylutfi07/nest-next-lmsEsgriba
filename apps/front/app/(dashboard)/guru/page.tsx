@@ -131,15 +131,15 @@ export default function GuruPage() {
     <div className="space-y-6">
       <Card>
         <CardHeader className="p-3 md:p-6">
-          <div className="md:flex items-center justify-between">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold">Data Guru</h1>
               <CardDescription>Total {total} data</CardDescription>
             </div>
-            <div className="flex gap-2 mt-4 md:mt-0">
-              <Button onClick={() => setIsImportModalOpen(true)} variant="outline">
-                <Upload size={16} />
-                Import Excel
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={() => setIsImportModalOpen(true)} variant="outline" size="sm" className="flex-1 md:flex-none">
+                <Upload size={16} className="mr-2" />
+                Import
               </Button>
               <Button
                 onClick={async () => {
@@ -154,19 +154,21 @@ export default function GuruPage() {
                   a.click();
                 }}
                 variant="outline"
+                size="sm"
+                className="flex-1 md:flex-none"
               >
-                <Download size={16} />
+                <Download size={16} className="mr-2" />
                 Export
               </Button>
-              <Button onClick={() => setIsCreateModalOpen(true)}>
-                <Plus size={16} />
-                Tambah Guru
+              <Button onClick={() => setIsCreateModalOpen(true)} size="sm" className="flex-1 md:flex-none w-full md:w-auto">
+                <Plus size={16} className="mr-2" />
+                Tambah
               </Button>
             </div>
           </div>
 
           <div className="mt-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="relative flex-1 md:w-64">
+            <div className="relative w-full md:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
               <input
                 type="text"

@@ -22,6 +22,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { tugasApi, materiApi, notifikasiApi } from "@/lib/api";
+import { AnnouncementWidget } from "@/components/announcement-widget";
 
 const getDaysRemaining = (deadline: string) => {
     const now = new Date();
@@ -212,196 +213,204 @@ export default function StudentDashboard() {
             </div>
 
             <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-                {/* Upcoming Tasks */}
-                <Card className="border-border bg-card/70">
-                    <CardHeader className="flex flex-row items-center justify-between">
-                        <div>
+                {/* Left Column: Tasks & Materi */}
+                <div className="space-y-6">
+                    {/* Upcoming Tasks */}
+                    <Card className="border-border bg-card/70">
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Target size={18} />
+                                    Tugas yang Akan Datang
+                                </CardTitle>
+                                <CardDescription>Jangan sampai terlewat deadline!</CardDescription>
+                            </div>
+                            <Link href="/tugas">
+                                <Button size="sm" variant="outline" className="gap-2">
+                                    Lihat Semua
+                                    <ArrowRight size={14} />
+                                </Button>
+                            </Link>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                            {isLoading ? (
+                                <div className="text-center py-4 text-muted-foreground">
+                                    Memuat data...
+                                </div>
+                            ) : upcomingTasks.length === 0 ? (
+                                <div className="text-center py-8">
+                                    <CheckCircle2 className="h-12 w-12 mx-auto text-green-500 mb-2" />
+                                    <p className="text-sm text-muted-foreground">
+                                        Tidak ada tugas yang menunggu 🎉
+                                    </p>
+                                </div>
+                            ) : (
+                                upcomingTasks.map((task: any) => {
+                                    const daysInfo = getDaysRemaining(task.deadline);
+                                    return (
+                                        <div
+                                            key={task.id}
+                                            className="flex items-center justify-between rounded-lg border border-white/5 bg-muted/40 p-3"
+                                        >
+                                            <div className="flex-1">
+                                                <p className="text-sm font-semibold">{task.judul}</p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {task.mataPelajaran?.nama || "Mata Pelajaran"}
+                                                </p>
+                                            </div>
+                                            <div
+                                                className={cn(
+                                                    "flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-semibold",
+                                                    daysInfo.urgent
+                                                        ? "bg-red-500/20 text-red-500"
+                                                        : "bg-blue-500/20 text-blue-500"
+                                                )}
+                                            >
+                                                <Clock size={14} />
+                                                {daysInfo.text}
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    {/* Recent Materi */}
+                    <Card className="border-border bg-card/70">
+                        <CardHeader>
                             <CardTitle className="flex items-center gap-2">
-                                <Target size={18} />
-                                Tugas yang Akan Datang
+                                <BookOpen size={18} />
+                                Materi Terbaru
                             </CardTitle>
-                            <CardDescription>Jangan sampai terlewat deadline!</CardDescription>
-                        </div>
-                        <Link href="/tugas">
-                            <Button size="sm" variant="outline" className="gap-2">
-                                Lihat Semua
-                                <ArrowRight size={14} />
-                            </Button>
-                        </Link>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                        {isLoading ? (
-                            <div className="text-center py-4 text-muted-foreground">
-                                Memuat data...
-                            </div>
-                        ) : upcomingTasks.length === 0 ? (
-                            <div className="text-center py-8">
-                                <CheckCircle2 className="h-12 w-12 mx-auto text-green-500 mb-2" />
-                                <p className="text-sm text-muted-foreground">
-                                    Tidak ada tugas yang menunggu 🎉
-                                </p>
-                            </div>
-                        ) : (
-                            upcomingTasks.map((task: any) => {
-                                const daysInfo = getDaysRemaining(task.deadline);
-                                return (
-                                    <div
-                                        key={task.id}
-                                        className="flex items-center justify-between rounded-lg border border-white/5 bg-muted/40 p-3"
-                                    >
-                                        <div className="flex-1">
-                                            <p className="text-sm font-semibold">{task.judul}</p>
+                            <CardDescription>Materi pelajaran terbaru untuk kamu</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                            {isLoading ? (
+                                <div className="text-center py-4 text-muted-foreground">
+                                    Memuat data...
+                                </div>
+                            ) : materiList.length === 0 ? (
+                                <div className="text-center py-8">
+                                    <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                                    <p className="text-sm text-muted-foreground">
+                                        Belum ada materi tersedia
+                                    </p>
+                                </div>
+                            ) : (
+                                materiList.slice(0, 4).map((item: any) => (
+                                    <Link key={item.id} href={`/materi/${item.id}`}>
+                                        <div className="rounded-lg border border-white/5 bg-muted/40 p-3 hover:bg-muted/60 transition-colors cursor-pointer">
+                                            <p className="text-sm font-semibold line-clamp-1">{item.judul}</p>
                                             <p className="text-xs text-muted-foreground">
-                                                {task.mataPelajaran?.nama || "Mata Pelajaran"}
+                                                {item.mataPelajaran?.nama || "Mata Pelajaran"}
                                             </p>
                                         </div>
-                                        <div
-                                            className={cn(
-                                                "flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-semibold",
-                                                daysInfo.urgent
-                                                    ? "bg-red-500/20 text-red-500"
-                                                    : "bg-blue-500/20 text-blue-500"
-                                            )}
-                                        >
-                                            <Clock size={14} />
-                                            {daysInfo.text}
-                                        </div>
-                                    </div>
-                                );
-                            })
-                        )}
-                    </CardContent>
-                </Card>
+                                    </Link>
+                                ))
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
 
-                {/* Recent Materi */}
-                <Card className="border-border bg-card/70">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <BookOpen size={18} />
-                            Materi Terbaru
-                        </CardTitle>
-                        <CardDescription>Materi pelajaran terbaru untuk kamu</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                        {isLoading ? (
-                            <div className="text-center py-4 text-muted-foreground">
-                                Memuat data...
-                            </div>
-                        ) : materiList.length === 0 ? (
-                            <div className="text-center py-8">
-                                <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-                                <p className="text-sm text-muted-foreground">
-                                    Belum ada materi tersedia
-                                </p>
-                            </div>
-                        ) : (
-                            materiList.slice(0, 4).map((item: any) => (
-                                <Link key={item.id} href={`/materi/${item.id}`}>
-                                    <div className="rounded-lg border border-white/5 bg-muted/40 p-3 hover:bg-muted/60 transition-colors cursor-pointer">
-                                        <p className="text-sm font-semibold line-clamp-1">{item.judul}</p>
-                                        <p className="text-xs text-muted-foreground">
-                                            {item.mataPelajaran?.nama || "Mata Pelajaran"}
-                                        </p>
-                                    </div>
-                                </Link>
-                            ))
-                        )}
-                    </CardContent>
-                </Card>
-            </div>
+                {/* Right Column: Announcements & Activity */}
+                <div className="space-y-6">
+                    <AnnouncementWidget role="SISWA" />
 
-            {/* Recent Activity */}
-            <Card className="border-border bg-card/70">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Bell size={18} />
-                        Aktivitas Terbaru
-                    </CardTitle>
-                    <CardDescription>Notifikasi dan update terbaru</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                    {isLoading ? (
-                        <div className="text-center py-4 text-muted-foreground">
-                            Memuat data...
-                        </div>
-                    ) : recentActivities.length === 0 ? (
-                        <div className="text-center py-8">
-                            <Bell className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-                            <p className="text-sm text-muted-foreground">
-                                Belum ada aktivitas terbaru
-                            </p>
-                        </div>
-                    ) : (
-                        recentActivities.map((activity: any) => (
-                            <div
-                                key={activity.id}
-                                className={cn(
-                                    "flex items-start gap-3 rounded-lg border border-white/5 bg-muted/40 p-3",
-                                    !activity.isRead && "border-primary/30 bg-primary/5"
-                                )}
-                            >
-                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                                    <Bell size={18} className="text-primary" />
+                    {/* Recent Activity */}
+                    <Card className="border-border bg-card/70">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Bell size={18} />
+                                Aktivitas Terbaru
+                            </CardTitle>
+                            <CardDescription>Notifikasi dan update terbaru</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                            {isLoading ? (
+                                <div className="text-center py-4 text-muted-foreground">
+                                    Memuat data...
                                 </div>
-                                <div className="flex-1">
-                                    <p className="text-sm font-semibold">{activity.title}</p>
-                                    <p className="text-xs text-muted-foreground line-clamp-1">
-                                        {activity.message}
+                            ) : recentActivities.length === 0 ? (
+                                <div className="text-center py-8">
+                                    <Bell className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                                    <p className="text-sm text-muted-foreground">
+                                        Belum ada aktivitas terbaru
                                     </p>
-                                    <p className="mt-1 text-xs text-muted-foreground">{activity.time}</p>
                                 </div>
-                                {!activity.isRead && (
-                                    <Badge tone="info" className="text-xs">Baru</Badge>
-                                )}
-                            </div>
-                        ))
-                    )}
-                </CardContent>
-            </Card>
-
-            {/* Quick Actions */}
-            <div className="grid gap-4 sm:grid-cols-3">
-                <Link href="/materi">
-                    <Card className="group cursor-pointer transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10">
-                        <CardContent className="flex items-center gap-4 pt-6">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/20">
-                                <BookOpen className="h-6 w-6 text-blue-500" />
-                            </div>
-                            <div>
-                                <p className="font-semibold group-hover:text-primary">Materi Pelajaran</p>
-                                <p className="text-xs text-muted-foreground">Akses materi lengkap</p>
-                            </div>
+                            ) : (
+                                recentActivities.map((activity: any) => (
+                                    <div
+                                        key={activity.id}
+                                        className={cn(
+                                            "flex items-start gap-3 rounded-lg border border-white/5 bg-muted/40 p-3",
+                                            !activity.isRead && "border-primary/30 bg-primary/5"
+                                        )}
+                                    >
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                                            <Bell size={18} className="text-primary" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="text-sm font-semibold">{activity.title}</p>
+                                            <p className="text-xs text-muted-foreground line-clamp-1">
+                                                {activity.message}
+                                            </p>
+                                            <p className="mt-1 text-xs text-muted-foreground">{activity.time}</p>
+                                        </div>
+                                        {!activity.isRead && (
+                                            <Badge tone="info" className="text-xs">Baru</Badge>
+                                        )}
+                                    </div>
+                                ))
+                            )}
                         </CardContent>
                     </Card>
-                </Link>
 
-                <Link href="/tugas">
-                    <Card className="group cursor-pointer transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10">
-                        <CardContent className="flex items-center gap-4 pt-6">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/20">
-                                <FileText className="h-6 w-6 text-amber-500" />
-                            </div>
-                            <div>
-                                <p className="font-semibold group-hover:text-primary">Tugas & PR</p>
-                                <p className="text-xs text-muted-foreground">Kumpulkan tugas</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </Link>
+                    {/* Quick Actions */}
+                    <div className="grid gap-4 sm:grid-cols-3">
+                        <Link href="/materi">
+                            <Card className="group cursor-pointer transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10">
+                                <CardContent className="flex items-center gap-4 pt-6">
+                                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/20">
+                                        <BookOpen className="h-6 w-6 text-blue-500" />
+                                    </div>
+                                    <div>
+                                        <p className="font-semibold group-hover:text-primary">Materi Pelajaran</p>
+                                        <p className="text-xs text-muted-foreground">Akses materi lengkap</p>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </Link>
 
-                <Link href="/forum">
-                    <Card className="group cursor-pointer transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10">
-                        <CardContent className="flex items-center gap-4 pt-6">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/20">
-                                <MessageSquare className="h-6 w-6 text-purple-500" />
-                            </div>
-                            <div>
-                                <p className="font-semibold group-hover:text-primary">Forum Diskusi</p>
-                                <p className="text-xs text-muted-foreground">Tanya & diskusi</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </Link>
+                        <Link href="/tugas">
+                            <Card className="group cursor-pointer transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10">
+                                <CardContent className="flex items-center gap-4 pt-6">
+                                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/20">
+                                        <FileText className="h-6 w-6 text-amber-500" />
+                                    </div>
+                                    <div>
+                                        <p className="font-semibold group-hover:text-primary">Tugas & PR</p>
+                                        <p className="text-xs text-muted-foreground">Kumpulkan tugas</p>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </Link>
+
+                        <Link href="/forum">
+                            <Card className="group cursor-pointer transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10">
+                                <CardContent className="flex items-center gap-4 pt-6">
+                                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/20">
+                                        <MessageSquare className="h-6 w-6 text-purple-500" />
+                                    </div>
+                                    <div>
+                                        <p className="font-semibold group-hover:text-primary">Forum Diskusi</p>
+                                        <p className="text-xs text-muted-foreground">Tanya & diskusi</p>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </Link>
+                    </div>
+                </div>
             </div>
         </div>
     );

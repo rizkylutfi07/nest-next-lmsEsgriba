@@ -140,4 +140,9 @@
   .hover\:scrollbar-thumb-white\/20:hover::-webkit-scrollbar-thumb {
     background-color: rgb(255 255 255 / 0.2);
   }
+
+  /* Safe area padding for iOS devices with notch/Dynamic Island */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 8px);
+  }
 }
