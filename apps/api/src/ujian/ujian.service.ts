@@ -618,4 +618,18 @@ export class UjianService {
 
         return `${prefix}-${nextNumber.toString().padStart(5, '0')}`;
     }
+
+    async toggleDeteksiKecurangan(id: string, enabled: boolean) {
+        await this.findOne(id);
+
+        return this.prisma.ujian.update({
+            where: { id },
+            data: { deteksiKecurangan: enabled },
+            select: {
+                id: true,
+                judul: true,
+                deteksiKecurangan: true,
+            },
+        });
+    }
 }

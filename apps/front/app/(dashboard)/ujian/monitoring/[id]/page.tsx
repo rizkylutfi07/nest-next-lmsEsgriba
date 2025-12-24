@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter, useParams } from "next/navigation";
 import {
     Loader2,
@@ -50,6 +50,37 @@ export default function MonitoringPage() {
     const [lastUpdate, setLastUpdate] = useState(new Date());
     const [blockStudent, setBlockStudent] = useState<string | null>(null);
     const [unblockStudent, setUnblockStudent] = useState<string | null>(null);
+    const queryClient = useQueryClient();
+
+    // Mutation untuk toggle deteksi kecurangan
+    const toggleDetectionMutation = useMutation({
+        mutationFn: async (enabled: boolean) => {
+            const res = await fetch(`http://localhost:3001/ujian/${ujianId}/toggle-detection`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ enabled }),
+            });
+            if (!res.ok) throw new Error("Gagal mengubah status deteksi kecurangan");
+            return res.json();
+        },
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: ["ujian-detail", ujianId] });
+            toast({
+                title: "Berhasil",
+                description: `Deteksi Kecurangan ${data.deteksiKecurangan ? "diaktifkan" : "dinonaktifkan"}`,
+            });
+        },
+        onError: () => {
+            toast({
+                title: "Error",
+                description: "Gagal mengubah status deteksi kecurangan",
+                variant: "destructive",
+            });
+        },
+    });
 
     // Fetch ujian details
     const { data: ujian, isLoading: ujianLoading } = useQuery({
@@ -210,11 +241,17 @@ export default function MonitoringPage() {
                         </div>
                         <div className="flex items-center gap-4 mt-4 bg-muted/50 p-3 rounded-lg border border-border">
                             <div className="flex items-center gap-3">
-                                <Switch checked={true} disabled />
+                                <Switch
+                                    checked={ujian?.deteksiKecurangan ?? true}
+                                    onCheckedChange={(checked) => toggleDetectionMutation.mutate(checked)}
+                                    disabled={toggleDetectionMutation.isPending}
+                                />
                                 <span className="font-medium text-foreground">Deteksi Kecurangan</span>
                             </div>
                             <span className="text-xs text-muted-foreground">Blokir otomatis saat terdeteksi pelanggaran</span>
-                            <Badge className="bg-green-500/10 text-green-600 hover:bg-green-500/20 ml-auto border-green-200 dark:border-green-900">AKTIF</Badge>
+                            <Badge className={`ml-auto ${ujian?.deteksiKecurangan ? "bg-green-500/10 text-green-600 hover:bg-green-500/20 border-green-200 dark:border-green-900" : "bg-red-500/10 text-red-600 hover:bg-red-500/20 border-red-200 dark:border-red-900"}`}>
+                                {ujian?.deteksiKecurangan ? "AKTIF" : "NONAKTIF"}
+                            </Badge>
                         </div>
                     </div>
                 </div>

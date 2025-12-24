@@ -323,6 +323,7 @@ model Ujian {
   acakSoal        Boolean       @default(true)
   tampilkanNilai  Boolean       @default(false)
   status          StatusUjian   @default(DRAFT)
+  deteksiKecurangan Boolean      @default(true) // Toggle untuk fitur deteksi kecurangan
   createdBy       String
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt

@@ -114,4 +114,10 @@ export class UjianController {
     updateStatus(@Param('id') id: string, @Body() body: { status: string }) {
         return this.ujianService.updateStatus(id, body.status as any);
     }
+
+    @Post(':id/toggle-detection')
+    @Roles(Role.ADMIN, Role.GURU)
+    toggleDetection(@Param('id') id: string, @Body() body: { enabled: boolean }) {
+        return this.ujianService.toggleDeteksiKecurangan(id, body.enabled);
+    }
 }

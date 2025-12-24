@@ -291,8 +291,8 @@ export default function KerjakanUjianPage() {
             if (typeof window !== "undefined") {
                 localStorage.removeItem(STORAGE_KEY);
             }
-            const shouldShowResult = Boolean(session?.ujian?.tampilkanNilai);
-            router.replace(shouldShowResult ? `/ujian-saya/hasil/${ujianSiswaId}` : "/");
+            // Redirect ke halaman congratulations
+            router.replace(`/ujian-saya/selesai/${ujianSiswaId}`);
         },
         onError: (err: any) => {
             toast({ title: "Error", description: err?.message || "Gagal submit ujian", variant: "destructive" });

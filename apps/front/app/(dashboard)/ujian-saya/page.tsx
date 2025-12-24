@@ -123,13 +123,6 @@ export default function UjianSayaPage() {
                                                         <StatusIcon className={`h-4 w-4 ${statusInfo.color}`} />
                                                         <span>{statusInfo.label}</span>
                                                     </div>
-                                                    {item.nilaiTotal !== null && item.nilaiTotal !== undefined && (
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="font-semibold">
-                                                                Nilai: {item.nilaiTotal}
-                                                            </span>
-                                                        </div>
-                                                    )}
                                                 </div>
 
                                                 <div className="mt-3 text-xs text-muted-foreground">
@@ -144,15 +137,7 @@ export default function UjianSayaPage() {
 
                                             <div className="flex flex-col gap-2">
                                                 {item.status === "SELESAI" ? (
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() =>
-                                                            router.push(`/ujian-saya/hasil/${item.id}`)
-                                                        }
-                                                    >
-                                                        Lihat Hasil
-                                                    </Button>
+                                                    <p>Selesai</p>
                                                 ) : item.status === "SEDANG_MENGERJAKAN" ? (
                                                     <Button
                                                         size="sm"

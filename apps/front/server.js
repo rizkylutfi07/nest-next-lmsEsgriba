@@ -32,6 +32,6 @@ app.prepare().then(() => {
         .listen(port, () => {
             console.log(`> Ready on http://${hostname}:${port}`);
             console.log(`> Local: http://localhost:${port}`);
-            console.log(`> Network: http://192.168.1.8:${port}`);
+            console.log(`> Network: http://192.168.1.17:${port}`);
         });
 });

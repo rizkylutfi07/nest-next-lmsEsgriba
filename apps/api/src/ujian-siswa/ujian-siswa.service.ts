@@ -361,11 +361,18 @@ export class UjianSiswaService {
     async logActivity(logDto: LogActivityDto, siswaId: string) {
         const { ujianSiswaId, activityType, metadata } = logDto;
 
-        // Verify ujianSiswa belongs to siswa
+        // Verify ujianSiswa belongs to siswa and get ujian for detection setting
         const ujianSiswa = await this.prisma.ujianSiswa.findFirst({
             where: {
                 id: ujianSiswaId,
                 siswaId,
+            },
+            include: {
+                ujian: {
+                    select: {
+                        deteksiKecurangan: true,
+                    },
+                },
             },
         });
 
@@ -385,12 +392,13 @@ export class UjianSiswaService {
         logs.push(logEntry);
         this.activityLogs.set(ujianSiswaId, logs);
 
-        // Check if should auto-submit due to violations
+        // Check if should auto-block due to violations (only if detection is enabled)
         const violationCount = logs.filter(
             (log) => log.activityType === 'TAB_SWITCH' || log.activityType === 'EXIT_FULLSCREEN'
         ).length;
 
-        if (violationCount >= this.MAX_VIOLATIONS) {
+        // Only auto-block if deteksiKecurangan is enabled for this exam
+        if (ujianSiswa.ujian.deteksiKecurangan && violationCount >= this.MAX_VIOLATIONS) {
             await this.blockStudent(ujianSiswaId);
             return {
                 logged: true,
@@ -403,6 +411,7 @@ export class UjianSiswaService {
             logged: true,
             violationCount,
             maxViolations: this.MAX_VIOLATIONS,
+            detectionEnabled: ujianSiswa.ujian.deteksiKecurangan,
         };
     }
 

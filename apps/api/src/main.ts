@@ -17,9 +17,9 @@ async function bootstrap() {
   const allowedOrigins = [
     frontendOrigin,
     'http://localhost:3000',
-    'http://192.168.1.8:3000',
+    'http://192.168.1.17:3000',
     'https://localhost:3000',
-    'https://192.168.1.8:3000',
+    'https://192.168.1.17:3000',
   ];
 
   app.enableCors({
@@ -49,6 +49,6 @@ async function bootstrap() {
   await app.listen(port, '0.0.0.0');
   console.log(`dYs? API ready on:`);
   console.log(`  - Local:   http://localhost:${port}`);
-  console.log(`  - Network: http://192.168.1.8:${port}`);
+  console.log(`  - Network: http://192.168.1.17:${port}`);
 }
 void bootstrap();
