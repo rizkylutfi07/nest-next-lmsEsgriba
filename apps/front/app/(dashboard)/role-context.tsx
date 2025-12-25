@@ -147,6 +147,7 @@ const navByRole: Record<Role, NavGroup[]> = {
         { label: "Kelola Materi", icon: BookOpen, href: "/materi-management", note: "Upload materi" },
         { label: "Kelola Tugas", icon: ClipboardList, href: "/tugas-management", note: "Buat & nilai tugas" },
         { label: "Forum Diskusi", icon: Activity, href: "/forum", note: "Jawab & moderasi" },
+        { label: "Pengumuman", icon: MessageSquare, href: "/pengumuman", note: "Info sekolah" },
         { label: "Absensi", icon: ClipboardList, href: "/attendance", note: "Scan & laporan" },
         { label: "Absensi Manual", icon: Users2, href: "/attendance/manual", note: "Tandai kehadiran" },
         { label: "Laporan Nilai", icon: BarChart3, href: "/laporan", note: "Rekap nilai" },
@@ -180,6 +181,7 @@ const navByRole: Record<Role, NavGroup[]> = {
         { label: "Materi Pelajaran", icon: BookOpen, href: "/materi", note: "Bank materi" },
         { label: "Tugas & PR", icon: ClipboardList, href: "/tugas", note: "Kumpulkan tugas" },
         { label: "Forum Diskusi", icon: Activity, href: "/forum", note: "Tanya & diskusi" },
+        { label: "Pengumuman", icon: MessageSquare, href: "/pengumuman", note: "Info sekolah" },
       ],
     },
     {

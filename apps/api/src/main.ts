@@ -14,21 +14,33 @@ async function bootstrap() {
     configService.get<string>('FRONTEND_ORIGIN') ?? 'http://localhost:3000';
 
   // Allow both localhost and local network access
-  const allowedOrigins = [
-    frontendOrigin,
-    'http://localhost:3000',
-    'http://192.168.1.17:3000',
-    'https://localhost:3000',
-    'https://192.168.1.17:3000',
-  ];
-
   app.enableCors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      // Allow requests with no origin (like mobile apps or curl)
+      if (!origin) {
         callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
+        return;
       }
+
+      // Allow localhost (any port)
+      if (origin.match(/^https?:\/\/localhost(:\d+)?$/)) {
+        callback(null, true);
+        return;
+      }
+
+      // Allow any local network IP (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
+      if (origin.match(/^https?:\/\/(192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$/)) {
+        callback(null, true);
+        return;
+      }
+
+      // Also check against configured frontend origin
+      if (origin === frontendOrigin) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
   });
