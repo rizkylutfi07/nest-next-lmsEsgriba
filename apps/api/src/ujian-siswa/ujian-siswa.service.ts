@@ -499,7 +499,21 @@ export class UjianSiswaService {
         return score;
     }
 
-    async getMonitoringData(ujianId: string) {
+    async getMonitoringData(ujianId: string, role?: string, guruId?: string) {
+        // Validate access for GURU role
+        if (role === 'GURU' && guruId) {
+            const ujian = await this.prisma.ujian.findFirst({
+                where: { id: ujianId, deletedAt: null },
+                select: { guruId: true },
+            });
+            if (!ujian) {
+                throw new NotFoundException('Ujian tidak ditemukan');
+            }
+            if (ujian.guruId !== guruId) {
+                throw new ForbiddenException('Anda tidak memiliki akses ke ujian ini');
+            }
+        }
+
         const getAnsweredCount = (jawaban: any): number => {
             if (!jawaban) return 0;
             if (Array.isArray(jawaban)) return jawaban.length;

@@ -40,10 +40,18 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
           select: {
             id: true,
             nama: true,
+            mataPelajaran: {
+              select: {
+                id: true,
+              }
+            }
           }
         },
       },
     });
+
+    // Extract mataPelajaranIds for guru
+    const mataPelajaranIds = user?.guru?.mataPelajaran?.map(mp => mp.id) ?? [];
 
     return {
       userId: payload.sub,
@@ -54,6 +62,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       // Keep legacy fields for backward compatibility
       siswaId: user?.siswa?.id ?? null,
       guruId: user?.guru?.id ?? null,
+      // Add mataPelajaranIds for filtering bank soal
+      mataPelajaranIds: mataPelajaranIds,
     };
   }
 }
+

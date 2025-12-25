@@ -105,7 +105,7 @@ export class UjianSiswaController {
 
     @Get('monitoring/:ujianId')
     @Roles(Role.ADMIN, Role.GURU)
-    getMonitoringData(@Param('ujianId') ujianId: string) {
-        return this.ujianSiswaService.getMonitoringData(ujianId);
+    getMonitoringData(@Param('ujianId') ujianId: string, @Request() req) {
+        return this.ujianSiswaService.getMonitoringData(ujianId, req.user.role, req.user.guruId);
     }
 }

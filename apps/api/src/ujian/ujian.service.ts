@@ -221,7 +221,7 @@ export class UjianService {
     }
 
     async findAll(filterDto: FilterUjianDto) {
-        const { search, mataPelajaranId, kelasId, status, page = 1, limit = 10 } = filterDto;
+        const { search, mataPelajaranId, kelasId, guruId, status, page = 1, limit = 10 } = filterDto;
         const skip = (page - 1) * limit;
 
         const where: any = {
@@ -241,6 +241,10 @@ export class UjianService {
 
         if (kelasId) {
             where.kelasId = kelasId;
+        }
+
+        if (guruId) {
+            where.guruId = guruId;
         }
 
         if (status) {

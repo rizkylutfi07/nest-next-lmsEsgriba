@@ -314,4 +314,72 @@ export class NotifikasiService {
 
         return { sent: notifications.length };
     }
+
+    /**
+     * Notify users about new pengumuman based on targetRoles
+     */
+    async notifyPengumumanBaru(pengumumanId: string, judul: string, konten: string, targetRoles: string[], authorName: string) {
+        console.log(`\n========================================`);
+        console.log(`[Notification] notifyPengumumanBaru called`);
+        console.log(`  pengumumanId: ${pengumumanId}`);
+        console.log(`  judul: ${judul}`);
+        console.log(`  targetRoles: ${targetRoles.join(', ') || 'Semua'}`);
+        console.log(`========================================\n`);
+
+        let userIds: string[] = [];
+
+        // If targetRoles is empty or includes both GURU and SISWA, notify everyone
+        if (targetRoles.length === 0 || (targetRoles.includes('GURU') && targetRoles.includes('SISWA'))) {
+            // Get all GURU users
+            const guruList = await this.prisma.guru.findMany({
+                select: { id: true },
+            });
+
+            // Get all SISWA users
+            const siswaList = await this.prisma.siswa.findMany({
+                select: { id: true },
+            });
+
+            userIds = [...guruList.map(g => g.id), ...siswaList.map(s => s.id)];
+            console.log(`[Notification] Notifying ALL users: ${guruList.length} guru + ${siswaList.length} siswa = ${userIds.length} total`);
+        } else {
+            // Notify specific roles
+            if (targetRoles.includes('GURU')) {
+                const guruList = await this.prisma.guru.findMany({
+                    select: { id: true },
+                });
+                userIds.push(...guruList.map(g => g.id));
+                console.log(`[Notification] Added ${guruList.length} GURU users`);
+            }
+
+            if (targetRoles.includes('SISWA')) {
+                const siswaList = await this.prisma.siswa.findMany({
+                    select: { id: true },
+                });
+                userIds.push(...siswaList.map(s => s.id));
+                console.log(`[Notification] Added ${siswaList.length} SISWA users`);
+            }
+
+            console.log(`[Notification] Total users to notify: ${userIds.length}`);
+        }
+
+        if (userIds.length === 0) {
+            console.log('[Notification] ❌ No users found to notify');
+            return;
+        }
+
+        // Create notification for each user
+        const notifications = userIds.map(userId => ({
+            userId,
+            tipe: 'SISTEM' as TipeNotifikasi,
+            judul: `Pengumuman: ${judul}`,
+            pesan: `${authorName} membuat pengumuman baru. ${konten.substring(0, 100)}${konten.length > 100 ? '...' : ''}`,
+            linkUrl: '/pengumuman',
+            metadata: { pengumumanId },
+        }));
+
+        console.log(`[Notification] 📨 Creating ${notifications.length} notifications for new announcement`);
+
+        return this.createBulk(notifications);
+    }
 }

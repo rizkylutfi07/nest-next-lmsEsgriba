@@ -15,6 +15,10 @@ export class FilterUjianDto {
     @IsOptional()
     kelasId?: string;
 
+    @IsString()
+    @IsOptional()
+    guruId?: string;
+
     @IsEnum(StatusUjian)
     @IsOptional()
     status?: StatusUjian;
@@ -31,3 +35,4 @@ export class FilterUjianDto {
     @IsOptional()
     limit?: number = 10;
 }
+

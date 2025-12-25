@@ -2,6 +2,7 @@ import { Body, Controller, Get, Post, UseGuards, Req, Put, UnauthorizedException
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { LoginNisnDto } from './dto/login-nisn.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 
@@ -17,6 +18,11 @@ export class AuthController {
   @Post('login')
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
+  }
+
+  @Post('login-nisn')
+  loginWithNisn(@Body() dto: LoginNisnDto) {
+    return this.authService.loginWithNisn(dto);
   }
 
   @UseGuards(JwtAuthGuard)

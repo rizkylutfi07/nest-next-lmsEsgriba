@@ -5,6 +5,22 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Pencil, Trash2, Plus, X, BookOpen, Upload, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import {
+    AlertDialog,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { useRole } from "../role-context";
 import { useToast } from "@/hooks/use-toast";
@@ -108,7 +124,7 @@ export default function BankSoalPage() {
                         </div>
 
                         <div className="flex gap-2 mt-4 md:mt-0">
-                            <Button variant="outline" onClick={() => setIsImportModalOpen(true)}>
+                            <Button className="border border-border bg-transparent text-muted-foreground" onClick={() => setIsImportModalOpen(true)}>
                                 <Upload size={16} />
                                 Import
                             </Button>
@@ -167,7 +183,7 @@ export default function BankSoalPage() {
                                     <div className="flex items-start justify-between gap-4">
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2 mb-2">
-                                                <Badge variant="outline">{item.kode}</Badge>
+                                                <Badge className="border border-border bg-transparent text-muted-foreground">{item.kode}</Badge>
                                                 <Badge
                                                     className={
                                                         item.tipe === "PILIHAN_GANDA"
@@ -221,7 +237,7 @@ export default function BankSoalPage() {
                             </div>
                             <div className="flex gap-2">
                                 <Button
-                                    variant="outline"
+                                    className="border border-border bg-transparent text-muted-foreground"
                                     size="sm"
                                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                                     disabled={page === 1}
@@ -229,7 +245,7 @@ export default function BankSoalPage() {
                                     Sebelumnya
                                 </Button>
                                 <Button
-                                    variant="outline"
+                                    className="border border-border bg-transparent text-muted-foreground"
                                     size="sm"
                                     onClick={() =>
                                         setPage((p) => Math.min(data.meta.totalPages, p + 1))
@@ -355,223 +371,208 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
     };
 
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-md">
-            <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <CardTitle>{title}</CardTitle>
-                        <Button variant="ghost" size="icon" onClick={onClose}>
-                            <X size={18} />
-                        </Button>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        {!item && generatedKode && (
-                            <div>
-                                <label className="mb-2 block text-sm font-medium">
-                                    Kode Soal
-                                </label>
-                                <input
-                                    type="text"
-                                    value={generatedKode}
-                                    disabled
-                                    className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none opacity-60"
-                                />
-                            </div>
-                        )}
-
+        <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle>{title}</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    {!item && generatedKode && (
                         <div>
                             <label className="mb-2 block text-sm font-medium">
-                                Pertanyaan *
+                                Kode Soal
                             </label>
-                            <textarea
-                                required
-                                value={formData.pertanyaan || ""}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, pertanyaan: e.target.value })
-                                }
-                                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-                                rows={4}
+                            <input
+                                type="text"
+                                value={generatedKode}
+                                disabled
+                                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none opacity-60"
                             />
                         </div>
+                    )}
 
+                    <div>
+                        <label className="mb-2 block text-sm font-medium">
+                            Pertanyaan *
+                        </label>
+                        <textarea
+                            required
+                            value={formData.pertanyaan || ""}
+                            onChange={(e) =>
+                                setFormData({ ...formData, pertanyaan: e.target.value })
+                            }
+                            className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                            rows={4}
+                        />
+                    </div>
+
+                    <div>
+                        <label className="mb-2 block text-sm font-medium">
+                            Tipe Soal *
+                        </label>
+                        <select
+                            required
+                            value={formData.tipe || "PILIHAN_GANDA"}
+                            onChange={(e) =>
+                                setFormData({ ...formData, tipe: e.target.value })
+                            }
+                            className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                        >
+                            <option value="PILIHAN_GANDA">Pilihan Ganda</option>
+                            <option value="ESSAY">Essay</option>
+                            <option value="BENAR_SALAH">Benar/Salah</option>
+                            <option value="ISIAN_SINGKAT">Isian Singkat</option>
+                        </select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="mb-2 block text-sm font-medium">
-                                Tipe Soal *
+                                Mata Pelajaran
                             </label>
                             <select
-                                required
-                                value={formData.tipe || "PILIHAN_GANDA"}
+                                value={formData.mataPelajaranId || ""}
                                 onChange={(e) =>
-                                    setFormData({ ...formData, tipe: e.target.value })
+                                    setFormData({
+                                        ...formData,
+                                        mataPelajaranId: e.target.value || undefined,
+                                    })
                                 }
                                 className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                             >
-                                <option value="PILIHAN_GANDA">Pilihan Ganda</option>
-                                <option value="ESSAY">Essay</option>
-                                <option value="BENAR_SALAH">Benar/Salah</option>
-                                <option value="ISIAN_SINGKAT">Isian Singkat</option>
+                                <option value="">Pilih Mata Pelajaran</option>
+                                {mataPelajaranList?.data?.map((mp: any) => (
+                                    <option key={mp.id} value={mp.id}>
+                                        {mp.nama}
+                                    </option>
+                                ))}
                             </select>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="mb-2 block text-sm font-medium">Bobot</label>
+                            <input
+                                type="number"
+                                min="1"
+                                value={formData.bobot || 1}
+                                onChange={(e) =>
+                                    setFormData({
+                                        ...formData,
+                                        bobot: parseInt(e.target.value),
+                                    })
+                                }
+                                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                            />
+                        </div>
+                    </div>
+
+                    {(formData.tipe === "PILIHAN_GANDA" ||
+                        formData.tipe === "BENAR_SALAH") && (
                             <div>
                                 <label className="mb-2 block text-sm font-medium">
-                                    Mata Pelajaran
+                                    Pilihan Jawaban *
                                 </label>
-                                <select
-                                    value={formData.mataPelajaranId || ""}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            mataPelajaranId: e.target.value || undefined,
-                                        })
-                                    }
-                                    className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-                                >
-                                    <option value="">Pilih Mata Pelajaran</option>
-                                    {mataPelajaranList?.data?.map((mp: any) => (
-                                        <option key={mp.id} value={mp.id}>
-                                            {mp.nama}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="mb-2 block text-sm font-medium">Bobot</label>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    value={formData.bobot || 1}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            bobot: parseInt(e.target.value),
-                                        })
-                                    }
-                                    className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-                                />
-                            </div>
-                        </div>
-
-                        {(formData.tipe === "PILIHAN_GANDA" ||
-                            formData.tipe === "BENAR_SALAH") && (
-                                <div>
-                                    <label className="mb-2 block text-sm font-medium">
-                                        Pilihan Jawaban *
-                                    </label>
-                                    <div className="space-y-2">
-                                        {formData.pilihanJawaban?.map((pilihan: any, idx: number) => (
-                                            <div key={idx} className="flex gap-2">
+                                <div className="space-y-2">
+                                    {formData.pilihanJawaban?.map((pilihan: any, idx: number) => (
+                                        <div key={idx} className="flex gap-2">
+                                            <input
+                                                type="radio"
+                                                name="correct"
+                                                checked={pilihan.isCorrect}
+                                                onChange={() => {
+                                                    const updated = formData.pilihanJawaban.map(
+                                                        (p: any, i: number) => ({
+                                                            ...p,
+                                                            isCorrect: i === idx,
+                                                        })
+                                                    );
+                                                    setFormData({
+                                                        ...formData,
+                                                        pilihanJawaban: updated,
+                                                    });
+                                                }}
+                                                className="mt-3"
+                                            />
+                                            <div className="flex-1">
                                                 <input
-                                                    type="radio"
-                                                    name="correct"
-                                                    checked={pilihan.isCorrect}
-                                                    onChange={() => {
-                                                        const updated = formData.pilihanJawaban.map(
-                                                            (p: any, i: number) => ({
-                                                                ...p,
-                                                                isCorrect: i === idx,
-                                                            })
-                                                        );
+                                                    type="text"
+                                                    placeholder={`Pilihan ${pilihan.id}`}
+                                                    value={pilihan.text}
+                                                    onChange={(e) => {
+                                                        const updated = [...formData.pilihanJawaban];
+                                                        updated[idx].text = e.target.value;
                                                         setFormData({
                                                             ...formData,
                                                             pilihanJawaban: updated,
                                                         });
                                                     }}
-                                                    className="mt-3"
+                                                    className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                                                 />
-                                                <div className="flex-1">
-                                                    <input
-                                                        type="text"
-                                                        placeholder={`Pilihan ${pilihan.id}`}
-                                                        value={pilihan.text}
-                                                        onChange={(e) => {
-                                                            const updated = [...formData.pilihanJawaban];
-                                                            updated[idx].text = e.target.value;
-                                                            setFormData({
-                                                                ...formData,
-                                                                pilihanJawaban: updated,
-                                                            });
-                                                        }}
-                                                        className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-                                                    />
-                                                </div>
                                             </div>
-                                        ))}
-                                    </div>
-                                    <p className="text-xs text-muted-foreground mt-2">
-                                        Pilih jawaban yang benar dengan radio button
-                                    </p>
+                                        </div>
+                                    ))}
                                 </div>
+                                <p className="text-xs text-muted-foreground mt-2">
+                                    Pilih jawaban yang benar dengan radio button
+                                </p>
+                            </div>
+                        )}
+
+                    <div>
+                        <label className="mb-2 block text-sm font-medium">
+                            Penjelasan
+                        </label>
+                        <textarea
+                            value={formData.penjelasan || ""}
+                            onChange={(e) =>
+                                setFormData({ ...formData, penjelasan: e.target.value })
+                            }
+                            className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                            rows={3}
+                        />
+                    </div>
+
+                    <div className="flex gap-2 pt-4">
+                        <Button
+                            type="button"
+                            className="border border-border bg-transparent text-muted-foreground"
+                            onClick={onClose}
+                            className="flex-1"
+                        >
+                            Batal
+                        </Button>
+                        <Button type="submit" disabled={isLoading} className="flex-1">
+                            {isLoading ? (
+                                <Loader2 className="animate-spin" size={16} />
+                            ) : (
+                                "Simpan"
                             )}
-
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Penjelasan
-                            </label>
-                            <textarea
-                                value={formData.penjelasan || ""}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, penjelasan: e.target.value })
-                                }
-                                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-                                rows={3}
-                            />
-                        </div>
-
-                        <div className="flex gap-2 pt-4">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={onClose}
-                                className="flex-1"
-                            >
-                                Batal
-                            </Button>
-                            <Button type="submit" disabled={isLoading} className="flex-1">
-                                {isLoading ? (
-                                    <Loader2 className="animate-spin" size={16} />
-                                ) : (
-                                    "Simpan"
-                                )}
-                            </Button>
-                        </div>
-                    </form>
-                </CardContent>
-            </Card>
-        </div>
+                        </Button>
+                    </div>
+                </form>
+            </DialogContent>
+        </Dialog>
     );
 }
 
 function DeleteModal({ item, onClose, onConfirm, isLoading }: any) {
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-md">
-            <Card className="w-full max-w-md">
-                <CardHeader>
-                    <CardTitle>Konfirmasi Hapus</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <p>
+        <AlertDialog open={true} onOpenChange={(open) => !open && onClose()}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Konfirmasi Hapus</AlertDialogTitle>
+                    <AlertDialogDescription>
                         Apakah Anda yakin ingin menghapus soal <strong>{item.kode}</strong>?
-                    </p>
-                    <div className="flex gap-2">
-                        <Button variant="outline" onClick={onClose} className="flex-1">
-                            Batal
-                        </Button>
-                        <Button onClick={onConfirm} disabled={isLoading} className="flex-1">
-                            {isLoading ? (
-                                <Loader2 className="animate-spin" size={16} />
-                            ) : (
-                                "Hapus"
-                            )}
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel onClick={onClose}>Batal</AlertDialogCancel>
+                    <Button variant="destructive" onClick={onConfirm} disabled={isLoading}>
+                        {isLoading ? <Loader2 className="animate-spin" size={16} /> : "Hapus"}
+                    </Button>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     );
 }
 
@@ -653,145 +654,138 @@ function ImportModal({ onClose, token, queryClient }: any) {
     };
 
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-md">
-            <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <CardTitle>Import Soal</CardTitle>
-                        <Button variant="ghost" size="icon" onClick={onClose}>
-                            <X size={18} />
-                        </Button>
-                    </div>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    {!result ? (
-                        <>
-                            {/* Template Download */}
-                            <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                                <h4 className="font-semibold mb-2 flex items-center gap-2">
-                                    <Download size={16} />
-                                    Download Template
-                                </h4>
-                                <p className="text-sm text-muted-foreground mb-3">
-                                    Download template teks untuk mempermudah import soal
-                                </p>
-                                <Button variant="outline" size="sm" onClick={handleDownloadTemplate}>
-                                    <Download size={14} className="mr-2" />
-                                    Download Template
-                                </Button>
-                            </div>
-
-                            {/* File Upload */}
-                            <div>
-                                <label className="mb-2 block text-sm font-medium">
-                                    Upload File *
-                                </label>
-                                <input
-                                    type="file"
-                                    accept=".docx,.doc,.txt,.json"
-                                    onChange={(e) => setFile(e.target.files?.[0] || null)}
-                                    className="w-full rounded-lg border border-border bg-background px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-                                />
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    Format yang didukung: Word (.docx, .doc), Text (.txt) atau JSON (.json)
-                                </p>
-                            </div>
-
-                            {/* Mata Pelajaran */}
-                            <div>
-                                <label className="mb-2 block text-sm font-medium">
-                                    Mata Pelajaran (Opsional)
-                                </label>
-                                <select
-                                    value={mataPelajaranId}
-                                    onChange={(e) => setMataPelajaranId(e.target.value)}
-                                    className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-                                >
-                                    <option value="">Pilih Mata Pelajaran</option>
-                                    {mataPelajaranList?.data?.map((mp: any) => (
-                                        <option key={mp.id} value={mp.id}>
-                                            {mp.nama}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Instructions */}
-                            <div className="p-4 bg-muted/30 rounded-lg text-sm">
-                                <h4 className="font-semibold mb-2">Format Word/Text:</h4>
-                                <ul className="space-y-1 text-muted-foreground">
-                                    <li>• Setiap soal dimulai dengan <strong>[NOMOR X]</strong></li>
-                                    <li>• <strong>JENIS SOAL:</strong> PG atau ESSAY</li>
-                                    <li>• <strong>NILAI:</strong> Bobot soal (angka)</li>
-                                    <li>• <strong>SOAL:</strong> Pertanyaan soal</li>
-                                    <li>• <strong>JAWABAN:</strong> Untuk PG, tulis 5 pilihan (setiap pilihan di baris baru)</li>
-                                    <li>• <strong>KUNCI JAWABAN:</strong> A/B/C/D/E untuk PG, penjelasan untuk ESSAY</li>
-                                </ul>
-                                <p className="mt-2 text-xs">
-                                    Contoh: Download template untuk melihat format lengkap
-                                </p>
-                            </div>
-
-                            {/* Actions */}
-                            <div className="flex gap-2">
-                                <Button variant="outline" onClick={onClose} className="flex-1">
-                                    Batal
-                                </Button>
-                                <Button
-                                    onClick={handleUpload}
-                                    disabled={!file || isUploading}
-                                    className="flex-1"
-                                >
-                                    {isUploading ? (
-                                        <>
-                                            <Loader2 className="animate-spin mr-2" size={16} />
-                                            Uploading...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Upload size={16} className="mr-2" />
-                                            Upload & Import
-                                        </>
-                                    )}
-                                </Button>
-                            </div>
-                        </>
-                    ) : (
-                        <>
-                            {/* Result */}
-                            <div className="space-y-4">
-                                <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
-                                    <h4 className="font-semibold text-green-600 mb-2">
-                                        ✓ Import Berhasil
-                                    </h4>
-                                    <p className="text-sm">
-                                        {result.success.length} soal berhasil diimport
-                                    </p>
-                                </div>
-
-                                {result.failed.length > 0 && (
-                                    <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
-                                        <h4 className="font-semibold text-red-600 mb-2">
-                                            ⚠ {result.failed.length} soal gagal diimport
-                                        </h4>
-                                        <div className="text-sm space-y-1 max-h-40 overflow-y-auto">
-                                            {result.failed.map((item: any, idx: number) => (
-                                                <p key={idx} className="text-muted-foreground">
-                                                    • {item.error}
-                                                </p>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            <Button onClick={onClose} className="w-full">
-                                Tutup
+        <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle>Import Soal</DialogTitle>
+                </DialogHeader>
+                {!result ? (
+                    <>
+                        {/* Template Download */}
+                        <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                            <h4 className="font-semibold mb-2 flex items-center gap-2">
+                                <Download size={16} />
+                                Download Template
+                            </h4>
+                            <p className="text-sm text-muted-foreground mb-3">
+                                Download template teks untuk mempermudah import soal
+                            </p>
+                            <Button className="border border-border bg-transparent text-muted-foreground" size="sm" onClick={handleDownloadTemplate}>
+                                <Download size={14} className="mr-2" />
+                                Download Template
                             </Button>
-                        </>
-                    )}
-                </CardContent>
-            </Card>
-        </div>
+                        </div>
+
+                        {/* File Upload */}
+                        <div>
+                            <label className="mb-2 block text-sm font-medium">
+                                Upload File *
+                            </label>
+                            <input
+                                type="file"
+                                accept=".docx,.doc,.txt,.json"
+                                onChange={(e) => setFile(e.target.files?.[0] || null)}
+                                className="w-full rounded-lg border border-border bg-background px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                            />
+                            <p className="text-xs text-muted-foreground mt-1">
+                                Format yang didukung: Word (.docx, .doc), Text (.txt) atau JSON (.json)
+                            </p>
+                        </div>
+
+                        {/* Mata Pelajaran */}
+                        <div>
+                            <label className="mb-2 block text-sm font-medium">
+                                Mata Pelajaran (Opsional)
+                            </label>
+                            <select
+                                value={mataPelajaranId}
+                                onChange={(e) => setMataPelajaranId(e.target.value)}
+                                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                            >
+                                <option value="">Pilih Mata Pelajaran</option>
+                                {mataPelajaranList?.data?.map((mp: any) => (
+                                    <option key={mp.id} value={mp.id}>
+                                        {mp.nama}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Instructions */}
+                        <div className="p-4 bg-muted/30 rounded-lg text-sm">
+                            <h4 className="font-semibold mb-2">Format Word/Text:</h4>
+                            <ul className="space-y-1 text-muted-foreground">
+                                <li>• Setiap soal dimulai dengan <strong>[NOMOR X]</strong></li>
+                                <li>• <strong>JENIS SOAL:</strong> PG atau ESSAY</li>
+                                <li>• <strong>NILAI:</strong> Bobot soal (angka)</li>
+                                <li>• <strong>SOAL:</strong> Pertanyaan soal</li>
+                                <li>• <strong>JAWABAN:</strong> Untuk PG, tulis 5 pilihan (setiap pilihan di baris baru)</li>
+                                <li>• <strong>KUNCI JAWABAN:</strong> A/B/C/D/E untuk PG, penjelasan untuk ESSAY</li>
+                            </ul>
+                            <p className="mt-2 text-xs">
+                                Contoh: Download template untuk melihat format lengkap
+                            </p>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex gap-2">
+                            <Button className="border border-border bg-transparent text-muted-foreground" onClick={onClose} className="flex-1">
+                                Batal
+                            </Button>
+                            <Button
+                                onClick={handleUpload}
+                                disabled={!file || isUploading}
+                                className="flex-1"
+                            >
+                                {isUploading ? (
+                                    <>
+                                        <Loader2 className="animate-spin mr-2" size={16} />
+                                        Uploading...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Upload size={16} className="mr-2" />
+                                        Upload & Import
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        {/* Result */}
+                        <div className="space-y-4">
+                            <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+                                <h4 className="font-semibold text-green-600 mb-2">
+                                    ✓ Import Berhasil
+                                </h4>
+                                <p className="text-sm">
+                                    {result.success.length} soal berhasil diimport
+                                </p>
+                            </div>
+
+                            {result.failed.length > 0 && (
+                                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+                                    <h4 className="font-semibold text-red-600 mb-2">
+                                        ⚠ {result.failed.length} soal gagal diimport
+                                    </h4>
+                                    <div className="text-sm space-y-1 max-h-40 overflow-y-auto">
+                                        {result.failed.map((item: any, idx: number) => (
+                                            <p key={idx} className="text-muted-foreground">
+                                                • {item.error}
+                                            </p>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <Button onClick={onClose} className="w-full">
+                            Tutup
+                        </Button>
+                    </>
+                )}
+            </DialogContent>
+        </Dialog>
     );
 }

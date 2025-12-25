@@ -11,6 +11,10 @@ export class FilterPaketSoalDto {
     mataPelajaranId?: string;
 
     @IsOptional()
+    @IsString()
+    guruId?: string;
+
+    @IsOptional()
     @Type(() => Number)
     @IsInt()
     @Min(1)
@@ -22,3 +26,4 @@ export class FilterPaketSoalDto {
     @Min(1)
     limit?: number = 10;
 }
+

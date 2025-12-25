@@ -35,7 +35,11 @@ export class UjianController {
 
     @Get()
     @Roles(Role.ADMIN, Role.GURU)
-    findAll(@Query() filterDto: FilterUjianDto) {
+    findAll(@Query() filterDto: FilterUjianDto, @Request() req) {
+        // If user is GURU, filter only their ujian
+        if (req.user.role === Role.GURU && req.user.guruId) {
+            filterDto.guruId = req.user.guruId;
+        }
         return this.ujianService.findAll(filterDto);
     }
 

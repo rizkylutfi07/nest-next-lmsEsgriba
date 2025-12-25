@@ -78,11 +78,18 @@ export class MateriController {
         @Query('guruId') guruId?: string,
         @Query('isPublished') isPublished?: boolean,
         @Query('search') search?: string,
+        @Req() req?: any,
     ) {
+        // For GURU, always filter by their own materi
+        let effectiveGuruId = guruId;
+        if (req.user.role === Role.GURU && req.user.guru?.id) {
+            effectiveGuruId = req.user.guru.id;
+        }
+
         return this.materiService.findAll({
             mataPelajaranId,
             kelasId,
-            guruId,
+            guruId: effectiveGuruId,
             isPublished,
             search,
         });

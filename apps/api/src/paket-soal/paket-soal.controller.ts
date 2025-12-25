@@ -40,7 +40,11 @@ export class PaketSoalController {
 
     @Get()
     @Roles(Role.ADMIN, Role.GURU)
-    findAll(@Query() filterDto: FilterPaketSoalDto) {
+    findAll(@Query() filterDto: FilterPaketSoalDto, @Req() req: any) {
+        // If user is GURU, filter only their paket soal
+        if (req.user.role === Role.GURU && req.user.guruId) {
+            filterDto.guruId = req.user.guruId;
+        }
         return this.paketSoalService.findAll(filterDto);
     }
 

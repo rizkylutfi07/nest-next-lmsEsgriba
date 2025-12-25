@@ -16,6 +16,24 @@ import { useToast } from "@/hooks/use-toast";
 import { apiFetch } from "@/lib/api-client";
 import { useRole } from "../role-context";
 import { Switch } from "@/components/ui/switch";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/components/ui/dialog";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface AnnouncementFormData {
     judul: string;
@@ -39,6 +57,7 @@ interface Announcement {
 }
 
 // Detail Modal for viewing announcement (for students/teachers)
+// Detail Modal for viewing announcement (for students/teachers)
 function AnnouncementDetailModal({
     announcement,
     onClose
@@ -47,46 +66,42 @@ function AnnouncementDetailModal({
     onClose: () => void;
 }) {
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md">
-            <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                <CardHeader className="sticky top-0 bg-card z-10 border-b">
-                    <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                                <MessageSquare size={20} className="text-primary" />
-                                <CardTitle className="text-xl">{announcement.judul}</CardTitle>
-                            </div>
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <Badge tone="info" className="text-xs">
-                                    {announcement.targetRoles?.length > 0
-                                        ? announcement.targetRoles.join(", ")
-                                        : "Umum"}
-                                </Badge>
-                                <span className="text-xs text-muted-foreground">
-                                    Oleh: {announcement.author?.name || "Admin"}
-                                </span>
-                                <span className="text-xs text-muted-foreground">•</span>
-                                <span className="text-xs text-muted-foreground">
-                                    {format(new Date(announcement.createdAt), "dd MMMM yyyy, HH:mm", { locale: idLocale })}
-                                </span>
-                            </div>
-                        </div>
-                        <Button variant="ghost" size="icon" onClick={onClose}>
-                            <X size={18} />
-                        </Button>
+        <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+            <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto flex flex-col">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-xl">
+                        <MessageSquare className="text-primary h-5 w-5" />
+                        {announcement.judul}
+                    </DialogTitle>
+                    <div className="flex items-center gap-2 flex-wrap text-sm text-muted-foreground pt-1">
+                        <Badge tone="info" className="text-xs font-normal bg-muted text-muted-foreground border-border">
+                            {announcement.targetRoles?.length > 0
+                                ? announcement.targetRoles.join(", ")
+                                : "Umum"}
+                        </Badge>
+                        <span>•</span>
+                        <span>{announcement.author?.name || "Admin"}</span>
+                        <span>•</span>
+                        <span>
+                            {format(new Date(announcement.createdAt), "dd MMM yyyy, HH:mm", { locale: idLocale })}
+                        </span>
                     </div>
-                </CardHeader>
-                <CardContent className="pt-6">
-                    <div className="prose prose-sm max-w-none">
+                </DialogHeader>
+                <div className="flex-1 overflow-y-auto py-2">
+                    <div className="prose prose-sm dark:prose-invert max-w-none">
                         <p className="whitespace-pre-wrap text-sm text-foreground leading-relaxed">
                             {announcement.konten}
                         </p>
                     </div>
-                </CardContent>
-            </Card>
-        </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={onClose}>Tutup</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }
+
 
 // Form Modal for Create/Edit (Admin only)
 function FormModal({
@@ -96,11 +111,11 @@ function FormModal({
     initialData
 }: {
     onClose: () => void;
-    onSubmit: (data: AnnouncementFormData) => void;
+    onSubmit: (data: any) => void;
     isLoading: boolean;
-    initialData?: Announcement;
+    initialData?: Announcement | null;
 }) {
-    const [formData, setFormData] = useState<AnnouncementFormData>({
+    const [formData, setFormData] = useState({
         judul: initialData?.judul || "",
         konten: initialData?.konten || "",
         targetRoles: initialData?.targetRoles || [],
@@ -113,127 +128,123 @@ function FormModal({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md">
-            <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto">
-                <CardHeader className="sticky top-0 bg-card z-10 border-b">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <CardTitle>{initialData ? "Edit Pengumuman" : "Buat Pengumuman Baru"}</CardTitle>
-                            <CardDescription>Bagikan informasi penting kepada warga sekolah.</CardDescription>
-                        </div>
-                        <Button variant="ghost" size="icon" onClick={onClose}>
-                            <X size={18} />
-                        </Button>
+        <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+            <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle>{initialData ? "Edit Pengumuman" : "Buat Pengumuman Baru"}</DialogTitle>
+                    <DialogDescription>
+                        Bagikan informasi penting kepada warga sekolah.
+                    </DialogDescription>
+                </DialogHeader>
+
+                <form onSubmit={handleSubmit} className="space-y-5 py-2">
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Judul Pengumuman</label>
+                        <Input
+                            required
+                            value={formData.judul}
+                            onChange={(e) => setFormData({ ...formData, judul: e.target.value })}
+                            placeholder="Contoh: Jadwal Libur Semester Ganjil"
+                        />
                     </div>
-                </CardHeader>
-                <CardContent className="pt-6">
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">Judul Pengumuman</label>
-                            <Input
-                                required
-                                value={formData.judul}
-                                onChange={(e) => setFormData({ ...formData, judul: e.target.value })}
-                                placeholder="Contoh: Jadwal Libur Semester Ganjil"
-                            />
-                        </div>
 
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">Konten / Isi</label>
-                            <Textarea
-                                required
-                                value={formData.konten}
-                                onChange={(e) => setFormData({ ...formData, konten: e.target.value })}
-                                placeholder="Tulis detail pengumuman di sini..."
-                                rows={5}
-                            />
-                        </div>
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Konten / Isi</label>
+                        <Textarea
+                            required
+                            value={formData.konten}
+                            onChange={(e) => setFormData({ ...formData, konten: e.target.value })}
+                            placeholder="Tulis detail pengumuman di sini..."
+                            rows={6}
+                            className="resize-none"
+                        />
+                    </div>
 
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">Target Penerima</label>
-                            <div className="flex gap-2">
-                                <Button
-                                    type="button"
-                                    variant={formData.targetRoles.length === 0 ? "default" : "outline"}
-                                    size="sm"
-                                    onClick={() => setFormData({ ...formData, targetRoles: [] })}
-                                    className="gap-2"
-                                >
-                                    <Globe size={14} />
-                                    Semua
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant={formData.targetRoles.includes("GURU") ? "default" : "outline"}
-                                    size="sm"
-                                    onClick={() => {
-                                        const hasGuru = formData.targetRoles.includes("GURU");
-                                        setFormData({
-                                            ...formData,
-                                            targetRoles: hasGuru
-                                                ? formData.targetRoles.filter(r => r !== "GURU")
-                                                : [...formData.targetRoles, "GURU"]
-                                        });
-                                    }}
-                                    className="gap-2"
-                                >
-                                    <Users size={14} />
-                                    Guru
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant={formData.targetRoles.includes("SISWA") ? "default" : "outline"}
-                                    size="sm"
-                                    onClick={() => {
-                                        const hasSiswa = formData.targetRoles.includes("SISWA");
-                                        setFormData({
-                                            ...formData,
-                                            targetRoles: hasSiswa
-                                                ? formData.targetRoles.filter(r => r !== "SISWA")
-                                                : [...formData.targetRoles, "SISWA"]
-                                        });
-                                    }}
-                                    className="gap-2"
-                                >
-                                    <GraduationCap size={14} />
-                                    Siswa
-                                </Button>
-                            </div>
-                            <p className="mt-2 text-xs text-muted-foreground">
-                                {formData.targetRoles.length === 0
-                                    ? "Pengumuman akan dilihat oleh semua pengguna (Siswa & Guru)."
-                                    : `Hanya terlihat oleh: ${formData.targetRoles.join(", ")}`}
+                    <div className="space-y-3">
+                        <label className="text-sm font-medium">Target Penerima</label>
+                        <div className="flex gap-2">
+                            <Button
+                                type="button"
+                                variant={formData.targetRoles.length === 0 ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setFormData({ ...formData, targetRoles: [] })}
+                                className="gap-2 px-3"
+                            >
+                                <Globe size={14} />
+                                Semua
+                            </Button>
+                            <Button
+                                type="button"
+                                variant={formData.targetRoles.includes("GURU") ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => {
+                                    const hasGuru = formData.targetRoles.includes("GURU");
+                                    setFormData({
+                                        ...formData,
+                                        targetRoles: hasGuru
+                                            ? formData.targetRoles.filter(r => r !== "GURU")
+                                            : [...formData.targetRoles, "GURU"]
+                                    });
+                                }}
+                                className="gap-2 px-3"
+                            >
+                                <Users size={14} />
+                                Guru
+                            </Button>
+                            <Button
+                                type="button"
+                                variant={formData.targetRoles.includes("SISWA") ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => {
+                                    const hasSiswa = formData.targetRoles.includes("SISWA");
+                                    setFormData({
+                                        ...formData,
+                                        targetRoles: hasSiswa
+                                            ? formData.targetRoles.filter(r => r !== "SISWA")
+                                            : [...formData.targetRoles, "SISWA"]
+                                    });
+                                }}
+                                className="gap-2 px-3"
+                            >
+                                <GraduationCap size={14} />
+                                Siswa
+                            </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded border border-border/50">
+                            {formData.targetRoles.length === 0
+                                ? "Pengumuman akan dilihat oleh semua pengguna (Siswa & Guru)."
+                                : `Hanya terlihat oleh: ${formData.targetRoles.join(", ")}`}
+                        </p>
+                    </div>
+
+                    <div className="flex items-center justify-between rounded-lg border p-4 bg-card">
+                        <div className="space-y-0.5">
+                            <label className="text-sm font-medium">Status Pengumuman</label>
+                            <p className="text-xs text-muted-foreground">
+                                {formData.isActive ? "Pengumuman akan ditampilkan" : "Pengumuman disembunyikan"}
                             </p>
                         </div>
+                        <Switch
+                            checked={formData.isActive}
+                            onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                        />
+                    </div>
 
-                        <div className="flex items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                                <label className="text-sm font-medium">Status Pengumuman</label>
-                                <p className="text-xs text-muted-foreground">
-                                    {formData.isActive ? "Pengumuman akan ditampilkan" : "Pengumuman disembunyikan"}
-                                </p>
-                            </div>
-                            <Switch
-                                checked={formData.isActive}
-                                onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
-                            />
-                        </div>
-
-                        <div className="flex gap-2 pt-4">
-                            <Button type="button" variant="outline" onClick={onClose} className="flex-1">
-                                Batal
-                            </Button>
-                            <Button type="submit" disabled={isLoading} className="flex-1">
-                                {isLoading ? <Loader2 className="animate-spin" size={16} /> : initialData ? "Simpan Perubahan" : "Kirim Pengumuman"}
-                            </Button>
-                        </div>
-                    </form>
-                </CardContent>
-            </Card>
-        </div>
+                    <DialogFooter className="gap-2 sm:gap-0">
+                        <Button type="button" variant="outline" onClick={onClose}>
+                            Batal
+                        </Button>
+                        <Button type="submit" disabled={isLoading}>
+                            {isLoading ? <Loader2 className="animate-spin" size={16} /> : initialData ? "Simpan Perubahan" : "Kirim Pengumuman"}
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
     );
 }
 
+// Delete Confirmation Modal (Admin only)
 // Delete Confirmation Modal (Admin only)
 function DeleteConfirmModal({
     onClose,
@@ -245,38 +256,22 @@ function DeleteConfirmModal({
     isLoading: boolean;
 }) {
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md">
-            <Card className="w-full max-w-md">
-                <CardHeader>
-                    <CardTitle>Hapus Pengumuman</CardTitle>
-                    <CardDescription>
+        <AlertDialog open={true} onOpenChange={(open) => !open && onClose()}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle className="text-destructive">Hapus Pengumuman</AlertDialogTitle>
+                    <AlertDialogDescription>
                         Apakah Anda yakin ingin menghapus pengumuman ini? Tindakan ini tidak dapat dibatalkan.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex gap-2">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={onClose}
-                            className="flex-1"
-                            disabled={isLoading}
-                        >
-                            Batal
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="destructive"
-                            onClick={onConfirm}
-                            className="flex-1"
-                            disabled={isLoading}
-                        >
-                            {isLoading ? <Loader2 className="animate-spin" size={16} /> : "Hapus"}
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel onClick={onClose}>Batal</AlertDialogCancel>
+                    <Button variant="destructive" onClick={onConfirm} disabled={isLoading}>
+                        {isLoading ? <Loader2 className="animate-spin" size={16} /> : "Hapus"}
+                    </Button>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     );
 }
 

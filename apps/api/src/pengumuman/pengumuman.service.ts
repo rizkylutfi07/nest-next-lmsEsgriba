@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma, Role } from '@prisma/client';
+import { NotifikasiService } from '../notifikasi/notifikasi.service';
 
 @Injectable()
 export class PengumumanService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private notifikasiService: NotifikasiService,
+    ) { }
 
     async create(data: {
         judul: string;
@@ -13,7 +17,7 @@ export class PengumumanService {
         authorId: string;
         isActive?: boolean;
     }) {
-        return this.prisma.pengumuman.create({
+        const pengumuman = await this.prisma.pengumuman.create({
             data: {
                 judul: data.judul,
                 konten: data.konten,
@@ -21,7 +25,26 @@ export class PengumumanService {
                 authorId: data.authorId,
                 isActive: data.isActive ?? true,
             },
+            include: {
+                author: {
+                    select: { name: true, email: true },
+                },
+            },
         });
+
+        // Send notifications to users if announcement is active
+        if (pengumuman.isActive) {
+            const authorName = pengumuman.author?.name || 'Admin';
+            await this.notifikasiService.notifyPengumumanBaru(
+                pengumuman.id,
+                pengumuman.judul,
+                pengumuman.konten,
+                pengumuman.targetRoles,
+                authorName,
+            );
+        }
+
+        return pengumuman;
     }
 
     async findAll(userRole?: Role) {

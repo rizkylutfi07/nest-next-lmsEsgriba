@@ -37,7 +37,7 @@ export class BankSoalService {
     }
 
     async findAll(filterDto: FilterBankSoalDto) {
-        const { search, tipe, mataPelajaranId, page = 1, limit = 10 } = filterDto;
+        const { search, tipe, mataPelajaranId, mataPelajaranIds, page = 1, limit = 10 } = filterDto;
         const skip = (page - 1) * limit;
 
         const where: any = {
@@ -57,6 +57,8 @@ export class BankSoalService {
 
         if (mataPelajaranId) {
             where.mataPelajaranId = mataPelajaranId;
+        } else if (mataPelajaranIds && mataPelajaranIds.length > 0) {
+            where.mataPelajaranId = { in: mataPelajaranIds };
         }
 
         const [data, total] = await Promise.all([

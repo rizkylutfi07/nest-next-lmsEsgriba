@@ -12,9 +12,17 @@ export class ForumService {
         });
     }
 
-    async findAllThreads(kategoriId?: string) {
+    async findAllThreads(kategoriId?: string, authorId?: string) {
+        const where: any = { deletedAt: null };
+        if (kategoriId) {
+            where.kategoriId = kategoriId;
+        }
+        if (authorId) {
+            where.authorId = authorId;
+        }
+
         return this.prisma.forumThread.findMany({
-            where: { deletedAt: null, ...(kategoriId && { kategoriId }) },
+            where,
             include: {
                 kategori: true,
                 _count: { select: { posts: true } },

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, Mail, ArrowRight, Loader2, Sparkles } from "lucide-react";
+import { Lock, ArrowRight, Loader2, Sparkles, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiFetch } from "@/lib/api-client";
@@ -11,7 +11,7 @@ import { useRole, type AuthResponse } from "../(dashboard)/role-context";
 export default function LoginPage() {
   const router = useRouter();
   const { setAuth } = useRole();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,15 +21,27 @@ export default function LoginPage() {
     setIsLoaded(true);
   }, []);
 
+  const isEmail = (value: string) => value.includes("@");
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     try {
-      const data = await apiFetch<AuthResponse>("/auth/login", {
-        method: "POST",
-        body: JSON.stringify({ email, password }),
-      });
+      let data: AuthResponse;
+      if (isEmail(identifier)) {
+        // Login dengan email (Guru/Admin)
+        data = await apiFetch<AuthResponse>("/auth/login", {
+          method: "POST",
+          body: JSON.stringify({ email: identifier, password }),
+        });
+      } else {
+        // Login dengan NISN (Siswa)
+        data = await apiFetch<AuthResponse>("/auth/login-nisn", {
+          method: "POST",
+          body: JSON.stringify({ nisn: identifier, password }),
+        });
+      }
       setAuth(data);
       router.replace("/");
     } catch (err) {
@@ -76,21 +88,24 @@ export default function LoginPage() {
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="space-y-2">
                   <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Email
+                    Email / NISN
                   </label>
                   <div className="relative group">
                     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary">
-                      <Mail size={18} />
+                      <UserCircle size={18} />
                     </div>
                     <Input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      type="text"
+                      value={identifier}
+                      onChange={(e) => setIdentifier(e.target.value)}
                       className="pl-10 h-11 bg-background/50 border-input/50 focus:bg-background transition-all"
-                      placeholder="nama@sekolah.sch.id"
+                      placeholder="Email atau NISN"
                       required
                     />
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    Guru/Admin: gunakan email • Siswa: gunakan NISN
+                  </p>
                 </div>
 
                 <div className="space-y-2">

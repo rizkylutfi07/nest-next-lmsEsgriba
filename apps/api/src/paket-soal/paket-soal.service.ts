@@ -33,7 +33,7 @@ export class PaketSoalService {
     }
 
     async findAll(filterDto: FilterPaketSoalDto) {
-        const { search, mataPelajaranId, page = 1, limit = 10 } = filterDto;
+        const { search, mataPelajaranId, guruId, page = 1, limit = 10 } = filterDto;
         const skip = (page - 1) * limit;
 
         const where: any = {
@@ -49,6 +49,10 @@ export class PaketSoalService {
 
         if (mataPelajaranId) {
             where.mataPelajaranId = mataPelajaranId;
+        }
+
+        if (guruId) {
+            where.guruId = guruId;
         }
 
         const [data, total] = await Promise.all([

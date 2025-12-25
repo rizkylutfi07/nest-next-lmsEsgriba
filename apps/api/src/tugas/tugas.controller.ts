@@ -117,14 +117,15 @@ export class TugasController {
             });
         }
 
-        // For guru, optionally filter by their own assignments
-        if (req.user.role === Role.GURU && filters?.myAssignments === 'true') {
+        // For GURU, always filter by their own assignments
+        if (req.user.role === Role.GURU && req.user.guru?.id) {
             return this.tugasService.findAll({
                 ...filters,
-                guruId: req.user.guru?.id,
+                guruId: req.user.guru.id,
             });
         }
 
+        // For ADMIN, show all
         return this.tugasService.findAll(filters);
     }
 

@@ -7,6 +7,7 @@ import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { LoginNisnDto } from './dto/login-nisn.dto';
 import { Role, User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
@@ -76,6 +77,50 @@ export class AuthService {
     }
 
     return this.buildToken(user);
+  }
+
+  async loginWithNisn(dto: LoginNisnDto): Promise<TokenResponse> {
+    const siswa = await this.prisma.siswa.findUnique({
+      where: { nisn: dto.nisn },
+      include: {
+        user: true,
+      },
+    });
+
+    if (!siswa || !siswa.user) {
+      throw new UnauthorizedException('NISN atau password salah');
+    }
+
+    const valid = await bcrypt.compare(dto.password, siswa.user.password);
+    if (!valid) {
+      throw new UnauthorizedException('NISN atau password salah');
+    }
+
+    // Build token with full user data including siswa relation
+    const userWithRelations = await this.prisma.user.findUnique({
+      where: { id: siswa.user.id },
+      include: {
+        guru: {
+          select: {
+            id: true,
+            nama: true,
+          },
+        },
+        siswa: {
+          select: {
+            id: true,
+            nama: true,
+            kelasId: true,
+          },
+        },
+      },
+    });
+
+    if (!userWithRelations) {
+      throw new UnauthorizedException('NISN atau password salah');
+    }
+
+    return this.buildToken(userWithRelations);
   }
 
   async hashPassword(password: string) {

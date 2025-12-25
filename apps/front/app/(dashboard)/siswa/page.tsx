@@ -6,6 +6,21 @@ import { Loader2, Pencil, Trash2, Plus, Upload, Download, X, ArrowUp, ArrowDown,
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { useRole } from "../role-context";
 import { useToast } from "@/hooks/use-toast";
@@ -486,136 +501,129 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-md">
-      <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>{title}</CardTitle>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <X size={18} />
+    <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="mb-2 block text-sm font-medium">NISN</label>
+            <input
+              type="text"
+              required
+              value={formData.nisn || ''}
+              onChange={(e) => setFormData({ ...formData, nisn: e.target.value })}
+              className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium">Nama Lengkap</label>
+            <input
+              type="text"
+              required
+              value={formData.nama || ''}
+              onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
+              className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium">Email</label>
+            <input
+              type="email"
+              value={formData.email || ''}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium">Tanggal Lahir</label>
+            <input
+              type="date"
+              required
+              value={formData.tanggalLahir?.split('T')[0] || ''}
+              onChange={(e) => setFormData({ ...formData, tanggalLahir: e.target.value })}
+              className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium">Alamat</label>
+            <textarea
+              value={formData.alamat || ''}
+              onChange={(e) => setFormData({ ...formData, alamat: e.target.value })}
+              className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+              rows={2}
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium">Nomor Telepon</label>
+            <input
+              type="tel"
+              value={formData.nomorTelepon || ''}
+              onChange={(e) => setFormData({ ...formData, nomorTelepon: e.target.value })}
+              className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium">Kelas</label>
+            <select
+              value={formData.kelasId || ''}
+              onChange={(e) => setFormData({ ...formData, kelasId: e.target.value || undefined })}
+              className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+            >
+              <option value="">Pilih Kelas</option>
+              {kelasList?.data?.map((kelas: any) => (
+                <option key={kelas.id} value={kelas.id}>
+                  {kelas.nama}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium">Status</label>
+            <select
+              required
+              value={formData.status || 'AKTIF'}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+            >
+              <option value="AKTIF">AKTIF</option>
+              <option value="PKL">PKL</option>
+              <option value="PINDAH">PINDAH</option>
+              <option value="ALUMNI">ALUMNI</option>
+            </select>
+          </div>
+
+          {!item && (
+            <div className="rounded-lg border border-border bg-background p-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.createUserAccount || false}
+                  onChange={(e) => setFormData({ ...formData, createUserAccount: e.target.checked })}
+                  className="rounded border-white/20"
+                />
+                <span className="text-sm font-medium">Buat akun user untuk login</span>
+              </label>
+              {formData.createUserAccount && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Password default: NISN siswa (dapat diubah nanti)
+                </p>
+              )}
+            </div>
+          )}
+
+          <div className="flex gap-2 pt-4">
+            <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+              Batal
+            </Button>
+            <Button type="submit" disabled={isLoading} className="flex-1">
+              {isLoading ? <Loader2 className="animate-spin" size={16} /> : "Simpan"}
             </Button>
           </div>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="mb-2 block text-sm font-medium">NISN</label>
-              <input
-                type="text"
-                required
-                value={formData.nisn || ''}
-                onChange={(e) => setFormData({ ...formData, nisn: e.target.value })}
-                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium">Nama Lengkap</label>
-              <input
-                type="text"
-                required
-                value={formData.nama || ''}
-                onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
-                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium">Email</label>
-              <input
-                type="email"
-                value={formData.email || ''}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium">Tanggal Lahir</label>
-              <input
-                type="date"
-                required
-                value={formData.tanggalLahir?.split('T')[0] || ''}
-                onChange={(e) => setFormData({ ...formData, tanggalLahir: e.target.value })}
-                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium">Alamat</label>
-              <textarea
-                value={formData.alamat || ''}
-                onChange={(e) => setFormData({ ...formData, alamat: e.target.value })}
-                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-                rows={2}
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium">Nomor Telepon</label>
-              <input
-                type="tel"
-                value={formData.nomorTelepon || ''}
-                onChange={(e) => setFormData({ ...formData, nomorTelepon: e.target.value })}
-                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium">Kelas</label>
-              <select
-                value={formData.kelasId || ''}
-                onChange={(e) => setFormData({ ...formData, kelasId: e.target.value || undefined })}
-                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-              >
-                <option value="">Pilih Kelas</option>
-                {kelasList?.data?.map((kelas: any) => (
-                  <option key={kelas.id} value={kelas.id}>
-                    {kelas.nama}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium">Status</label>
-              <select
-                required
-                value={formData.status || 'AKTIF'}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-              >
-                <option value="AKTIF">AKTIF</option>
-                <option value="PKL">PKL</option>
-                <option value="PINDAH">PINDAH</option>
-                <option value="ALUMNI">ALUMNI</option>
-              </select>
-            </div>
-
-            {!item && (
-              <div className="rounded-lg border border-border bg-background p-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.createUserAccount || false}
-                    onChange={(e) => setFormData({ ...formData, createUserAccount: e.target.checked })}
-                    className="rounded border-white/20"
-                  />
-                  <span className="text-sm font-medium">Buat akun user untuk login</span>
-                </label>
-                {formData.createUserAccount && (
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    Password default: NISN siswa (dapat diubah nanti)
-                  </p>
-                )}
-              </div>
-            )}
-
-            <div className="flex gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={onClose} className="flex-1">
-                Batal
-              </Button>
-              <Button type="submit" disabled={isLoading} className="flex-1">
-                {isLoading ? <Loader2 className="animate-spin" size={16} /> : "Simpan"}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -675,17 +683,12 @@ function ImportModal({ onClose, onSuccess }: any) {
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-md">
-      <Card className="w-full max-w-lg">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Import Data Siswa dari Excel</CardTitle>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <X size={18} />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
+    <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Import Data Siswa dari Excel</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
           <div>
             <Button onClick={downloadTemplate} variant="outline" className="w-full">
               <Download size={16} />
@@ -741,31 +744,29 @@ function ImportModal({ onClose, onSuccess }: any) {
               {isUploading ? <Loader2 className="animate-spin" size={16} /> : "Upload & Import"}
             </Button>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
 function DeleteModal({ item, onClose, onConfirm, isLoading }: any) {
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-md">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Konfirmasi Hapus</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p>Apakah Anda yakin ingin menghapus siswa <strong>{item.nama}</strong>?</p>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose} className="flex-1">
-              Batal
-            </Button>
-            <Button onClick={onConfirm} disabled={isLoading} className="flex-1">
-              {isLoading ? <Loader2 className="animate-spin" size={16} /> : "Hapus"}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+    <AlertDialog open={true} onOpenChange={(open) => !open && onClose()}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Konfirmasi Hapus</AlertDialogTitle>
+          <AlertDialogDescription>
+            Apakah Anda yakin ingin menghapus siswa <strong>{item.nama}</strong>?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={onClose}>Batal</AlertDialogCancel>
+          <Button variant="destructive" onClick={onConfirm} disabled={isLoading}>
+            {isLoading ? <Loader2 className="animate-spin" size={16} /> : "Hapus"}
+          </Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

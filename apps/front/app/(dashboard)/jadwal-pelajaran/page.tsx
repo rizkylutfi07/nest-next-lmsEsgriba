@@ -447,6 +447,26 @@ function ScheduleModal({
     const [guruId, setGuruId] = useState(item?.guruId || "");
     const { toast } = useToast();
 
+    // Filter guru based on selected mata pelajaran (from mataPelajaran relation)
+    const filteredGuruList = useMemo(() => {
+        if (!mataPelajaranId) return [];
+        return guruList.filter((guru: any) =>
+            guru.mataPelajaran?.some((mp: any) => mp.id === mataPelajaranId)
+        );
+    }, [guruList, mataPelajaranId]);
+
+    // Reset guruId when mataPelajaranId changes (only if the current guru doesn't teach the new subject)
+    const handleMapelChange = (newMapelId: string) => {
+        setMataPelajaranId(newMapelId);
+        // Check if current guru teaches this subject
+        const currentGuruTeachesSubject = guruList.find((g: any) =>
+            g.id === guruId && g.mataPelajaran?.some((mp: any) => mp.id === newMapelId)
+        );
+        if (!currentGuruTeachesSubject) {
+            setGuruId("");
+        }
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!kelasId || !mataPelajaranId || !guruId) {
@@ -494,7 +514,7 @@ function ScheduleModal({
                                     label: mp.nama,
                                 }))}
                                 value={mataPelajaranId}
-                                onChange={setMataPelajaranId}
+                                onChange={handleMapelChange}
                                 placeholder="Pilih mata pelajaran..."
                                 searchPlaceholder="Cari..."
                                 emptyMessage="Tidak ada mata pelajaran"
@@ -503,15 +523,15 @@ function ScheduleModal({
                         <div>
                             <label className="mb-2 block text-sm font-medium">Guru *</label>
                             <SearchableSelect
-                                options={guruList.map((g: any) => ({
+                                options={filteredGuruList.map((g: any) => ({
                                     value: g.id,
                                     label: g.nama,
                                 }))}
                                 value={guruId}
                                 onChange={setGuruId}
-                                placeholder="Pilih guru..."
+                                placeholder={mataPelajaranId ? "Pilih guru..." : "Pilih mata pelajaran dulu..."}
                                 searchPlaceholder="Cari..."
-                                emptyMessage="Tidak ada guru"
+                                emptyMessage={mataPelajaranId ? "Tidak ada guru untuk mata pelajaran ini" : "Pilih mata pelajaran dulu"}
                             />
                         </div>
                         <div className="flex gap-2 pt-4">

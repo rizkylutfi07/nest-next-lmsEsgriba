@@ -6,6 +6,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, ArrowLeft, Plus, Trash2, Upload, FileText, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useRole } from "../../role-context";
 import { useRouter } from "next/navigation";
@@ -440,84 +447,79 @@ function AddFromBankModal({ paketSoalId, token, onClose, onSuccess }: any) {
     };
 
     return (
-        <ModalPortal>
-            <div className="fixed inset-0 z-[99999] overflow-y-auto">
-                <div className="flex min-h-full items-center justify-center p-4 text-center">
-                    <div className="fixed inset-0 bg-black/60 backdrop-blur-md transition-opacity" onClick={onClose} />
-                    <Card className="relative z-50 w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col shadow-xl">
-                        <CardHeader>
-                            <CardTitle>Pilih Soal dari Bank Soal</CardTitle>
-                        </CardHeader>
-                        <CardContent className="flex-1 overflow-y-auto">
-                            <input
-                                type="text"
-                                placeholder="Cari soal..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                className="w-full rounded-lg border border-border bg-background px-4 py-2 mb-4 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-                            />
+        <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+            <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+                <DialogHeader>
+                    <DialogTitle>Pilih Soal dari Bank Soal</DialogTitle>
+                </DialogHeader>
+                <div className="flex-1 overflow-y-auto space-y-4 px-1">
+                    <input
+                        type="text"
+                        placeholder="Cari soal..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="w-full rounded-lg border border-border bg-background px-4 py-2 mb-4 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                    />
 
-                            <div className="space-y-2">
-                                {bankSoal?.data?.map((soal: any) => (
-                                    <div
-                                        key={soal.id}
-                                        onClick={() => toggleSoal(soal.id)}
-                                        className={`p-3 rounded-lg border cursor-pointer transition ${selectedSoal.includes(soal.id)
-                                            ? "border-primary bg-primary/10"
-                                            : "border-border hover:border-white/20"
-                                            }`}
-                                    >
-                                        <div className="flex items-start gap-2">
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedSoal.includes(soal.id)}
-                                                onChange={() => toggleSoal(soal.id)}
-                                                className="mt-1"
+                    <div className="space-y-2">
+                        {bankSoal?.data?.map((soal: any) => (
+                            <div
+                                key={soal.id}
+                                onClick={() => toggleSoal(soal.id)}
+                                className={`p-3 rounded-lg border cursor-pointer transition ${selectedSoal.includes(soal.id)
+                                    ? "border-primary bg-primary/10"
+                                    : "border-border hover:border-white/20"
+                                    }`}
+                            >
+                                <div className="flex items-start gap-2">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedSoal.includes(soal.id)}
+                                        onChange={() => toggleSoal(soal.id)}
+                                        className="mt-1"
+                                    />
+                                    <div className="flex-1">
+                                        {soal.pertanyaan.includes('<img') ? (
+                                            <div
+                                                className="text-sm whitespace-pre-wrap prose prose-sm max-w-none"
+                                                dangerouslySetInnerHTML={{ __html: soal.pertanyaan }}
                                             />
-                                            <div className="flex-1">
-                                                {soal.pertanyaan.includes('<img') ? (
-                                                    <div
-                                                        className="text-sm whitespace-pre-wrap prose prose-sm max-w-none"
-                                                        dangerouslySetInnerHTML={{ __html: soal.pertanyaan }}
-                                                    />
-                                                ) : (
-                                                    <p className="text-sm whitespace-pre-wrap">{soal.pertanyaan}</p>
-                                                )}
-                                                <div className="flex gap-2 mt-1">
-                                                    <Badge className="text-xs">{soal.tipe}</Badge>
-                                                    <Badge className="bg-transparent text-xs">
-                                                        Bobot: {soal.bobot}
-                                                    </Badge>
-                                                </div>
-                                            </div>
+                                        ) : (
+                                            <p className="text-sm whitespace-pre-wrap">{soal.pertanyaan}</p>
+                                        )}
+                                        <div className="flex gap-2 mt-1">
+                                            <Badge className="text-xs">{soal.tipe}</Badge>
+                                            <Badge className="bg-transparent text-xs">
+                                                Bobot: {soal.bobot}
+                                            </Badge>
                                         </div>
                                     </div>
-                                ))}
+                                </div>
                             </div>
-                        </CardContent>
-                        <div className="p-4 border-t flex gap-2">
-                            <Button variant="outline" onClick={onClose} className="flex-1">
-                                Batal
-                            </Button>
-                            <Button
-                                onClick={() => addSoalMutation.mutate(selectedSoal)}
-                                disabled={selectedSoal.length === 0 || addSoalMutation.isPending}
-                                className="flex-1"
-                            >
-                                {addSoalMutation.isPending ? (
-                                    <>
-                                        <Loader2 className="animate-spin mr-2" size={16} />
-                                        Menambahkan...
-                                    </>
-                                ) : (
-                                    `Tambahkan ${selectedSoal.length} Soal`
-                                )}
-                            </Button>
-                        </div>
-                    </Card>
+                        ))}
+                    </div>
                 </div>
-            </div>
-        </ModalPortal>
+                <div className="p-4 border-t flex gap-2">
+                    <Button variant="outline" onClick={onClose} className="flex-1">
+                        Batal
+                    </Button>
+                    <Button
+                        onClick={() => addSoalMutation.mutate(selectedSoal)}
+                        disabled={selectedSoal.length === 0 || addSoalMutation.isPending}
+                        className="flex-1"
+                    >
+                        {addSoalMutation.isPending ? (
+                            <>
+                                <Loader2 className="animate-spin mr-2" size={16} />
+                                Menambahkan...
+                            </>
+                        ) : (
+                            `Tambahkan ${selectedSoal.length} Soal`
+                        )}
+                    </Button>
+                </div>
+            </DialogContent>
+        </Dialog>
     );
 }
 
@@ -605,212 +607,207 @@ function ImportSoalModal({ paketSoalId, token, onClose, onSuccess }: any) {
     };
 
     return (
-        <ModalPortal>
-            <div className="fixed inset-0 z-[99999] overflow-y-auto">
-                <div className="flex min-h-full items-center justify-center p-4 text-center">
-                    <div className="fixed inset-0 bg-black/60 backdrop-blur-md transition-opacity" onClick={onClose} />
-                    <Card className="relative z-50 w-full max-w-3xl transform overflow-hidden shadow-xl text-left max-h-[90vh] overflow-y-auto">
-                        <CardHeader>
-                            <CardTitle>Import Soal ke Paket</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            {/* Step 1: File Selection */}
-                            {!preview && !result && (
-                                <div>
-                                    <p className="text-sm text-muted-foreground mb-4">
-                                        Upload file Word (.docx) dengan format yang sama seperti Bank Soal.
-                                        Soal akan divalidasi terlebih dahulu sebelum diimport.
-                                    </p>
+        <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle>Import Soal ke Paket</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                    {/* Step 1: File Selection */}
+                    {!preview && !result && (
+                        <div>
+                            <p className="text-sm text-muted-foreground mb-4">
+                                Upload file Word (.docx) dengan format yang sama seperti Bank Soal.
+                                Soal akan divalidasi terlebih dahulu sebelum diimport.
+                            </p>
 
-                                    <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
-                                        <input
-                                            type="file"
-                                            accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                                            onChange={handleFileChange}
-                                            className="hidden"
-                                            id="file-upload"
-                                        />
-                                        <label
-                                            htmlFor="file-upload"
-                                            className="cursor-pointer flex flex-col items-center gap-2"
-                                        >
-                                            <Upload size={32} className="text-muted-foreground" />
-                                            <div>
-                                                <p className="font-medium">
-                                                    {file ? file.name : "Pilih file Word"}
-                                                </p>
-                                                <p className="text-sm text-muted-foreground">
-                                                    Format: .doc atau .docx
-                                                </p>
-                                            </div>
-                                        </label>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Step 2: Preview Results */}
-                            {preview && !result && (
-                                <div className="space-y-4">
-                                    {/* Summary */}
-                                    <div className="grid grid-cols-3 gap-3">
-                                        <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-center">
-                                            <p className="text-2xl font-bold text-blue-600">{preview.totalSoal}</p>
-                                            <p className="text-xs text-muted-foreground">Total Soal</p>
-                                        </div>
-                                        <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-center">
-                                            <p className="text-2xl font-bold text-green-600">{preview.validCount}</p>
-                                            <p className="text-xs text-muted-foreground">Valid</p>
-                                        </div>
-                                        <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-center">
-                                            <p className="text-2xl font-bold text-red-600">{preview.invalidCount}</p>
-                                            <p className="text-xs text-muted-foreground">Bermasalah</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="p-3 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                                        <p className="text-sm font-medium text-purple-600">
-                                            Total Bobot: {preview.totalBobot} poin
+                            <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+                                <input
+                                    type="file"
+                                    accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                    onChange={handleFileChange}
+                                    className="hidden"
+                                    id="file-upload"
+                                />
+                                <label
+                                    htmlFor="file-upload"
+                                    className="cursor-pointer flex flex-col items-center gap-2"
+                                >
+                                    <Upload size={32} className="text-muted-foreground" />
+                                    <div>
+                                        <p className="font-medium">
+                                            {file ? file.name : "Pilih file Word"}
                                         </p>
-                                        <p className="text-xs text-muted-foreground mt-1">
-                                            (Hanya dari soal yang valid)
+                                        <p className="text-sm text-muted-foreground">
+                                            Format: .doc atau .docx
                                         </p>
                                     </div>
-
-                                    {/* Invalid Soal List */}
-                                    {preview.invalidSoal.length > 0 && (
-                                        <div className="space-y-2">
-                                            <p className="text-sm font-medium text-red-600">
-                                                ⚠ Soal Bermasalah (Nomor: {preview.nomorBermasalah.join(", ")}):
-                                            </p>
-                                            <div className="max-h-48 overflow-y-auto space-y-2">
-                                                {preview.invalidSoal.map((soal: any) => (
-                                                    <div key={soal.nomor} className="p-2 rounded bg-red-500/5 border border-red-500/10 text-sm">
-                                                        <div className="flex justify-between items-start">
-                                                            <span className="font-medium">Nomor {soal.nomor}</span>
-                                                            <span className="text-xs text-muted-foreground">{soal.jenisSoal}</span>
-                                                        </div>
-                                                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                                                            {soal.pertanyaanPreview}
-                                                        </p>
-                                                        <ul className="mt-1 text-xs text-red-500">
-                                                            {soal.issues.map((issue: string, i: number) => (
-                                                                <li key={i}>• {issue}</li>
-                                                            ))}
-                                                        </ul>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Valid Soal List */}
-                                    {preview.validSoal.length > 0 && (
-                                        <div className="space-y-2">
-                                            <p className="text-sm font-medium text-green-600">
-                                                ✓ Soal Valid ({preview.validCount}):
-                                            </p>
-                                            <div className="max-h-48 overflow-y-auto space-y-2">
-                                                {preview.validSoal.map((soal: any) => (
-                                                    <div key={soal.nomor} className="p-2 rounded bg-green-500/5 border border-green-500/10 text-sm">
-                                                        <div className="flex justify-between items-start">
-                                                            <span className="font-medium">
-                                                                Nomor {soal.nomor}
-                                                                {soal.hasImage && <span className="ml-1 text-cyan-500">🖼️</span>}
-                                                            </span>
-                                                            <div className="flex gap-2 text-xs">
-                                                                <span className="text-muted-foreground">{soal.jenisSoal}</span>
-                                                                <span className="text-purple-500">Bobot: {soal.bobot}</span>
-                                                            </div>
-                                                        </div>
-                                                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                                                            {soal.pertanyaanPreview}
-                                                        </p>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* Step 3: Import Results */}
-                            {result && (
-                                <div className="space-y-2">
-                                    <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                                        <p className="text-sm font-medium text-green-600">
-                                            ✓ {result.success?.length || 0} soal berhasil diimport
-                                        </p>
-                                        <p className="text-xs text-muted-foreground mt-1">
-                                            {result.addedToPackage} soal ditambahkan ke paket
-                                        </p>
-                                    </div>
-                                    {result.failed?.length > 0 && (
-                                        <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-                                            <p className="text-sm font-medium text-red-600">
-                                                ✗ {result.failed.length} soal gagal diimport
-                                            </p>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* Action Buttons */}
-                            <div className="flex gap-2 pt-4">
-                                {!preview && !result && (
-                                    <>
-                                        <Button variant="outline" onClick={onClose} className="flex-1">
-                                            Batal
-                                        </Button>
-                                        <Button
-                                            onClick={handlePreview}
-                                            disabled={!file || previewing}
-                                            className="flex-1"
-                                        >
-                                            {previewing ? (
-                                                <>
-                                                    <Loader2 className="animate-spin mr-2" size={16} />
-                                                    Memvalidasi...
-                                                </>
-                                            ) : (
-                                                "Validasi File"
-                                            )}
-                                        </Button>
-                                    </>
-                                )}
-
-                                {preview && !result && (
-                                    <>
-                                        <Button variant="outline" onClick={resetPreview} className="flex-1">
-                                            Pilih File Lain
-                                        </Button>
-                                        <Button
-                                            onClick={handleUpload}
-                                            disabled={preview.validCount === 0 || uploading}
-                                            className="flex-1"
-                                        >
-                                            {uploading ? (
-                                                <>
-                                                    <Loader2 className="animate-spin mr-2" size={16} />
-                                                    Mengimport...
-                                                </>
-                                            ) : (
-                                                `Import ${preview.validCount} Soal`
-                                            )}
-                                        </Button>
-                                    </>
-                                )}
-
-                                {result && (
-                                    <Button onClick={onClose} className="flex-1">
-                                        Tutup
-                                    </Button>
-                                )}
+                                </label>
                             </div>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    )}
+
+                    {/* Step 2: Preview Results */}
+                    {preview && !result && (
+                        <div className="space-y-4">
+                            {/* Summary */}
+                            <div className="grid grid-cols-3 gap-3">
+                                <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-center">
+                                    <p className="text-2xl font-bold text-blue-600">{preview.totalSoal}</p>
+                                    <p className="text-xs text-muted-foreground">Total Soal</p>
+                                </div>
+                                <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-center">
+                                    <p className="text-2xl font-bold text-green-600">{preview.validCount}</p>
+                                    <p className="text-xs text-muted-foreground">Valid</p>
+                                </div>
+                                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-center">
+                                    <p className="text-2xl font-bold text-red-600">{preview.invalidCount}</p>
+                                    <p className="text-xs text-muted-foreground">Bermasalah</p>
+                                </div>
+                            </div>
+
+                            <div className="p-3 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                                <p className="text-sm font-medium text-purple-600">
+                                    Total Bobot: {preview.totalBobot} poin
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    (Hanya dari soal yang valid)
+                                </p>
+                            </div>
+
+                            {/* Invalid Soal List */}
+                            {preview.invalidSoal.length > 0 && (
+                                <div className="space-y-2">
+                                    <p className="text-sm font-medium text-red-600">
+                                        ⚠ Soal Bermasalah (Nomor: {preview.nomorBermasalah.join(", ")}):
+                                    </p>
+                                    <div className="max-h-48 overflow-y-auto space-y-2">
+                                        {preview.invalidSoal.map((soal: any) => (
+                                            <div key={soal.nomor} className="p-2 rounded bg-red-500/5 border border-red-500/10 text-sm">
+                                                <div className="flex justify-between items-start">
+                                                    <span className="font-medium">Nomor {soal.nomor}</span>
+                                                    <span className="text-xs text-muted-foreground">{soal.jenisSoal}</span>
+                                                </div>
+                                                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                                    {soal.pertanyaanPreview}
+                                                </p>
+                                                <ul className="mt-1 text-xs text-red-500">
+                                                    {soal.issues.map((issue: string, i: number) => (
+                                                        <li key={i}>• {issue}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Valid Soal List */}
+                            {preview.validSoal.length > 0 && (
+                                <div className="space-y-2">
+                                    <p className="text-sm font-medium text-green-600">
+                                        ✓ Soal Valid ({preview.validCount}):
+                                    </p>
+                                    <div className="max-h-48 overflow-y-auto space-y-2">
+                                        {preview.validSoal.map((soal: any) => (
+                                            <div key={soal.nomor} className="p-2 rounded bg-green-500/5 border border-green-500/10 text-sm">
+                                                <div className="flex justify-between items-start">
+                                                    <span className="font-medium">
+                                                        Nomor {soal.nomor}
+                                                        {soal.hasImage && <span className="ml-1 text-cyan-500">🖼️</span>}
+                                                    </span>
+                                                    <div className="flex gap-2 text-xs">
+                                                        <span className="text-muted-foreground">{soal.jenisSoal}</span>
+                                                        <span className="text-purple-500">Bobot: {soal.bobot}</span>
+                                                    </div>
+                                                </div>
+                                                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                                    {soal.pertanyaanPreview}
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Step 3: Import Results */}
+                    {result && (
+                        <div className="space-y-2">
+                            <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                                <p className="text-sm font-medium text-green-600">
+                                    ✓ {result.success?.length || 0} soal berhasil diimport
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    {result.addedToPackage} soal ditambahkan ke paket
+                                </p>
+                            </div>
+                            {result.failed?.length > 0 && (
+                                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                                    <p className="text-sm font-medium text-red-600">
+                                        ✗ {result.failed.length} soal gagal diimport
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 pt-4">
+                        {!preview && !result && (
+                            <>
+                                <Button variant="outline" onClick={onClose} className="flex-1">
+                                    Batal
+                                </Button>
+                                <Button
+                                    onClick={handlePreview}
+                                    disabled={!file || previewing}
+                                    className="flex-1"
+                                >
+                                    {previewing ? (
+                                        <>
+                                            <Loader2 className="animate-spin mr-2" size={16} />
+                                            Memvalidasi...
+                                        </>
+                                    ) : (
+                                        "Validasi File"
+                                    )}
+                                </Button>
+                            </>
+                        )}
+
+                        {preview && !result && (
+                            <>
+                                <Button variant="outline" onClick={resetPreview} className="flex-1">
+                                    Pilih File Lain
+                                </Button>
+                                <Button
+                                    onClick={handleUpload}
+                                    disabled={preview.validCount === 0 || uploading}
+                                    className="flex-1"
+                                >
+                                    {uploading ? (
+                                        <>
+                                            <Loader2 className="animate-spin mr-2" size={16} />
+                                            Mengimport...
+                                        </>
+                                    ) : (
+                                        `Import ${preview.validCount} Soal`
+                                    )}
+                                </Button>
+                            </>
+                        )}
+
+                        {result && (
+                            <Button onClick={onClose} className="flex-1">
+                                Tutup
+                            </Button>
+                        )}
+                    </div>
                 </div>
-            </div>
-        </ModalPortal>
+            </DialogContent>
+        </Dialog>
     );
 }
 
@@ -829,176 +826,166 @@ function PreviewModal({ paketSoal, index, setIndex, answers, setAnswers, onClose
     };
 
     return (
-        <ModalPortal>
-            <div className="fixed inset-0 z-[99999] overflow-y-auto">
-                <div className="flex min-h-full items-center justify-center p-4 text-center">
-                    <div className="fixed inset-0 bg-black/60 backdrop-blur-md transition-opacity" onClick={onClose} />
-                    <Card className="relative z-50 w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col shadow-xl text-left">
-                        <CardHeader className="flex flex-row items-start justify-between gap-4">
-                            <div>
-                                <CardTitle>Pratinjau Soal (tampilan siswa)</CardTitle>
-                                <p className="text-sm text-muted-foreground">
-                                    Urutan mengikuti acak siswa (deterministik) dan opsi sesuai yang akan terlihat oleh siswa.
-                                </p>
+        <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+            <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+                <DialogHeader>
+                    <DialogTitle>Pratinjau Soal (tampilan siswa)</DialogTitle>
+                    <DialogDescription>
+                        Urutan mengikuti acak siswa (deterministik) dan opsi sesuai yang akan terlihat oleh siswa.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="flex-1 overflow-y-auto space-y-4 px-1">
+                    <div className="p-4 rounded-lg border bg-muted/40">
+                        <p className="text-sm font-semibold mb-2">Navigasi Soal</p>
+                        <div className="grid grid-cols-5 sm:grid-cols-8 gap-2">
+                            {soalItems.map((item: any, idx: number) => {
+                                const key = item.bankSoalId ?? item.id;
+                                const isActive = idx === index;
+                                const answered = Boolean(answers[key]);
+                                return (
+                                    <button
+                                        key={key}
+                                        type="button"
+                                        onClick={() => goTo(idx)}
+                                        className={`rounded-md border px-0 py-2 text-xs font-semibold transition ${isActive
+                                            ? "border-primary bg-primary text-primary-foreground"
+                                            : answered
+                                                ? "border-green-500 bg-green-500/10 text-green-700"
+                                                : "border-muted bg-muted/40 text-muted-foreground"
+                                            }`}
+                                    >
+                                        {idx + 1}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {current ? (
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-2">
+                                <Badge className="bg-transparent">Soal {index + 1}</Badge>
+                                {tipe && (
+                                    <Badge className="bg-blue-500/15 text-blue-600">
+                                        {tipe.replace("_", " ")}
+                                    </Badge>
+                                )}
+                                <Badge className="bg-transparent">Bobot: {current.bankSoal?.bobot ?? 1}</Badge>
                             </div>
-                            <Button variant="ghost" size="sm" onClick={onClose}>
-                                Tutup
-                            </Button>
-                        </CardHeader>
-                        <CardContent className="flex-1 overflow-y-auto space-y-4">
-                            <div className="p-4 rounded-lg border bg-muted/40">
-                                <p className="text-sm font-semibold mb-2">Navigasi Soal</p>
-                                <div className="grid grid-cols-5 sm:grid-cols-8 gap-2">
-                                    {soalItems.map((item: any, idx: number) => {
-                                        const key = item.bankSoalId ?? item.id;
-                                        const isActive = idx === index;
-                                        const answered = Boolean(answers[key]);
+                            {pertanyaan.includes('<img') ? (
+                                <div
+                                    className="text-base whitespace-pre-wrap prose prose-sm max-w-none"
+                                    dangerouslySetInnerHTML={{ __html: pertanyaan }}
+                                />
+                            ) : (
+                                <p className="text-base whitespace-pre-wrap">{pertanyaan}</p>
+                            )}
+
+                            {tipe === "PILIHAN_GANDA" && pilihanJawaban.length > 0 && (
+                                <div className="space-y-2">
+                                    {pilihanJawaban.map((pilihan: any, idx: number) => {
+                                        const optionKey = `${pilihan.id ?? "opt"}-${idx}`;
+                                        const optionValue = pilihan.id ?? pilihan.value ?? `${idx}`;
+                                        const optionLabel = pilihan.text || optionValue;
+                                        const optionImageUrl = pilihan.imageUrl;
+                                        const soalKey = current.bankSoalId ?? current.id;
                                         return (
-                                            <button
-                                                key={key}
-                                                type="button"
-                                                onClick={() => goTo(idx)}
-                                                className={`rounded-md border px-0 py-2 text-xs font-semibold transition ${isActive
-                                                    ? "border-primary bg-primary text-primary-foreground"
-                                                    : answered
-                                                        ? "border-green-500 bg-green-500/10 text-green-700"
-                                                        : "border-muted bg-muted/40 text-muted-foreground"
-                                                    }`}
+                                            <label
+                                                key={optionKey}
+                                                className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/30 transition"
                                             >
-                                                {idx + 1}
-                                            </button>
+                                                <input
+                                                    type="radio"
+                                                    name={`preview-${soalKey}`}
+                                                    value={optionValue}
+                                                    checked={answers[soalKey] === optionValue}
+                                                    onChange={(e) =>
+                                                        setAnswers({ ...answers, [soalKey]: e.target.value })
+                                                    }
+                                                    className="mt-1"
+                                                />
+                                                <div className="flex-1">
+                                                    {optionLabel.includes('<img') ? (
+                                                        <div
+                                                            className="prose prose-sm max-w-none"
+                                                            dangerouslySetInnerHTML={{ __html: optionLabel }}
+                                                        />
+                                                    ) : (
+                                                        <span>{optionLabel}</span>
+                                                    )}
+                                                    {optionImageUrl && (
+                                                        <img
+                                                            src={optionImageUrl.startsWith('/') ? `${process.env.NEXT_PUBLIC_API_URL || ''}${optionImageUrl}` : optionImageUrl}
+                                                            alt={`Option ${optionValue}`}
+                                                            className="mt-2 max-w-full max-h-48 object-contain rounded"
+                                                        />
+                                                    )}
+                                                </div>
+                                            </label>
                                         );
                                     })}
                                 </div>
-                            </div>
+                            )}
 
-                            {current ? (
-                                <div className="space-y-3">
-                                    <div className="flex items-center gap-2">
-                                        <Badge className="bg-transparent">Soal {index + 1}</Badge>
-                                        {tipe && (
-                                            <Badge className="bg-blue-500/15 text-blue-600">
-                                                {tipe.replace("_", " ")}
-                                            </Badge>
-                                        )}
-                                        <Badge className="bg-transparent">Bobot: {current.bankSoal?.bobot ?? 1}</Badge>
-                                    </div>
-                                    {pertanyaan.includes('<img') ? (
-                                        <div
-                                            className="text-base whitespace-pre-wrap prose prose-sm max-w-none"
-                                            dangerouslySetInnerHTML={{ __html: pertanyaan }}
-                                        />
-                                    ) : (
-                                        <p className="text-base whitespace-pre-wrap">{pertanyaan}</p>
-                                    )}
-
-                                    {tipe === "PILIHAN_GANDA" && pilihanJawaban.length > 0 && (
-                                        <div className="space-y-2">
-                                            {pilihanJawaban.map((pilihan: any, idx: number) => {
-                                                const optionKey = `${pilihan.id ?? "opt"}-${idx}`;
-                                                const optionValue = pilihan.id ?? pilihan.value ?? `${idx}`;
-                                                const optionLabel = pilihan.text || optionValue;
-                                                const optionImageUrl = pilihan.imageUrl;
-                                                const soalKey = current.bankSoalId ?? current.id;
-                                                return (
-                                                    <label
-                                                        key={optionKey}
-                                                        className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/30 transition"
-                                                    >
-                                                        <input
-                                                            type="radio"
-                                                            name={`preview-${soalKey}`}
-                                                            value={optionValue}
-                                                            checked={answers[soalKey] === optionValue}
-                                                            onChange={(e) =>
-                                                                setAnswers({ ...answers, [soalKey]: e.target.value })
-                                                            }
-                                                            className="mt-1"
-                                                        />
-                                                        <div className="flex-1">
-                                                            {optionLabel.includes('<img') ? (
-                                                                <div
-                                                                    className="prose prose-sm max-w-none"
-                                                                    dangerouslySetInnerHTML={{ __html: optionLabel }}
-                                                                />
-                                                            ) : (
-                                                                <span>{optionLabel}</span>
-                                                            )}
-                                                            {optionImageUrl && (
-                                                                <img
-                                                                    src={optionImageUrl.startsWith('/') ? `${process.env.NEXT_PUBLIC_API_URL || ''}${optionImageUrl}` : optionImageUrl}
-                                                                    alt={`Option ${optionValue}`}
-                                                                    className="mt-2 max-w-full max-h-48 object-contain rounded"
-                                                                />
-                                                            )}
-                                                        </div>
-                                                    </label>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
-
-                                    {tipe === "BENAR_SALAH" && (
-                                        <div className="space-y-2">
-                                            {["BENAR", "SALAH"].map((opt) => {
-                                                const soalKey = current.bankSoalId ?? current.id;
-                                                return (
-                                                    <label
-                                                        key={opt}
-                                                        className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/30 transition"
-                                                    >
-                                                        <input
-                                                            type="radio"
-                                                            name={`preview-${soalKey}`}
-                                                            value={opt}
-                                                            checked={answers[soalKey] === opt}
-                                                            onChange={(e) =>
-                                                                setAnswers({ ...answers, [soalKey]: e.target.value })
-                                                            }
-                                                            className="mt-1"
-                                                        />
-                                                        <span className="flex-1">{opt === "BENAR" ? "Benar" : "Salah"}</span>
-                                                    </label>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
-
-                                    {(tipe === "ESSAY" || tipe === "ISIAN_SINGKAT") && (
-                                        <div className="p-3 rounded-lg border bg-muted/30 text-sm text-muted-foreground">
-                                            Tampilan jawaban siswa akan berupa area teks di sini.
-                                        </div>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="text-center text-muted-foreground py-10">
-                                    Tidak ada soal untuk dipratinjau.
+                            {tipe === "BENAR_SALAH" && (
+                                <div className="space-y-2">
+                                    {["BENAR", "SALAH"].map((opt) => {
+                                        const soalKey = current.bankSoalId ?? current.id;
+                                        return (
+                                            <label
+                                                key={opt}
+                                                className="flex items-start gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/30 transition"
+                                            >
+                                                <input
+                                                    type="radio"
+                                                    name={`preview-${soalKey}`}
+                                                    value={opt}
+                                                    checked={answers[soalKey] === opt}
+                                                    onChange={(e) =>
+                                                        setAnswers({ ...answers, [soalKey]: e.target.value })
+                                                    }
+                                                    className="mt-1"
+                                                />
+                                                <span className="flex-1">{opt === "BENAR" ? "Benar" : "Salah"}</span>
+                                            </label>
+                                        );
+                                    })}
                                 </div>
                             )}
-                        </CardContent>
 
-                        <div className="p-4 border-t flex items-center justify-between">
-                            <Button
-                                variant="outline"
-                                disabled={index === 0}
-                                onClick={() => goTo(index - 1)}
-                            >
-                                Soal Sebelumnya
-                            </Button>
-                            <span className="text-sm text-muted-foreground">
-                                Soal {index + 1} dari {total}
-                            </span>
-                            <Button
-                                variant="outline"
-                                disabled={index >= total - 1}
-                                onClick={() => goTo(index + 1)}
-                            >
-                                Soal Berikutnya
-                            </Button>
+                            {(tipe === "ESSAY" || tipe === "ISIAN_SINGKAT") && (
+                                <div className="p-3 rounded-lg border bg-muted/30 text-sm text-muted-foreground">
+                                    Tampilan jawaban siswa akan berupa area teks di sini.
+                                </div>
+                            )}
                         </div>
-                    </Card>
+                    ) : (
+                        <div className="text-center text-muted-foreground py-10">
+                            Tidak ada soal untuk dipratinjau.
+                        </div>
+                    )}
                 </div>
-            </div>
-        </ModalPortal>
+
+                <div className="p-4 border-t flex items-center justify-between">
+                    <Button
+                        variant="outline"
+                        disabled={index === 0}
+                        onClick={() => goTo(index - 1)}
+                    >
+                        Soal Sebelumnya
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                        Soal {index + 1} dari {total}
+                    </span>
+                    <Button
+                        variant="outline"
+                        disabled={index >= total - 1}
+                        onClick={() => goTo(index + 1)}
+                    >
+                        Soal Berikutnya
+                    </Button>
+                </div>
+            </DialogContent>
+        </Dialog>
     );
 }

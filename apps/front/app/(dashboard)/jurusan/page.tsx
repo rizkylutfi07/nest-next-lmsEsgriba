@@ -5,6 +5,23 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Search, Pencil, Trash2, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useRole } from "../role-context";
 
 const jurusanApi = {
@@ -233,86 +250,75 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>{title}</CardTitle>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <X size={18} />
+    <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="mb-2 block text-sm font-medium">Kode Jurusan</label>
+            <input
+              type="text"
+              required
+              placeholder="IPA, IPS, RPL, dll"
+              value={formData.kode || ''}
+              onChange={(e) => setFormData({ ...formData, kode: e.target.value })}
+              className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium">Nama Jurusan</label>
+            <input
+              type="text"
+              required
+              placeholder="Ilmu Pengetahuan Alam"
+              value={formData.nama || ''}
+              onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
+              className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium">Deskripsi (Opsional)</label>
+            <textarea
+              value={formData.deskripsi || ''}
+              onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
+              rows={3}
+              className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+          <div className="flex gap-2 pt-4">
+            <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+              Batal
+            </Button>
+            <Button type="submit" disabled={isLoading} className="flex-1">
+              {isLoading ? <Loader2 className="animate-spin" size={16} /> : "Simpan"}
             </Button>
           </div>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="mb-2 block text-sm font-medium">Kode Jurusan</label>
-              <input
-                type="text"
-                required
-                placeholder="IPA, IPS, RPL, dll"
-                value={formData.kode || ''}
-                onChange={(e) => setFormData({ ...formData, kode: e.target.value })}
-                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium">Nama Jurusan</label>
-              <input
-                type="text"
-                required
-                placeholder="Ilmu Pengetahuan Alam"
-                value={formData.nama || ''}
-                onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
-                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium">Deskripsi (Opsional)</label>
-              <textarea
-                value={formData.deskripsi || ''}
-                onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
-                rows={3}
-                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-            <div className="flex gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={onClose} className="flex-1">
-                Batal
-              </Button>
-              <Button type="submit" disabled={isLoading} className="flex-1">
-                {isLoading ? <Loader2 className="animate-spin" size={16} /> : "Simpan"}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 
 function DeleteModal({ item, onClose, onConfirm, isLoading }: any) {
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Hapus Jurusan</CardTitle>
-          <CardDescription>
+    <AlertDialog open={true} onOpenChange={(open) => !open && onClose()}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Hapus Jurusan</AlertDialogTitle>
+          <AlertDialogDescription>
             Apakah Anda yakin ingin menghapus jurusan <strong>{item.nama}</strong>?
             Tindakan ini tidak dapat dibatalkan.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose} className="flex-1">
-              Batal
-            </Button>
-            <Button variant="outline" onClick={onConfirm} disabled={isLoading} className="flex-1 bg-red-500/10 text-red-500 hover:bg-red-500/20">
-              {isLoading ? <Loader2 className="animate-spin" size={16} /> : "Hapus"}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={onClose}>Batal</AlertDialogCancel>
+          <Button variant="destructive" onClick={onConfirm} disabled={isLoading}>
+            {isLoading ? <Loader2 className="animate-spin" size={16} /> : "Hapus"}
+          </Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

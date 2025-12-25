@@ -11,6 +11,7 @@ import {
     UseInterceptors,
     UploadedFile,
     BadRequestException,
+    Req,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { BankSoalService } from './bank-soal.service';
@@ -35,7 +36,11 @@ export class BankSoalController {
 
     @Get()
     @Roles(Role.ADMIN, Role.GURU)
-    findAll(@Query() filterDto: FilterBankSoalDto) {
+    findAll(@Query() filterDto: FilterBankSoalDto, @Req() req: any) {
+        // If user is GURU, filter only bank soal from their mata pelajaran
+        if (req.user.role === Role.GURU && req.user.mataPelajaranIds && req.user.mataPelajaranIds.length > 0) {
+            filterDto.mataPelajaranIds = req.user.mataPelajaranIds;
+        }
         return this.bankSoalService.findAll(filterDto);
     }
 

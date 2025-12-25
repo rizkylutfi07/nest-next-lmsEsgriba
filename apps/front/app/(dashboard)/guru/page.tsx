@@ -5,6 +5,22 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Search, Pencil, Trash2, Loader2, X, Upload, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useRole } from "../role-context";
 import { useToast } from "@/hooks/use-toast";
 
@@ -356,79 +372,72 @@ function ImportModal({ onClose, onSuccess, token }: { onClose: () => void; onSuc
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Import Excel - Guru</CardTitle>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <X size={18} />
-            </Button>
-          </div>
-          <CardDescription>
+    <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Import Excel - Guru</DialogTitle>
+          <DialogDescription>
             Upload file Excel dengan kolom: NIP, Nama Lengkap, Email, Nomor Telepon, Status, Buat Akun (Ya/Tidak)
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {!result ? (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Button
-                  type="button"
-                  onClick={async () => {
-                    const res = await fetch('http://localhost:3001/guru/template', {
-                      headers: { Authorization: `Bearer ${token}` },
-                    });
-                    const blob = await res.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'template_import_guru.xlsx';
-                    a.click();
-                  }}
-                  variant="outline"
-                  className="w-full"
-                >
-                  <Download size={16} />
-                  Download Template
-                </Button>
-              </div>
-              <div>
-                <input
-                  type="file"
-                  accept=".xlsx,.xls"
-                  onChange={(e) => setFile(e.target.files?.[0] || null)}
-                  className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none"
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button type="button" variant="outline" onClick={onClose} className="flex-1">
-                  Batal
-                </Button>
-                <Button type="submit" disabled={!file || isLoading} className="flex-1">
-                  {isLoading ? <Loader2 className="animate-spin" size={16} /> : "Upload"}
-                </Button>
-              </div>
-            </form>
-          ) : (
-            <div className="space-y-2">
-              <p className="text-sm"><strong>Berhasil:</strong> {result.success}</p>
-              <p className="text-sm"><strong>Gagal:</strong> {result.failed}</p>
-              <p className="text-sm"><strong>Dilewati:</strong> {result.skipped}</p>
-              {result.errors?.length > 0 && (
-                <div className="mt-4 max-h-48 overflow-y-auto">
-                  <p className="text-sm font-medium mb-2">Errors:</p>
-                  {result.errors.slice(0, 5).map((err: any, i: number) => (
-                    <p key={i} className="text-xs text-red-500">Row {err.row}: {err.error}</p>
-                  ))}
-                </div>
-              )}
-              <Button onClick={onClose} className="w-full mt-4">Tutup</Button>
+          </DialogDescription>
+        </DialogHeader>
+        {!result ? (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Button
+                type="button"
+                onClick={async () => {
+                  const res = await fetch('http://localhost:3001/guru/template', {
+                    headers: { Authorization: `Bearer ${token}` },
+                  });
+                  const blob = await res.blob();
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = 'template_import_guru.xlsx';
+                  a.click();
+                }}
+                variant="outline"
+                className="w-full"
+              >
+                <Download size={16} />
+                Download Template
+              </Button>
             </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+            <div>
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={(e) => setFile(e.target.files?.[0] || null)}
+                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+                Batal
+              </Button>
+              <Button type="submit" disabled={!file || isLoading} className="flex-1">
+                {isLoading ? <Loader2 className="animate-spin" size={16} /> : "Upload"}
+              </Button>
+            </div>
+          </form>
+        ) : (
+          <div className="space-y-2">
+            <p className="text-sm"><strong>Berhasil:</strong> {result.success}</p>
+            <p className="text-sm"><strong>Gagal:</strong> {result.failed}</p>
+            <p className="text-sm"><strong>Dilewati:</strong> {result.skipped}</p>
+            {result.errors?.length > 0 && (
+              <div className="mt-4 max-h-48 overflow-y-auto">
+                <p className="text-sm font-medium mb-2">Errors:</p>
+                {result.errors.slice(0, 5).map((err: any, i: number) => (
+                  <p key={i} className="text-xs text-red-500">Row {err.row}: {err.error}</p>
+                ))}
+              </div>
+            )}
+            <Button onClick={onClose} className="w-full mt-4">Tutup</Button>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -498,184 +507,173 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
     : [];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>{title}</CardTitle>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <X size={18} />
+    <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="mb-2 block text-sm font-medium">NIP</label>
+            <input
+              type="text"
+              required
+
+
+
+              value={formData.nip || ''}
+              onChange={(e) => setFormData({ ...formData, nip: e.target.value })}
+              className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium">Nama Lengkap</label>
+            <input
+              type="text"
+              required
+
+
+
+              value={formData.nama || ''}
+              onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
+              className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium">Email</label>
+            <input
+              type="email"
+              required
+
+
+
+              value={formData.email || ''}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium">Nomor Telepon</label>
+            <input
+              type="tel"
+
+
+
+
+              value={formData.nomorTelepon || ''}
+              onChange={(e) => setFormData({ ...formData, nomorTelepon: e.target.value })}
+              className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium">Status</label>
+            <select
+              required
+              value={formData.status || ''}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+            >
+              <option value="">Pilih Status</option>
+              <option value="AKTIF">AKTIF</option>
+              <option value="CUTI">CUTI</option>
+              <option value="PENSIUN">PENSIUN</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium">Mata Pelajaran</label>
+
+            {/* Search Input */}
+            <div className="mb-2 relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Cari mata pelajaran..."
+                value={searchMataPelajaran}
+                onChange={(e) => setSearchMataPelajaran(e.target.value)}
+                className="w-full h-9 rounded-md border border-border bg-background pl-9 pr-4 text-sm outline-none focus:border-primary/50"
+              />
+            </div>
+
+            <div className="max-h-48 overflow-y-auto rounded-lg border border-border bg-background p-3">
+              {mataPelajaranList?.data?.length > 0 ? (
+                filteredAndSortedMataPelajaran.length > 0 ? (
+                  <div className="space-y-2">
+                    {filteredAndSortedMataPelajaran.map((mp: any) => (
+                      <label key={mp.id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/40 p-2 rounded">
+                        <input
+                          type="checkbox"
+                          checked={(formData.mataPelajaranIds || []).includes(mp.id)}
+                          onChange={() => toggleMataPelajaran(mp.id)}
+                          className="rounded border-white/20"
+                        />
+                        <span className="text-sm">{mp.nama} ({mp.kode})</span>
+                      </label>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-2">
+                    Tidak ada mata pelajaran ditemukan
+                  </p>
+                )
+              ) : (
+                <p className="text-sm text-muted-foreground">Loading mata pelajaran...</p>
+              )}
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Pilih satu atau lebih mata pelajaran
+            </p>
+          </div>
+
+          {!item && (
+            <div className="rounded-lg border border-border bg-background p-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.createUserAccount || false}
+                  onChange={(e) => setFormData({ ...formData, createUserAccount: e.target.checked })}
+                  className="rounded border-white/20"
+                />
+                <span className="text-sm font-medium">Buat akun user untuk login</span>
+              </label>
+              {formData.createUserAccount && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Password default: NIP guru (dapat diubah nanti)
+                </p>
+              )}
+            </div>
+          )}
+
+          <div className="flex gap-2 pt-4">
+            <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+              Batal
+            </Button>
+            <Button type="submit" disabled={isLoading} className="flex-1">
+              {isLoading ? <Loader2 className="animate-spin" size={16} /> : "Simpan"}
             </Button>
           </div>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="mb-2 block text-sm font-medium">NIP</label>
-              <input
-                type="text"
-                required
-
-
-
-                value={formData.nip || ''}
-                onChange={(e) => setFormData({ ...formData, nip: e.target.value })}
-                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium">Nama Lengkap</label>
-              <input
-                type="text"
-                required
-
-
-
-                value={formData.nama || ''}
-                onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
-                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium">Email</label>
-              <input
-                type="email"
-                required
-
-
-
-                value={formData.email || ''}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium">Nomor Telepon</label>
-              <input
-                type="tel"
-
-
-
-
-                value={formData.nomorTelepon || ''}
-                onChange={(e) => setFormData({ ...formData, nomorTelepon: e.target.value })}
-                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium">Status</label>
-              <select
-                required
-                value={formData.status || ''}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-              >
-                <option value="">Pilih Status</option>
-                <option value="AKTIF">AKTIF</option>
-                <option value="CUTI">CUTI</option>
-                <option value="PENSIUN">PENSIUN</option>
-              </select>
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium">Mata Pelajaran</label>
-
-              {/* Search Input */}
-              <div className="mb-2 relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Cari mata pelajaran..."
-                  value={searchMataPelajaran}
-                  onChange={(e) => setSearchMataPelajaran(e.target.value)}
-                  className="w-full h-9 rounded-md border border-border bg-background pl-9 pr-4 text-sm outline-none focus:border-primary/50"
-                />
-              </div>
-
-              <div className="max-h-48 overflow-y-auto rounded-lg border border-border bg-background p-3">
-                {mataPelajaranList?.data?.length > 0 ? (
-                  filteredAndSortedMataPelajaran.length > 0 ? (
-                    <div className="space-y-2">
-                      {filteredAndSortedMataPelajaran.map((mp: any) => (
-                        <label key={mp.id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/40 p-2 rounded">
-                          <input
-                            type="checkbox"
-                            checked={(formData.mataPelajaranIds || []).includes(mp.id)}
-                            onChange={() => toggleMataPelajaran(mp.id)}
-                            className="rounded border-white/20"
-                          />
-                          <span className="text-sm">{mp.nama} ({mp.kode})</span>
-                        </label>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground text-center py-2">
-                      Tidak ada mata pelajaran ditemukan
-                    </p>
-                  )
-                ) : (
-                  <p className="text-sm text-muted-foreground">Loading mata pelajaran...</p>
-                )}
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Pilih satu atau lebih mata pelajaran
-              </p>
-            </div>
-
-            {!item && (
-              <div className="rounded-lg border border-border bg-background p-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.createUserAccount || false}
-                    onChange={(e) => setFormData({ ...formData, createUserAccount: e.target.checked })}
-                    className="rounded border-white/20"
-                  />
-                  <span className="text-sm font-medium">Buat akun user untuk login</span>
-                </label>
-                {formData.createUserAccount && (
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    Password default: NIP guru (dapat diubah nanti)
-                  </p>
-                )}
-              </div>
-            )}
-
-            <div className="flex gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={onClose} className="flex-1">
-                Batal
-              </Button>
-              <Button type="submit" disabled={isLoading} className="flex-1">
-                {isLoading ? <Loader2 className="animate-spin" size={16} /> : "Simpan"}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 
 function DeleteModal({ item, onClose, onConfirm, isLoading }: any) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Hapus Guru</CardTitle>
-          <CardDescription>
+    <AlertDialog open={true} onOpenChange={(open) => !open && onClose()}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Hapus Guru</AlertDialogTitle>
+          <AlertDialogDescription>
             Apakah Anda yakin ingin menghapus data ini? Tindakan ini tidak dapat dibatalkan.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose} className="flex-1">
-              Batal
-            </Button>
-            <Button variant="destructive" onClick={onConfirm} disabled={isLoading} className="flex-1">
-              {isLoading ? <Loader2 className="animate-spin" size={16} /> : "Hapus"}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={onClose}>Batal</AlertDialogCancel>
+          <Button variant="destructive" onClick={onConfirm} disabled={isLoading}>
+            {isLoading ? <Loader2 className="animate-spin" size={16} /> : "Hapus"}
+          </Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

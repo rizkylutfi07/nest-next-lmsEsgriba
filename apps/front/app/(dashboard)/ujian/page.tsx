@@ -6,6 +6,22 @@ import { Loader2, Pencil, Trash2, Plus, X, FileCheck, Eye, Send, Activity } from
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import {
+    AlertDialog,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { useRole } from "../role-context";
 import { useRouter } from "next/navigation";
@@ -194,7 +210,7 @@ export default function UjianPage() {
                                     <div className="flex items-start justify-between gap-4">
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2 mb-2">
-                                                <Badge variant="outline">{item.kode}</Badge>
+                                                <Badge className="border border-border bg-transparent text-muted-foreground">{item.kode}</Badge>
                                                 {getStatusBadge(item.status)}
                                                 {item.mataPelajaran && (
                                                     <Badge className="bg-indigo-500/15 text-indigo-600">
@@ -228,7 +244,7 @@ export default function UjianPage() {
                                         <div className="flex flex-col gap-1">
                                             {item.status === "DRAFT" && (
                                                 <Button
-                                                    variant="outline"
+                                                    className="border border-border bg-transparent text-muted-foreground"
                                                     size="sm"
                                                     onClick={() => publishMutation.mutate(item.id)}
                                                     disabled={publishMutation.isPending}
@@ -240,7 +256,7 @@ export default function UjianPage() {
                                             {(item.status === "PUBLISHED" || item.status === "ONGOING") && (
                                                 <>
                                                     <Button
-                                                        variant="outline"
+                                                        className="border border-border bg-transparent text-muted-foreground"
                                                         size="sm"
                                                         onClick={() => assignMutation.mutate(item.id)}
                                                         disabled={assignMutation.isPending}
@@ -249,7 +265,7 @@ export default function UjianPage() {
                                                         Assign
                                                     </Button>
                                                     <Button
-                                                        variant="outline"
+                                                        className="border border-border bg-transparent text-muted-foreground"
                                                         size="sm"
                                                         onClick={() => router.push(`/ujian/monitoring/${item.id}`)}
                                                     >
@@ -297,7 +313,7 @@ export default function UjianPage() {
                             </div>
                             <div className="flex gap-2">
                                 <Button
-                                    variant="outline"
+                                    className="border border-border bg-transparent text-muted-foreground"
                                     size="sm"
                                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                                     disabled={page === 1}
@@ -305,7 +321,7 @@ export default function UjianPage() {
                                     Sebelumnya
                                 </Button>
                                 <Button
-                                    variant="outline"
+                                    className="border border-border bg-transparent text-muted-foreground"
                                     size="sm"
                                     onClick={() =>
                                         setPage((p) => Math.min(data.meta.totalPages, p + 1))
@@ -343,30 +359,22 @@ export default function UjianPage() {
 
 function DeleteModal({ item, onClose, onConfirm, isLoading }: any) {
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-md">
-            <Card className="w-full max-w-md">
-                <CardHeader>
-                    <CardTitle>Konfirmasi Hapus</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <p>
+        <AlertDialog open={true} onOpenChange={(open) => !open && onClose()}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Konfirmasi Hapus</AlertDialogTitle>
+                    <AlertDialogDescription>
                         Apakah Anda yakin ingin menghapus ujian <strong>{item.judul}</strong>?
-                    </p>
-                    <div className="flex gap-2">
-                        <Button variant="outline" onClick={onClose} className="flex-1">
-                            Batal
-                        </Button>
-                        <Button onClick={onConfirm} disabled={isLoading} className="flex-1">
-                            {isLoading ? (
-                                <Loader2 className="animate-spin" size={16} />
-                            ) : (
-                                "Hapus"
-                            )}
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel onClick={onClose}>Batal</AlertDialogCancel>
+                    <Button variant="destructive" onClick={onConfirm} disabled={isLoading}>
+                        {isLoading ? <Loader2 className="animate-spin" size={16} /> : "Hapus"}
+                    </Button>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     );
 }
 
@@ -395,15 +403,15 @@ function StatusModal({ item, onClose, onConfirm, isLoading }: any) {
     };
 
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-md">
-            <Card className="w-full max-w-md">
-                <CardHeader>
-                    <CardTitle>Update Status Ujian</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
+        <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+            <DialogContent className="max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Update Status Ujian</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
                     <div>
                         <p className="text-sm text-muted-foreground mb-2">Status Saat Ini</p>
-                        <Badge variant="outline">{getLabel(item.status)}</Badge>
+                        <Badge className="border border-border bg-transparent text-muted-foreground">{getLabel(item.status)}</Badge>
                     </div>
 
                     <div className="space-y-2">
@@ -444,8 +452,8 @@ function StatusModal({ item, onClose, onConfirm, isLoading }: any) {
                             )}
                         </Button>
                     </div>
-                </CardContent>
-            </Card>
-        </div>
+                </div>
+            </DialogContent>
+        </Dialog>
     );
 }

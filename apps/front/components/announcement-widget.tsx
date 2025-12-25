@@ -10,6 +10,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api-client";
 import { useRole } from "@/app/(dashboard)/role-context";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/components/ui/dialog";
 
 interface Announcement {
     id: string;
@@ -25,6 +33,7 @@ interface Announcement {
 }
 
 // Detail Modal Component
+// Detail Modal Component
 function AnnouncementDetailModal({
     announcement,
     onClose
@@ -33,44 +42,39 @@ function AnnouncementDetailModal({
     onClose: () => void;
 }) {
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md">
-            <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                <CardHeader className="sticky top-0 bg-card z-10 border-b">
-                    <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                                <MessageSquare size={20} className="text-primary" />
-                                <CardTitle className="text-xl">{announcement.judul}</CardTitle>
-                            </div>
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <Badge tone="info" className="text-xs">
-                                    {announcement.targetRoles?.length > 0
-                                        ? announcement.targetRoles.join(", ")
-                                        : "Umum"}
-                                </Badge>
-                                <span className="text-xs text-muted-foreground">
-                                    Oleh: {announcement.author?.name || "Admin"}
-                                </span>
-                                <span className="text-xs text-muted-foreground">•</span>
-                                <span className="text-xs text-muted-foreground">
-                                    {format(new Date(announcement.createdAt), "dd MMMM yyyy, HH:mm", { locale: idLocale })}
-                                </span>
-                            </div>
-                        </div>
-                        <Button variant="ghost" size="icon" onClick={onClose}>
-                            <X size={18} />
-                        </Button>
+        <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+            <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto flex flex-col">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-xl">
+                        <MessageSquare className="text-primary h-5 w-5" />
+                        {announcement.judul}
+                    </DialogTitle>
+                    <div className="flex items-center gap-2 flex-wrap text-sm text-muted-foreground pt-1">
+                        <Badge tone="info" className="text-xs font-normal bg-muted text-muted-foreground border-border">
+                            {announcement.targetRoles?.length > 0
+                                ? announcement.targetRoles.join(", ")
+                                : "Umum"}
+                        </Badge>
+                        <span>•</span>
+                        <span>{announcement.author?.name || "Admin"}</span>
+                        <span>•</span>
+                        <span>
+                            {format(new Date(announcement.createdAt), "dd MMM yyyy, HH:mm", { locale: idLocale })}
+                        </span>
                     </div>
-                </CardHeader>
-                <CardContent className="pt-6">
-                    <div className="prose prose-sm max-w-none">
+                </DialogHeader>
+                <div className="flex-1 overflow-y-auto py-2">
+                    <div className="prose prose-sm dark:prose-invert max-w-none">
                         <p className="whitespace-pre-wrap text-sm text-foreground leading-relaxed">
                             {announcement.konten}
                         </p>
                     </div>
-                </CardContent>
-            </Card>
-        </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={onClose}>Tutup</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }
 
