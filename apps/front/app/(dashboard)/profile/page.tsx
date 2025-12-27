@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { User, Mail, Shield, Calendar, Loader2, Edit } from "lucide-react";
+import { User, Mail, Shield, Calendar, Loader2, Edit, GraduationCap, IdCard } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -149,6 +149,32 @@ export default function ProfilePage() {
                                 className="capitalize"
                             />
                         </div>
+
+                        {user?.role === "SISWA" && (
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium flex items-center gap-2">
+                                    <GraduationCap size={16} />
+                                    Kelas
+                                </label>
+                                <Input
+                                    value={user?.siswa?.kelas?.nama || "-"}
+                                    disabled
+                                />
+                            </div>
+                        )}
+
+                        {user?.role === "SISWA" && (
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium flex items-center gap-2">
+                                    <IdCard size={16} />
+                                    NISN
+                                </label>
+                                <Input
+                                    value={user?.siswa?.nisn || "-"}
+                                    disabled
+                                />
+                            </div>
+                        )}
 
                         <div className="space-y-2">
                             <label className="text-sm font-medium flex items-center gap-2">

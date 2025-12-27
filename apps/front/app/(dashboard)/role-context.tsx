@@ -46,6 +46,16 @@ export type AuthUser = {
     id: string;
     nama: string;
   } | null;
+  siswa?: {
+    id: string;
+    nama: string;
+    nisn?: string | null;
+    kelasId: string | null;
+    kelas?: {
+      id: string;
+      nama: string;
+    } | null;
+  } | null;
 };
 
 export type AuthResponse = {

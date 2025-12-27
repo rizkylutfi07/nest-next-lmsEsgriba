@@ -34,6 +34,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             kelasId: true,
             nama: true,
             nisn: true,
+            kelas: {
+              select: {
+                id: true,
+                nama: true,
+              }
+            }
           }
         },
         guru: {

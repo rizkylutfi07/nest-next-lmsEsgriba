@@ -15,6 +15,6 @@ npm run prisma:migrate
 
 cd ../..
 
-npx create-turbo@latest
+npm install turbo --global
 
 turbo dev

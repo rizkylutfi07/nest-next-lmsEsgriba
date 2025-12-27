@@ -15,6 +15,8 @@ export default function MateriDetailPage() {
     const { toast } = useToast();
     const [materi, setMateri] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [isBookmarked, setIsBookmarked] = useState(false);
+    const [bookmarkLoading, setBookmarkLoading] = useState(false);
 
     useEffect(() => {
         if (params.id) {
@@ -26,13 +28,32 @@ export default function MateriDetailPage() {
         try {
             setLoading(true);
             // Increment view count when loading
-            const response = await materiApi.getOne(id);
+            const response = await materiApi.getOne(id) as any;
             setMateri(response);
+            setIsBookmarked(response?.isBookmarked || false);
         } catch (error) {
             console.error("Error loading materi:", error);
             toast({ title: "Error", description: "Gagal memuat materi", variant: "destructive" });
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleBookmark = async () => {
+        if (!materi) return;
+        try {
+            setBookmarkLoading(true);
+            await materiApi.toggleBookmark(materi.id);
+            setIsBookmarked(!isBookmarked);
+            toast({
+                title: isBookmarked ? "Dihapus dari Bookmark" : "Disimpan ke Bookmark",
+                description: isBookmarked ? "Materi telah dihapus dari bookmark" : "Materi telah disimpan ke bookmark",
+            });
+        } catch (error) {
+            console.error("Error toggling bookmark:", error);
+            toast({ title: "Error", description: "Gagal mengubah bookmark", variant: "destructive" });
+        } finally {
+            setBookmarkLoading(false);
         }
     };
 
@@ -258,9 +279,14 @@ export default function MateriDetailPage() {
 
             {/* Action Buttons */}
             <div className="mt-6 flex gap-3">
-                <Button variant="outline" className="flex-1">
-                    <Bookmark className="mr-2 h-4 w-4" />
-                    Simpan ke Bookmark
+                <Button
+                    variant={isBookmarked ? "default" : "outline"}
+                    className="flex-1"
+                    onClick={handleBookmark}
+                    disabled={bookmarkLoading}
+                >
+                    <Bookmark className={`mr-2 h-4 w-4 ${isBookmarked ? "fill-current" : ""}`} />
+                    {bookmarkLoading ? "Loading..." : isBookmarked ? "Tersimpan" : "Simpan ke Bookmark"}
                 </Button>
                 <Button variant="outline">
                     <Share2 className="h-4 w-4" />

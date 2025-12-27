@@ -631,7 +631,7 @@ export class PaketSoalService {
                     text = this.cleanHtmlContent(text);
 
                     // Remove any leading A., B., C. pattern if present
-                    text = text.replace(/^[A-E][\.)\s]*/i, '').trim();
+                    text = text.replace(/^[A-E][\.)]\s*/i, '').trim();
 
                     options.push({
                         id: optionLabels[i],
@@ -697,7 +697,7 @@ export class PaketSoalService {
                     let part = parts[i].trim();
 
                     // Remove leading label like "A.", "B)" etc if present
-                    part = part.replace(/^[A-E][\.)\s]+/i, '').trim();
+                    part = part.replace(/^[A-E][\.)]\s*/i, '').trim();
 
                     if (part) {
                         options.push({

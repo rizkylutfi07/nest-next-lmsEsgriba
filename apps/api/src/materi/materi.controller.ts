@@ -86,9 +86,15 @@ export class MateriController {
             effectiveGuruId = req.user.guru.id;
         }
 
+        // For SISWA, filter by their class
+        let effectiveKelasId = kelasId;
+        if (req.user.role === Role.SISWA && req.user.siswa?.kelasId) {
+            effectiveKelasId = req.user.siswa.kelasId;
+        }
+
         return this.materiService.findAll({
             mataPelajaranId,
-            kelasId,
+            kelasId: effectiveKelasId,
             guruId: effectiveGuruId,
             isPublished,
             search,

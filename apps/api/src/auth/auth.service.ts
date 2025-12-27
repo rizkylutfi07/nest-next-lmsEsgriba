@@ -15,7 +15,7 @@ type TokenResponse = {
   accessToken: string;
   user: Pick<User, 'id' | 'email' | 'name' | 'role' | 'createdAt'> & {
     guru?: { id: string; nama: string } | null;
-    siswa?: { id: string; nama: string; kelasId: string | null } | null;
+    siswa?: { id: string; nama: string; nisn?: string | null; kelasId: string | null; kelas?: { id: string; nama: string } | null } | null;
   };
 };
 
@@ -62,7 +62,14 @@ export class AuthService {
           select: {
             id: true,
             nama: true,
+            nisn: true,
             kelasId: true,
+            kelas: {
+              select: {
+                id: true,
+                nama: true,
+              }
+            }
           },
         },
       },
@@ -110,7 +117,14 @@ export class AuthService {
           select: {
             id: true,
             nama: true,
+            nisn: true,
             kelasId: true,
+            kelas: {
+              select: {
+                id: true,
+                nama: true,
+              }
+            }
           },
         },
       },
@@ -128,7 +142,7 @@ export class AuthService {
     return bcrypt.hash(password, saltRounds);
   }
 
-  private async buildToken(user: User & { guru?: { id: string; nama: string } | null; siswa?: { id: string; nama: string; kelasId: string | null } | null }): Promise<TokenResponse> {
+  private async buildToken(user: User & { guru?: { id: string; nama: string } | null; siswa?: { id: string; nama: string; nisn?: string | null; kelasId: string | null; kelas?: { id: string; nama: string } | null } | null }): Promise<TokenResponse> {
     const payload = {
       sub: user.id,
       email: user.email,

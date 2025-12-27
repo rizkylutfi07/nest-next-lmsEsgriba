@@ -108,7 +108,7 @@ const normalizePilihanData = (source: any): PilihanJawaban[] => {
             const optionLabels = ['A', 'B', 'C', 'D', 'E'];
             return data.map((text: string, idx: number) => ({
                 id: optionLabels[idx] || `${idx}`,
-                text: text.replace(/^[A-E][\.)\s]+/i, '').trim(),
+                text: text.replace(/^[A-E][\\.)]\s*/i, '').trim(),
                 value: optionLabels[idx] || `${idx}`,
             }));
         }

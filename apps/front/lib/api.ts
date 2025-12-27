@@ -98,6 +98,11 @@ export const materiApi = {
         fetchApi(`/materi/${id}`, {
             method: 'DELETE',
         }),
+
+    toggleBookmark: (id: string) =>
+        fetchApi(`/materi/${id}/bookmark`, {
+            method: 'POST',
+        }),
 };
 
 // Tugas API
