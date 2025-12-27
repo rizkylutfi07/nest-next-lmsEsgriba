@@ -653,7 +653,7 @@ export class PaketSoalService {
 
         for (const line of lines) {
             // Match patterns: A. text, A) text, or just A text at start of line
-            const optionMatch = line.match(/^([A-E])[\.)\s]+(.+)/i);
+            const optionMatch = line.match(/^([A-E])[\.)]\s*(.+)/i);
 
             if (optionMatch) {
                 const label = optionMatch[1].toUpperCase();
