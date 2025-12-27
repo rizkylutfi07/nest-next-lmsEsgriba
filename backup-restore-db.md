@@ -15,7 +15,7 @@ Untuk mem-backup database saat ini ke dalam file SQL, jalankan perintah berikut 
 mkdir -p database
 
 # Jalankan backup
-docker exec belajar-postgres pg_dump -U postgres belajar > database/data-awal.sql
+docker exec belajar-postgres pg_dump -U postgres belajar > database/data-awal-fix.sql
 ```
 
 **Penjelasan:**
