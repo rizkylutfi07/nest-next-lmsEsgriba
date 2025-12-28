@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/api";
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -22,7 +23,7 @@ export default function ProfilePage() {
 
     const updateMutation = useMutation({
         mutationFn: async (data: { name: string; email: string }) => {
-            const res = await fetch("http://localhost:3001/auth/profile", {
+            const res = await fetch(`${API_URL}/auth/profile`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -38,7 +39,7 @@ export default function ProfilePage() {
 
             // Fetch fresh user data from backend
             try {
-                const userRes = await fetch("http://localhost:3001/auth/me", {
+                const userRes = await fetch(`${API_URL}/auth/me`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },

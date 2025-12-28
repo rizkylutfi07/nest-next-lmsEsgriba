@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/api";
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -38,7 +39,7 @@ export default function PaketSoalPage() {
             if (filterMataPelajaran) params.append("mataPelajaranId", filterMataPelajaran);
 
             const res = await fetch(
-                `http://localhost:3001/paket-soal?${params.toString()}`,
+                `${API_URL}/paket-soal?${params.toString()}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             return res.json();
@@ -48,7 +49,7 @@ export default function PaketSoalPage() {
     const { data: mataPelajaranList } = useQuery({
         queryKey: ["mata-pelajaran-list"],
         queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/mata-pelajaran?limit=100`, {
+            const res = await fetch(`${API_URL}/mata-pelajaran?limit=100`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             return res.json();
@@ -57,7 +58,7 @@ export default function PaketSoalPage() {
 
     const deleteMutation = useMutation({
         mutationFn: async (id: string) => {
-            const res = await fetch(`http://localhost:3001/paket-soal/${id}`, {
+            const res = await fetch(`${API_URL}/paket-soal/${id}`, {
                 method: "DELETE",
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -184,10 +185,14 @@ export default function PaketSoalPage() {
                                                 )}
                                             </td>
                                             <td className="py-4 px-4 text-center">
-                                                {item.kelas ? (
-                                                    <Badge className="bg-emerald-500/15 text-emerald-600">
-                                                        {item.kelas.nama}
-                                                    </Badge>
+                                                {item.paketSoalKelas && item.paketSoalKelas.length > 0 ? (
+                                                    <div className="flex flex-wrap gap-1 justify-center">
+                                                        {item.paketSoalKelas.map((psk: any) => (
+                                                            <Badge key={psk.id} className="bg-emerald-500/15 text-emerald-500">
+                                                                {psk.kelas?.nama}
+                                                            </Badge>
+                                                        ))}
+                                                    </div>
                                                 ) : (
                                                     <span className="text-muted-foreground">-</span>
                                                 )}
@@ -211,6 +216,14 @@ export default function PaketSoalPage() {
                                                     >
                                                         <Eye size={14} />
                                                         Detail
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => router.push(`/paket-soal/${item.id}/edit`)}
+                                                    >
+                                                        <Pencil size={14} />
+                                                        Edit
                                                     </Button>
                                                     <Button
                                                         variant="ghost"

@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/api";
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -17,7 +18,7 @@ export default function UjianSayaPage() {
         queryKey: ["ujian-siswa-available"],
         queryFn: async () => {
             const res = await fetch(
-                `http://localhost:3001/ujian-siswa/available`,
+                `${API_URL}/ujian-siswa/available`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             return res.json();

@@ -289,33 +289,26 @@ export class BankSoalController {
 
                     console.log('Total options extracted:', pilihanJawaban.length);
                     soal.pilihanJawaban = pilihanJawaban;
-                } else if (tipe === 'ESSAY') {
-                    // For essay, try to extract from JAWABAN or KUNCI JAWABAN section
+                } else if (tipe === 'ESSAY' || tipe === 'ISIAN_SINGKAT') {
+                    // For essay/short answer, extract answer key from KUNCI JAWABAN section
                     let textAnswer = '';
 
-                    // Pattern 1: Extract from JAWABAN section
-                    let jawabanMatch = block.match(
-                        /JAWABAN\s*:?\s*([^]*)(?=KUNCI\s+JAWABAN\s*:?|$)/i
+                    // Extract from KUNCI JAWABAN section
+                    const kunciMatch = block.match(
+                        /KUNCI\s+JAWABAN\s*:?\s*([^]*)$/i
                     );
 
-                    // Pattern 2: If JAWABAN is empty, try KUNCI JAWABAN
-                    if (!jawabanMatch || !jawabanMatch[1].trim()) {
-                        jawabanMatch = block.match(
-                            /KUNCI\s+JAWABAN\s*:?\s*([^]*)$/i
-                        );
-                    }
-
-                    if (jawabanMatch) {
-                        textAnswer = jawabanMatch[1]
+                    if (kunciMatch) {
+                        textAnswer = kunciMatch[1]
                             .trim()
                             .replace(/^[-\s]+|[-\s]+$/g, '')
                             .trim();
                     }
 
-                    console.log('ESSAY answer:', textAnswer.substring(0, 100));
+                    console.log('ESSAY/SHORT answer key:', textAnswer.substring(0, 100));
 
                     if (textAnswer && textAnswer !== '-') {
-                        soal.penjelasan = this.decodeHtmlEntities(textAnswer);
+                        soal.jawabanBenar = this.decodeHtmlEntities(textAnswer);
                     }
                 }
 

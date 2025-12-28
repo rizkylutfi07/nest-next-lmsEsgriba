@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict HKSNvPrwGuavfU1Pns1k1bpqdm4f5iRN8UUh9ZemJQdT0xRcM1MlhRPl6l5xQmD
+\restrict reqaxuWCGx6p2shW9aabNXoz2LTnYA54vcJeuWV2yse2ocGiQiWSuxvl3FT63eA
 
 -- Dumped from database version 17.7
 -- Dumped by pg_dump version 17.7
@@ -554,6 +554,25 @@ CREATE TABLE public."PaketSoalItem" (
 ALTER TABLE public."PaketSoalItem" OWNER TO postgres;
 
 --
+-- Name: Pengumuman; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."Pengumuman" (
+    id text NOT NULL,
+    judul text NOT NULL,
+    konten text NOT NULL,
+    "targetRoles" public."Role"[] DEFAULT ARRAY[]::public."Role"[],
+    "authorId" text NOT NULL,
+    "isActive" boolean DEFAULT true NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    "deletedAt" timestamp(3) without time zone
+);
+
+
+ALTER TABLE public."Pengumuman" OWNER TO postgres;
+
+--
 -- Name: ProgressSiswa; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -754,7 +773,8 @@ CREATE TABLE public."Ujian" (
     "updatedAt" timestamp(3) without time zone NOT NULL,
     "deletedAt" timestamp(3) without time zone,
     "paketSoalId" text,
-    "guruId" text
+    "guruId" text,
+    "deteksiKecurangan" boolean DEFAULT true NOT NULL
 );
 
 
@@ -791,7 +811,8 @@ CREATE TABLE public."UjianSiswa" (
     "isPassed" boolean,
     jawaban jsonb,
     "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    "updatedAt" timestamp(3) without time zone NOT NULL
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    "manualGrades" jsonb
 );
 
 
@@ -873,56 +894,6 @@ COPY public."Attendance" (id, "siswaId", tanggal, "jamMasuk", "jamKeluar", statu
 --
 
 COPY public."BankSoal" (id, kode, pertanyaan, tipe, "mataPelajaranId", "pilihanJawaban", "jawabanBenar", bobot, penjelasan, "createdAt", "updatedAt", "deletedAt") FROM stdin;
-cmjifhn1b0000oludbvbhjb42	SOAL-00001	Penyusunan teks prosedur biasanya mengikuti ....	PILIHAN_GANDA	\N	[{"id": "A", "text": "jalan cerita", "isCorrect": false}, {"id": "B", "text": "konflik yang ada", "isCorrect": false}, {"id": "C", "text": "urutan waktu", "isCorrect": true}, {"id": "D", "text": "jalan hidup tokoh", "isCorrect": false}, {"id": "E", "text": "pengembangan alur", "isCorrect": false}]	C	3	\N	2025-12-23 10:14:42.909	2025-12-23 10:14:42.909	\N
-cmjifhn1q0001oludryabqn4c	SOAL-00002	Kebahasaan dalam teks prosedur yang paling menonjol adalah ....	PILIHAN_GANDA	\N	[{"id": "A", "text": "memakai pola kalimat perintah", "isCorrect": true}, {"id": "B", "text": "erisi pengalaman seseorang yang tidak biasa", "isCorrect": false}, {"id": "C", "text": "menunjukkan hal unik yang akan ada di dalam teks", "isCorrect": false}, {"id": "D", "text": "pendapat penulis yang berdasarkan sebuah fakta", "isCorrect": false}, {"id": "E", "text": "jakan penulis kepada pembaca", "isCorrect": false}]	A	3	\N	2025-12-23 10:14:42.925	2025-12-23 10:14:42.925	\N
-cmjifhn1v0002oludrud51ivw	SOAL-00003	Bacalah prosedur di bawah ini! Tuangkan sampo secukupnya. Basahi rambut dengan air. Oleskan merata di kulit kepala saja. Bilas rambut sampai bersih. Gunakan kondisioner. Bilas rambut dengan air. Prosedur mencuci rambut dan menggunakan kondisioner yang benar adalah ....	PILIHAN_GANDA	\N	[{"id": "A", "text": "(4) - (3) - (5) - (6) - (2)", "isCorrect": false}, {"id": "B", "text": "(1) - (6) - (5) - (3) - (4)", "isCorrect": true}, {"id": "C", "text": "(1) - (2) - (5) - (3) - (6)", "isCorrect": false}, {"id": "D", "text": "(5) - (4) - (1) - (2) - (6)", "isCorrect": false}, {"id": "E", "text": "(3) - (4) - (1) - (5) - (2)", "isCorrect": false}]	B	3	\N	2025-12-23 10:14:42.931	2025-12-23 10:14:42.931	\N
-cmjifhn220003oludgizw3vuw	SOAL-00004	Bacalah artikel di bawah ini dengan saksama! (1) Buah naga bermanfaat menyeimbangkan kadar gula di dalam darah. (2) Khasiat lain dari buah yang mirip kaktus ini adalah menjaga kesehatan jantung, mencegah kanker, mencegah kencing manis, memperkuat fungsi ginjal, bahkan baik dikonsumsi bagi Anda yang sedang menjalani diet sehat. (3) Bagi Anda yang suka dengan buah naga bisa mengolahnya menjadi aneka makanan dan minuman. (4) Konsumsilah setiap hari dan rasakan manfaat buah naga. Kata kerja imperatif terdapat pada kalimat nomor....	PILIHAN_GANDA	\N	[{"id": "A", "text": "(1)", "isCorrect": false}, {"id": "B", "text": "(2)", "isCorrect": false}, {"id": "C", "text": "(3)", "isCorrect": false}, {"id": "D", "text": "(4)", "isCorrect": true}, {"id": "E", "text": "(1) dan (3)", "isCorrect": false}]	D	3	\N	2025-12-23 10:14:42.937	2025-12-23 10:14:42.937	\N
-cmjifhn280004olud1uijyfs1	SOAL-00005	Lalu, pergilah ke bank dan ambil nomor antrean. Jika Anda tidak mengantre, langsung saja menuju teller, tidak usah mengambil nomor antrean. Nomor antrean untuk teller dan untuk membuka rekening berbeda. Jika bingung, tanya saja kepada satpam. Berikut ini kalimat imperatif yang terdapat pada paragraf di atas, kecuali …	PILIHAN_GANDA	\N	[{"id": "A", "text": "Pergilah ke bank", "isCorrect": false}, {"id": "B", "text": "Langsung saja menuju teller", "isCorrect": false}, {"id": "C", "text": "mbil nomor antrean", "isCorrect": false}, {"id": "D", "text": "Nomor antrean untuk teller", "isCorrect": true}, {"id": "E", "text": "Tanya saja kepada satpam", "isCorrect": false}]	D	3	\N	2025-12-23 10:14:42.943	2025-12-23 10:14:42.943	\N
-cmjifhn2e0005oludwna0hqbs	SOAL-00006	Kalimat dalam teks prosedur berikut yang tidak mengandung partisipan di dalamnya adalah ....	PILIHAN_GANDA	\N	[{"id": "A", "text": "Pengendara diharuskan memiliki SIM yang masih berlaku.", "isCorrect": false}, {"id": "B", "text": "Pembuat harus mencampurkan semua bahan dalam satu wadah.", "isCorrect": false}, {"id": "C", "text": "Pemohon diwajibkan membawa semua jenis dokumen agli ke kantor cabang.", "isCorrect": false}, {"id": "D", "text": "awalah semua berkas yang diminta oleh perusahaan ter­sebut.", "isCorrect": false}, {"id": "E", "text": "Para penjual semakin pintar memasarkan produk-produk baru.", "isCorrect": true}]	E	3	\N	2025-12-23 10:14:42.95	2025-12-23 10:14:42.95	\N
-cmjifhn2k0006olud1l9eurof	SOAL-00007	Di bawah ini yang termasuk ke dalam struktur teks eksplanasi ialah ...	PILIHAN_GANDA	\N	[{"id": "A", "text": "bstraksi", "isCorrect": false}, {"id": "B", "text": "tesis", "isCorrect": false}, {"id": "C", "text": "rgumentasi", "isCorrect": false}, {"id": "D", "text": "pernyataan umum", "isCorrect": true}, {"id": "E", "text": "koda", "isCorrect": false}]	D	3	\N	2025-12-23 10:14:42.956	2025-12-23 10:14:42.956	\N
-cmjifhn2p0007olud3qy9tm1q	SOAL-00008	Di dalam teks eksplanasi secara umum membahas tentang berbagai fenomena sebagai berikut, kecuali ....	PILIHAN_GANDA	\N	[{"id": "A", "text": "fenomena alam", "isCorrect": false}, {"id": "B", "text": "fenomena sosial", "isCorrect": false}, {"id": "C", "text": "fenomena ekonomi kerakyatan", "isCorrect": false}, {"id": "D", "text": "fenomena kawin cerai artis", "isCorrect": false}, {"id": "E", "text": "fenomena pendidikan teks eskplanasi disebut sebagai...", "isCorrect": true}]	E	3	\N	2025-12-23 10:14:42.961	2025-12-23 10:14:42.961	\N
-cmjifhn2w0008oludp5vxuea3	SOAL-00009	Di bawah ini yang tidak termasuk ke dalam isi dari sebuah teks eksplanasi adalah ....	PILIHAN_GANDA	\N	[{"id": "A", "text": "simpulan/intisari dari gagasan yang dibahas", "isCorrect": false}, {"id": "B", "text": "konflik pada tokoh-tokoh dalam novel", "isCorrect": true}, {"id": "C", "text": "pernyataan tantang topik yang sedang dibahas", "isCorrect": false}, {"id": "D", "text": "informasi yang didasarkan pada fakta berkaitan dengan topik", "isCorrect": false}, {"id": "E", "text": "generalisasi tentang topik yang sedang dibahas", "isCorrect": false}]	B	3	\N	2025-12-23 10:14:42.968	2025-12-23 10:14:42.968	\N
-cmjifhn320009olud4vjbm65o	SOAL-00010	Interpretasi dalam teks eksplanasi berisi ....	PILIHAN_GANDA	\N	[{"id": "A", "text": "pernyataan umum", "isCorrect": true}, {"id": "B", "text": "nalisis fenomena yang terjadi", "isCorrect": false}, {"id": "C", "text": "pengenalan objek yang akan di- jelaskan", "isCorrect": false}, {"id": "D", "text": "menjelaskan mengenai proses kejadian", "isCorrect": false}, {"id": "E", "text": "kesimpulan tentang topik yang telah dijelaskan", "isCorrect": false}]	A	3	\N	2025-12-23 10:14:42.973	2025-12-23 10:14:42.973	\N
-cmjifhn38000aoludddci8ku7	SOAL-00011	Tujuan akhir ceramah digolongkan ke dalam bentuk ....	PILIHAN_GANDA	\N	[{"id": "A", "text": "eskripsi", "isCorrect": false}, {"id": "B", "text": "persuasi", "isCorrect": true}, {"id": "C", "text": "narasi", "isCorrect": false}, {"id": "D", "text": "rgumentasi", "isCorrect": false}, {"id": "E", "text": "ksposisi", "isCorrect": false}]	B	3	\N	2025-12-23 10:14:42.98	2025-12-23 10:14:42.98	\N
-cmjifhn3e000boludz052vyxg	SOAL-00012	Ceramah merupakan peristiwa berbicara ....	PILIHAN_GANDA	\N	[{"id": "A", "text": "satu arah", "isCorrect": true}, {"id": "B", "text": "ua arah", "isCorrect": false}, {"id": "C", "text": "tiga arah", "isCorrect": false}, {"id": "D", "text": "mpat arah", "isCorrect": false}, {"id": "E", "text": "lima arah", "isCorrect": false}]	A	3	\N	2025-12-23 10:14:42.985	2025-12-23 10:14:42.985	\N
-cmjifhn3j000coludt9g3w06r	SOAL-00013	Itulah sedikit hal yang Bapak sampaikan. Mudah-mudahan bermanfaat. Selamat sore. Kalimat di atas merupakan ceramah pada bagian ....	PILIHAN_GANDA	\N	[{"id": "A", "text": "pembukaan", "isCorrect": false}, {"id": "B", "text": "isi", "isCorrect": false}, {"id": "C", "text": "pengantar", "isCorrect": false}, {"id": "D", "text": "penutup", "isCorrect": false}, {"id": "E", "text": "simpulan", "isCorrect": false}]	\N	3	\N	2025-12-23 10:14:42.99	2025-12-23 10:14:42.99	\N
-cmjifhn3o000dolud1ytiyztk	SOAL-00014	Sistematika teks ceramah yang tepat adalah ....	PILIHAN_GANDA	\N	[{"id": "A", "text": "pembuka, isi, penutup", "isCorrect": true}, {"id": "B", "text": "isi, pembuka, penutup", "isCorrect": false}, {"id": "C", "text": "pembukaan, penutup, isi", "isCorrect": false}, {"id": "D", "text": "isi, pembukaan, penutup", "isCorrect": false}, {"id": "E", "text": "penutup, isi, pembukaan", "isCorrect": false}]	A	3	\N	2025-12-23 10:14:42.995	2025-12-23 10:14:42.995	\N
-cmjifhn3t000eoludzakxy1zy	SOAL-00015	Dengan melakukan aktivitas yang benar, Anda akan lebih kuat dan tubuh menjadi sehat. Hal yang lebih penting juga adalah memilih makanan yang sehat. Bagian tersebut merupakan bagian dari teks ceramah, yaitu ....	PILIHAN_GANDA	\N	[{"id": "A", "text": "pembuka", "isCorrect": false}, {"id": "B", "text": "kesimpulan", "isCorrect": false}, {"id": "C", "text": "pengenalan isu", "isCorrect": false}, {"id": "D", "text": "rangkaian argumen", "isCorrect": false}, {"id": "E", "text": "penegasan kembali", "isCorrect": true}]	E	3	\N	2025-12-23 10:14:43.001	2025-12-23 10:14:43.001	\N
-cmjifhn3z000foluddxg6y706	SOAL-00016	Buku yang disusun oleh penulis berdasarkan rekayasa imajinasi sang pengarang sering disebut dengan istilah ....	PILIHAN_GANDA	\N	[{"id": "A", "text": "uku referensi", "isCorrect": false}, {"id": "B", "text": "uku mutasi", "isCorrect": false}, {"id": "C", "text": "uku nonfiksi", "isCorrect": false}, {"id": "D", "text": "uku fiksi", "isCorrect": true}, {"id": "E", "text": "uku ajar", "isCorrect": false}]	D	3	\N	2025-12-23 10:14:43.007	2025-12-23 10:14:43.007	\N
-cmjifhn43000goluds7fk3hbl	SOAL-00017	Contoh buku nonfiksi adalah ....	PILIHAN_GANDA	\N	[{"id": "A", "text": "uku ajar", "isCorrect": true}, {"id": "B", "text": "novel", "isCorrect": false}, {"id": "C", "text": "ongeng", "isCorrect": false}, {"id": "D", "text": "roman", "isCorrect": false}, {"id": "E", "text": "erpen", "isCorrect": false}]	A	3	\N	2025-12-23 10:14:43.011	2025-12-23 10:14:43.011	\N
-cmjifhn4a000holudhwqgyxpc	SOAL-00018	Perwatakan tokoh cerita dalam sebuah karangan prosa dapat dikenal melalui hal-hal berikut, kecuali....	PILIHAN_GANDA	\N	[{"id": "A", "text": "ialog antartokoh", "isCorrect": false}, {"id": "B", "text": "waktu terjadinya peristiwa", "isCorrect": false}, {"id": "C", "text": "entuk atau ciri fisik", "isCorrect": false}, {"id": "D", "text": "lingkungan kehidupan", "isCorrect": true}, {"id": "E", "text": "tindakan tokoh", "isCorrect": false}]	D	3	\N	2025-12-23 10:14:43.018	2025-12-23 10:14:43.018	\N
-cmjifhn4f000ioluddypvlhef	SOAL-00019	Perhatikan penggalan teks novel berikut! “Elena yang sedang bermain di jalanan depan rumah tiba-tiba menghilang. Ibu yang dari tadi sibuk di dapur belakang baru menyadari ketika menuju ke halaman depan sudah tidak ada Elena yang bermain. Ibu mencari Elena. Ia menelusuri jalanan dan bertanya ke tetangga, namun tidak ada yang melihat Elena”. Unsur intrinsik yang menonjol dari penggalan novel tersebut adalah ....	PILIHAN_GANDA	\N	[{"id": "A", "text": "lur dan latar", "isCorrect": false}, {"id": "B", "text": "lur dan tokoh", "isCorrect": false}, {"id": "C", "text": "lur dan tema", "isCorrect": false}, {"id": "D", "text": "latar dan tokoh", "isCorrect": true}, {"id": "E", "text": "tokoh dan tema", "isCorrect": false}]	D	3	\N	2025-12-23 10:14:43.022	2025-12-23 10:14:43.022	\N
-cmjifhn4k000jolud2vdefxlx	SOAL-00020	Perhatikan penggalan teks novel berikut! “Elena yang sedang bermain di jalanan depan rumah tiba-tiba menghilang. Ibu yang dari tadi sibuk di dapur belakang baru menyadari ketika menuju ke halaman depan sudah tidak ada Elena yang bermain. Ibu mencari Elena. Ia menelusuri jalanan dan bertanya ke tetangga, namun tidak ada yang melihat Elena”. Sudut pandang yang digunakan dalam penggalan novel tersebut adalah ....	PILIHAN_GANDA	\N	[{"id": "A", "text": "orang pertama dan orang kedua", "isCorrect": false}, {"id": "B", "text": "orang pertama dan orang ketiga", "isCorrect": true}, {"id": "C", "text": "orang pertama pelaku utama", "isCorrect": false}, {"id": "D", "text": "orang kedua pelaku utama", "isCorrect": false}, {"id": "E", "text": "orang ketiga serba tahu", "isCorrect": false}]	B	3	\N	2025-12-23 10:14:43.028	2025-12-23 10:14:43.028	\N
-cmjifhn4q000koludxyrve37c	SOAL-00021	Apa yang harus dilakukan untuk menghasilkan teks prosedur yang baik?	ESSAY	\N	\N	\N	8	\N	2025-12-23 10:14:43.034	2025-12-23 10:14:43.034	\N
-cmjifhn4u000loludq4i9ufss	SOAL-00022	Sebutkan ciri-ciri teks eksplanasi!	ESSAY	\N	\N	\N	8	\N	2025-12-23 10:14:43.038	2025-12-23 10:14:43.038	\N
-cmjifhn4z000molud63nz1hdh	SOAL-00023	Apa perbedaan antara pidato, ceramah, dan khotbah?	ESSAY	\N	\N	\N	8	\N	2025-12-23 10:14:43.043	2025-12-23 10:14:43.043	\N
-cmjifhn55000nolud4zsbfpli	SOAL-00024	Apa yang dimaksud buku nonfiksi?	ESSAY	\N	\N	\N	8	\N	2025-12-23 10:14:43.048	2025-12-23 10:14:43.048	\N
-cmjifhn59000ooludv2zhqkyo	SOAL-00025	Mengapa buku fiksi tidak perlu dipertanggungjawabkan?	ESSAY	\N	\N	\N	8	\N	2025-12-23 10:14:43.053	2025-12-23 10:14:43.053	\N
-cmjifienj001eoludxsig2f5g	SOAL-00026	Berfikir komputasional adalah cara berpikir untuk?	PILIHAN_GANDA	\N	[{"id": "A", "text": "Menghafal semua rumus komputer", "isCorrect": false}, {"id": "B", "text": "Menyelesaikan masalah secara acak", "isCorrect": false}, {"id": "C", "text": "Menyelesaikan masalah dengan langkah yang logis dan sistematis", "isCorrect": true}, {"id": "D", "text": "Membuat masalah menjadi lebih rumit", "isCorrect": false}, {"id": "E", "text": "Bekerja tanpa menggunakan komputer", "isCorrect": false}]	C	3	\N	2025-12-23 10:15:18.702	2025-12-23 10:15:18.702	\N
-cmjifienv001foluddwaxkhi7	SOAL-00027	Tahapan dalam berfikir komputasional yang menghilangkan bagian tidak penting dari suatu masalah disebut?	PILIHAN_GANDA	\N	[{"id": "A", "text": "Abstraksi", "isCorrect": true}, {"id": "B", "text": "Pola", "isCorrect": false}, {"id": "C", "text": "Simulasi", "isCorrect": false}, {"id": "D", "text": "Debugging", "isCorrect": false}, {"id": "E", "text": "Eksperimen", "isCorrect": false}]	A	3	\N	2025-12-23 10:15:18.715	2025-12-23 10:15:18.715	\N
-cmjifieo0001goludfkwbw40k	SOAL-00028	Contoh penerapan pola (pattern recognition) dalam kehidupan adalah…	PILIHAN_GANDA	\N	[{"id": "A", "text": "Menghapus data tanpa alasan", "isCorrect": false}, {"id": "B", "text": "Mengulang perhitungan yang sama berkali-kali", "isCorrect": false}, {"id": "C", "text": "Mencari kesamaan solusi untuk masalah berbeda", "isCorrect": true}, {"id": "D", "text": "Menghindari perhitungan", "isCorrect": false}, {"id": "E", "text": "Tidak menggunakan komputer", "isCorrect": false}]	C	3	\N	2025-12-23 10:15:18.72	2025-12-23 10:15:18.72	\N
-cmjifieo5001holudft7ycw8s	SOAL-00029	Perintah langkah kerja terurut untuk menyelesaikan masalah disebut…	PILIHAN_GANDA	\N	[{"id": "A", "text": "Algoritma", "isCorrect": true}, {"id": "B", "text": "Hardware", "isCorrect": false}, {"id": "C", "text": "Browser", "isCorrect": false}, {"id": "D", "text": "Abstraksi", "isCorrect": false}, {"id": "E", "text": "Excel", "isCorrect": false}]	A	3	\N	2025-12-23 10:15:18.724	2025-12-23 10:15:18.724	\N
-cmjifieoa001iolud5rcx9rue	SOAL-00030	Kompeten dalam Teknologi Informasi dan Komunikasi berarti …	PILIHAN_GANDA	\N	[{"id": "A", "text": "Tidak mampu mengoperasikan komputer", "isCorrect": false}, {"id": "B", "text": "Mampu menggunakan teknologi sesuai kebutuhan", "isCorrect": true}, {"id": "C", "text": "Menolak perkembangan teknologi", "isCorrect": false}, {"id": "D", "text": "Hanya bisa menggunakan HP", "isCorrect": false}, {"id": "E", "text": "Menghafal nama perangkat saja", "isCorrect": false}]	B	3	\N	2025-12-23 10:15:18.729	2025-12-23 10:15:18.729	\N
-cmjifieoe001jolud9363qoeg	SOAL-00031	Berikut ini termasuk etika menggunakan teknologi, kecuali …	PILIHAN_GANDA	\N	[{"id": "A", "text": "Mengutip sumber informasi", "isCorrect": false}, {"id": "B", "text": "Tidak menyebarkan hoax", "isCorrect": false}, {"id": "C", "text": "Mencuri data orang lain", "isCorrect": true}, {"id": "D", "text": "Menggunakan bahasa sopan di internet", "isCorrect": false}, {"id": "E", "text": "Menjaga privasi", "isCorrect": false}]	C	3	\N	2025-12-23 10:15:18.734	2025-12-23 10:15:18.734	\N
-cmjifieol001koludsgeqqikg	SOAL-00032	Perangkat lunak yang digunakan untuk mengolah kata adalah…	PILIHAN_GANDA	\N	[{"id": "A", "text": "Microsoft Excel", "isCorrect": false}, {"id": "B", "text": "Microsoft Word", "isCorrect": true}, {"id": "C", "text": "Microsoft PowerPoint", "isCorrect": false}, {"id": "D", "text": "Corel Draw", "isCorrect": false}, {"id": "E", "text": "Photoshop", "isCorrect": false}]	B	3	\N	2025-12-23 10:15:18.74	2025-12-23 10:15:18.74	\N
-cmjifieor001loludmim8twxs	SOAL-00033	Microsoft Excel digunakan untuk…	PILIHAN_GANDA	\N	[{"id": "A", "text": "Mengolah gambar", "isCorrect": false}, {"id": "B", "text": "Mengolah angka dan tabel", "isCorrect": true}, {"id": "C", "text": "Membuat desain", "isCorrect": false}, {"id": "D", "text": "Membuat poster", "isCorrect": false}, {"id": "E", "text": "Memutar video", "isCorrect": false}]	B	3	\N	2025-12-23 10:15:18.746	2025-12-23 10:15:18.746	\N
-cmjifieov001moluda8w9bi8h	SOAL-00034	File presentasi biasanya dihasilkan dari program…	PILIHAN_GANDA	\N	[{"id": "A", "text": "Word", "isCorrect": false}, {"id": "B", "text": "Excel", "isCorrect": false}, {"id": "C", "text": "PowerPoint", "isCorrect": true}, {"id": "D", "text": "Corel Draw", "isCorrect": false}, {"id": "E", "text": "Paint", "isCorrect": false}]	C	3	\N	2025-12-23 10:15:18.75	2025-12-23 10:15:18.75	\N
-cmjifiep2001noludwtsuxr11	SOAL-00035	Ukuran huruf (font size) dapat diatur di tab…	PILIHAN_GANDA	\N	[{"id": "A", "text": "Insert", "isCorrect": false}, {"id": "B", "text": "Design", "isCorrect": false}, {"id": "C", "text": "Home", "isCorrect": true}, {"id": "D", "text": "Review", "isCorrect": false}, {"id": "E", "text": "View", "isCorrect": false}]	C	3	\N	2025-12-23 10:15:18.758	2025-12-23 10:15:18.758	\N
-cmjifiep8001ooludxwpc45io	SOAL-00036	Fasilitas untuk menghitung jumlah data pada Excel secara otomatis adalah rumus…	PILIHAN_GANDA	\N	[{"id": "A", "text": "=AVG", "isCorrect": false}, {"id": "B", "text": "=COUNT", "isCorrect": false}, {"id": "C", "text": "=SUM", "isCorrect": true}, {"id": "D", "text": "=PLUS", "isCorrect": false}, {"id": "E", "text": "=TOTAL", "isCorrect": false}]	C	3	\N	2025-12-23 10:15:18.763	2025-12-23 10:15:18.763	\N
-cmjifiepg001polud7gebv0ux	SOAL-00037	Ikon Bold (B) berfungsi untuk…	PILIHAN_GANDA	\N	[{"id": "A", "text": "Memiringkan huruf", "isCorrect": false}, {"id": "B", "text": "Memberi garis bawah", "isCorrect": false}, {"id": "C", "text": "Menebalkan huruf", "isCorrect": true}, {"id": "D", "text": "Menghapus huruf", "isCorrect": false}, {"id": "E", "text": "Mengganti warna", "isCorrect": false}]	C	3	\N	2025-12-23 10:15:18.768	2025-12-23 10:15:18.768	\N
-cmjifiepl001qolud1sgehr2f	SOAL-00038	Shortcut (tombol cepat) untuk menyimpan dokumen adalah…	PILIHAN_GANDA	\N	[{"id": "A", "text": "Ctrl + A", "isCorrect": false}, {"id": "B", "text": "Ctrl + V", "isCorrect": false}, {"id": "C", "text": "Ctrl + S", "isCorrect": true}, {"id": "D", "text": "Ctrl + P", "isCorrect": false}, {"id": "E", "text": "Ctrl + C", "isCorrect": false}]	C	3	\N	2025-12-23 10:15:18.776	2025-12-23 10:15:18.776	\N
-cmjifieps001roludb2jj6cua	SOAL-00039	Penyimpanan data berbasis internet yang bisa diakses kapan saja disebut…	PILIHAN_GANDA	\N	[{"id": "A", "text": "Virus", "isCorrect": false}, {"id": "B", "text": "Cloud Storage", "isCorrect": true}, {"id": "C", "text": "Antivirus", "isCorrect": false}, {"id": "D", "text": "Format", "isCorrect": false}, {"id": "E", "text": "BIOS", "isCorrect": false}]	B	3	\N	2025-12-23 10:15:18.784	2025-12-23 10:15:18.784	\N
-cmjifiepx001soludj3cg7ytv	SOAL-00040	Contoh aplikasi cloud storage adalah…	PILIHAN_GANDA	\N	[{"id": "A", "text": "VLC", "isCorrect": false}, {"id": "B", "text": "Chrome", "isCorrect": false}, {"id": "C", "text": "Google Drive", "isCorrect": true}, {"id": "D", "text": "PowerPoint", "isCorrect": false}, {"id": "E", "text": "Corel Draw", "isCorrect": false}]	C	3	\N	2025-12-23 10:15:18.789	2025-12-23 10:15:18.789	\N
-cmjifieq5001toludcvqwda78	SOAL-00041	Office yang digunakan untuk membuat dokumen resmi seperti surat adalah…	PILIHAN_GANDA	\N	[{"id": "A", "text": "Excel", "isCorrect": false}, {"id": "B", "text": "Word", "isCorrect": true}, {"id": "C", "text": "PowerPoint", "isCorrect": false}, {"id": "D", "text": "Photoshop", "isCorrect": false}, {"id": "E", "text": "Chrome", "isCorrect": false}]	B	3	\N	2025-12-23 10:15:18.797	2025-12-23 10:15:18.797	\N
-cmjifieqc001uoludw4c72r2i	SOAL-00042	Menu untuk memasukkan gambar ke Word adalah…	PILIHAN_GANDA	\N	[{"id": "A", "text": "Insert → Pictures", "isCorrect": true}, {"id": "B", "text": "Home → Font", "isCorrect": false}, {"id": "C", "text": "Layout → Margins", "isCorrect": false}, {"id": "D", "text": "Review → Comments", "isCorrect": false}, {"id": "E", "text": "View → Zoom", "isCorrect": false}]	A	3	\N	2025-12-23 10:15:18.803	2025-12-23 10:15:18.803	\N
-cmjifieqi001voludsqyo1qmb	SOAL-00043	Cell dalam Excel merupakan …	PILIHAN_GANDA	\N	[{"id": "A", "text": "Gabungan baris dan kolom", "isCorrect": true}, {"id": "B", "text": "Nama file", "isCorrect": false}, {"id": "C", "text": "Jenis huruf", "isCorrect": false}, {"id": "D", "text": "Gambar grafik", "isCorrect": false}, {"id": "E", "text": "Video", "isCorrect": false}]	A	3	\N	2025-12-23 10:15:18.81	2025-12-23 10:15:18.81	\N
-cmjifieqn001woludaaipze17	SOAL-00044	Untuk membuat grafik di Excel, digunakan menu…	PILIHAN_GANDA	\N	[{"id": "A", "text": "Formula", "isCorrect": false}, {"id": "B", "text": "Home", "isCorrect": false}, {"id": "C", "text": "Insert → Chart", "isCorrect": true}, {"id": "D", "text": "Review", "isCorrect": false}, {"id": "E", "text": "Data", "isCorrect": false}]	C	3	\N	2025-12-23 10:15:18.814	2025-12-23 10:15:18.814	\N
-cmjifieqt001xolud1y9xhes0	SOAL-00045	Berikut ini termasuk perangkat input, kecuali…	PILIHAN_GANDA	\N	[{"id": "A", "text": "Keyboard", "isCorrect": false}, {"id": "B", "text": "Mouse", "isCorrect": false}, {"id": "C", "text": "Scanner", "isCorrect": false}, {"id": "D", "text": "Monitor", "isCorrect": true}, {"id": "E", "text": "Webcam", "isCorrect": false}]	D	3	\N	2025-12-23 10:15:18.82	2025-12-23 10:15:18.82	\N
-cmjifieqy001yoludx262gojq	SOAL-00046	Jelaskan apa yang dimaksud dengan berfikir komputasional!	ESSAY	\N	\N	\N	8	\N	2025-12-23 10:15:18.826	2025-12-23 10:15:18.826	\N
-cmjifier6001zoludjybxprw5	SOAL-00047	Sebutkan 2 contoh perangkat lunak Microsoft Office dan fungsinya!	ESSAY	\N	\N	\N	8	\N	2025-12-23 10:15:18.833	2025-12-23 10:15:18.833	\N
-cmjifiera0020oludd6yb0x0l	SOAL-00048	Apa fungsi dari tombol Ctrl + S pada komputer?	ESSAY	\N	\N	\N	8	\N	2025-12-23 10:15:18.838	2025-12-23 10:15:18.838	\N
-cmjifierg0021oludgjbs0dxz	SOAL-00049	Jelaskan apa yang dimaksud Cloud Storage!	ESSAY	\N	\N	\N	8	\N	2025-12-23 10:15:18.843	2025-12-23 10:15:18.843	\N
-cmjifierl0022oludquxabvwz	SOAL-00050	Mengapa etika berinternet itu penting?	ESSAY	\N	\N	\N	8	\N	2025-12-23 10:15:18.849	2025-12-23 10:15:18.849	\N
 \.
 
 
@@ -963,28 +934,28 @@ COPY public."ForumThread" (id, judul, "isPinned", "isLocked", "kategoriId", "aut
 --
 
 COPY public."Guru" (id, nip, nama, email, "nomorTelepon", status, "createdAt", "updatedAt", "deletedAt", "userId") FROM stdin;
-cmj9z8ynh00365dudxaiuoy08	00000000000000076	Maulida Putri Lesmana	pa717885@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.797	2025-12-17 12:17:54.797	\N	cmj9z8ynd00355dudycn1e6hi
 cmj9z8yox00385dudt5p2uvo1	1234567891	Ila Febti Sherly M., S.E	ilafebtisherly@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.849	2025-12-17 12:25:57.706	\N	cmj9z8you00375dudrf1e71qe
 cmj9z8yly00345dudadjrqvfh	0000000000000044	Zulfi Amaliyah, S.Kom	zulfiamaliyah1306@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.742	2025-12-17 12:26:16.194	\N	cmj9z8ylv00335dudr8tet2na
 cmj9z8ybn002q5dud7n4058u9	5040758659300040	Nurmala Evayanti S.Pd.	nurmalaevayanti2006@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.371	2025-12-23 11:57:12.118	\N	cmj9z8ybk002p5dudp5man22v
 cmj9z8y4a002g5dudjlq4s2jp	0000000000000066	M. Fais Jainuddin, S.Pd	faizabrahammalik@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.105	2025-12-23 11:57:31.914	\N	cmj9z8y44002f5dudfvho6nza
-cmj9z8yg3002w5dud29sel0av	00000000000000977	Siska Purwanti, S.E.	purwantisiska25@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.53	2025-12-23 11:57:59.206	\N	cmj9z8yfy002v5dudvf51yqq4
 cmj9z8y77002k5dudwjch4365	8834765666130320	Moh. Yunus Ansori, S.Pd.	yunuskacer@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.211	2025-12-23 11:58:13.302	\N	cmj9z8y73002j5dud9ooury49
 cmj9z8yem002u5dudolwskcz4	1201212121212110	Rizky Lutfi Romadona, S.Kom	rizkielutfi@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.477	2025-12-23 11:58:40.481	\N	cmj9z8yej002t5dudlb0wn4mh
 cmj9z8xtu00225dudew59ixr7	8550751654200000	Aini Abdul Cholis S.Pd.	ainiabdcholis.73@gmail.com	081234567890	AKTIF	2025-12-17 12:17:53.73	2025-12-23 11:59:18.368	\N	cmj9z8xto00215dudxiyqcr71
-cmj9z8yj000305dudtwddc0j1	0000000000000010044	Udayani, S.Pd.	udayaniprayuda@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.635	2025-12-23 11:59:54.787	\N	cmj9z8yix002z5dudbc4lk8nv
 cmj9z8y5q002i5dudk3gr40r9	00000000000023235	Moh. Rohim, S.T.	mohrohim02@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.158	2025-12-23 12:02:46.205	\N	cmj9z8y5n002h5dud9vb23462
 cmj9z8xvg00245duda7dxbp56	3449744648300010	Dra. Subur Hindartin	drasuburhindartin@gmail.com	081234567890	AKTIF	2025-12-17 12:17:53.787	2025-12-23 12:00:48.021	\N	cmj9z8xvb00235dudd4xbolii
-cmj9z8ya7002o5dudm0yzma1k	5736762663300210	Nunung Indrawati, S.Pd.	nunungindrawati437@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.318	2025-12-23 12:01:34.945	\N	cmj9z8ya2002n5dudxxrmi27p
 cmj9z8yd4002s5dudqb9lav2o	0000000000000007878	Nurul Hidayah, S.E.	nurulhidayahse485@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.423	2025-12-23 12:01:50.717	\N	cmj9z8ycz002r5duda3p9ojun
 cmj9z8y2q002e5dud69l0gx00	00000000000000004	Imtiana, S.Pd	imtianateguh@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.049	2025-12-23 12:04:57.009	\N	cmj9z8y2n002d5dudjgj6nzx4
 cmj9z8y8o002m5dudwnycw1jf	0000000000000006	Mulyono, S.Th.	danzia22@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.263	2025-12-23 12:05:31.217	\N	cmj9z8y8l002l5dudo8u4k81t
 cmj9z8yhl002y5dudqly12oc3	8549764665110030	Syamsul Rizal, S.Pd.I.	rizalpecintaseni@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.585	2025-12-23 12:05:44.242	\N	cmj9z8yhh002x5dud9my7ci8i
 cmj9z8xyc00285dudgvf5bnnv	3455763666300010	Erlin Novia Diana, S.E.	erlinnoviadiana@gmail.com	081234567890	AKTIF	2025-12-17 12:17:53.891	2025-12-23 12:06:19.489	\N	cmj9z8xy800275dudsv8ypuim
-cmj9z8xzs002a5dudw0c717l2	00000000000000022222	Fera Mega Haristina, S.Tr.Kom.	feramegaharistiana@gmail.com	081234567890	AKTIF	2025-12-17 12:17:53.943	2025-12-23 12:07:27.603	\N	cmj9z8xzp00295dudiet5g8kd
 cmj9z8xwv00265dud0w98oh1m	00000000230011444	Dwi Wahyudi, S.T,	yudiaster1922@gmail.com	081234567890	AKTIF	2025-12-17 12:17:53.839	2025-12-23 12:07:53.385	\N	cmj9z8xws00255dudbgtsplon
 cmj9z8ykj00325dudk20mdgjx	00000000003444211	Wahyu Mirnawati, S.Ak.	wahyumirnawati30@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.691	2025-12-23 12:08:17.471	\N	cmj9z8ykf00315duda3u6niqb
 cmj9z8y1b002c5dudh3e7fyuu	0000000023232323	Frances Laurence Setyo Budi, S.Pd.	franceskoyen16@gmail.com	081234567890	AKTIF	2025-12-17 12:17:53.998	2025-12-23 12:08:30.754	\N	cmj9z8y16002b5dudps21lpfm
+cmj9z8ya7002o5dudm0yzma1k	5736762663300210	Nunung Indrawati, S.Pd.	nunungindrawati437@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.318	2025-12-25 11:59:15.002	\N	cmj9z8ya2002n5dudxxrmi27p
+cmj9z8xzs002a5dudw0c717l2	00000000000000022222	Fera Mega Haristina, S.Tr.Kom.	feramegaharistiana@gmail.com	081234567890	AKTIF	2025-12-17 12:17:53.943	2025-12-25 12:04:08.915	\N	cmj9z8xzp00295dudiet5g8kd
+cmj9z8yg3002w5dud29sel0av	00000000000000977	Siska Purwanti, S.E.	purwantisiska25@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.53	2025-12-25 12:08:06.998	\N	cmj9z8yfy002v5dudvf51yqq4
+cmj9z8ynh00365dudxaiuoy08	00000000000000076	Maulida Putri Lesmana	pa717885@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.797	2025-12-27 14:54:01.414	\N	cmj9z8ynd00355dudycn1e6hi
+cmj9z8yj000305dudtwddc0j1	0000000000000010044	Udayani, S.Pd.	udayaniprayuda@gmail.com	081234567890	AKTIF	2025-12-17 12:17:54.635	2025-12-27 14:54:08.736	\N	cmj9z8yix002z5dudbc4lk8nv
 \.
 
 
@@ -996,6 +967,76 @@ COPY public."JadwalPelajaran" (id, hari, "jamMulai", "jamSelesai", "kelasId", "m
 cmjh3jl490001cqud3kr1298a	SENIN	07:38	08:16	cmj5ec9zf0000jsudgpxci2hf	cmj9z7qae00205dudqey9zf1h	cmj9z8yox00385dudt5p2uvo1	2025-12-22 11:52:32.168	2025-12-22 11:52:32.168
 cmjh3jv8w0002cqudpqnp8a1z	SENIN	08:16	08:54	cmj5ec9zf0000jsudgpxci2hf	cmj9z7q8c001f5dudtoyt49tx	cmj9z8xzs002a5dudw0c717l2	2025-12-22 11:52:45.296	2025-12-22 11:52:45.296
 cmjh3kyxc0003cqudd8vzybo0	SENIN	08:54	09:32	cmj5ec9zf0000jsudgpxci2hf	cmj9z7qae00205dudqey9zf1h	cmj9z8y2q002e5dud69l0gx00	2025-12-22 11:53:36.719	2025-12-22 11:53:36.719
+cmjle3ec40000omudiuwni8lz	KAMIS	07:00	07:38	cmj5eca0w0006jsud9bca11b3	cmj9z7q9c001p5dudhh2cp17a	cmj9z8ya7002o5dudm0yzma1k	2025-12-25 11:58:57.363	2025-12-25 11:59:23.978
+cmjle4b0i0001omudres3aulf	KAMIS	07:38	08:16	cmj5eca0w0006jsud9bca11b3	cmj9z7q98001o5dudu8zzru3q	cmj9z8xwv00265dud0w98oh1m	2025-12-25 11:59:39.714	2025-12-25 11:59:39.714
+cmjle4mr10002omudrzqfeej5	KAMIS	08:16	08:54	cmj5eca0w0006jsud9bca11b3	cmj9z7q98001o5dudu8zzru3q	cmj9z8xwv00265dud0w98oh1m	2025-12-25 11:59:54.925	2025-12-25 11:59:54.925
+cmjle4vcx0003omuduoa9f8ih	KAMIS	08:54	09:32	cmj5eca0w0006jsud9bca11b3	cmj9z7q98001o5dudu8zzru3q	cmj9z8xwv00265dud0w98oh1m	2025-12-25 12:00:06.08	2025-12-25 12:00:06.08
+cmjle52gk0004omudekm730j8	KAMIS	10:10	10:45	cmj5eca0w0006jsud9bca11b3	cmj9z7qae00205dudqey9zf1h	cmj9z8yhl002y5dudqly12oc3	2025-12-25 12:00:15.284	2025-12-25 12:00:15.284
+cmjle57bs0005omudljdfnapu	KAMIS	10:45	11:20	cmj5eca0w0006jsud9bca11b3	cmj9z7qae00205dudqey9zf1h	cmj9z8yhl002y5dudqly12oc3	2025-12-25 12:00:21.592	2025-12-25 12:00:21.592
+cmjle5gsf0006omud9y3t25ck	KAMIS	11:20	11:55	cmj5eca0w0006jsud9bca11b3	cmj9z7q98001o5dudu8zzru3q	cmj9z8xwv00265dud0w98oh1m	2025-12-25 12:00:33.855	2025-12-25 12:00:33.855
+cmjle5nco0007omudzwm9xe0g	KAMIS	11:55	12:30	cmj5eca0w0006jsud9bca11b3	cmj9z7q98001o5dudu8zzru3q	cmj9z8xwv00265dud0w98oh1m	2025-12-25 12:00:42.36	2025-12-25 12:00:42.36
+cmjle5vdc0008omud2fpqo9r5	KAMIS	12:30	13:05	cmj5eca0w0006jsud9bca11b3	cmj9z7q98001o5dudu8zzru3q	cmj9z8xwv00265dud0w98oh1m	2025-12-25 12:00:52.752	2025-12-25 12:00:52.752
+cmjle6gig0009omudomtsllhe	KAMIS	07:00	07:38	cmj5ec9zf0000jsudgpxci2hf	cmj9z7q8c001f5dudtoyt49tx	cmj9z8yly00345dudadjrqvfh	2025-12-25 12:01:20.152	2025-12-25 12:01:20.152
+cmjle6o4y000aomud96eehydy	KAMIS	07:38	08:16	cmj5ec9zf0000jsudgpxci2hf	cmj9z7q8c001f5dudtoyt49tx	cmj9z8yly00345dudadjrqvfh	2025-12-25 12:01:30.033	2025-12-25 12:01:30.033
+cmjle6t5h000bomud3pjpd28v	KAMIS	08:16	08:54	cmj5ec9zf0000jsudgpxci2hf	cmj9z7q8c001f5dudtoyt49tx	cmj9z8yly00345dudadjrqvfh	2025-12-25 12:01:36.533	2025-12-25 12:01:36.533
+cmjle6yeq000comud34gyikka	KAMIS	08:54	09:32	cmj5ec9zf0000jsudgpxci2hf	cmj9z7q8c001f5dudtoyt49tx	cmj9z8yly00345dudadjrqvfh	2025-12-25 12:01:43.345	2025-12-25 12:01:43.345
+cmjle7ckl000domudjcd3bg8f	KAMIS	10:10	10:45	cmj5ec9zf0000jsudgpxci2hf	cmj9z7q8q001j5dudx5o1zuri	cmj9z8xvg00245duda7dxbp56	2025-12-25 12:02:01.701	2025-12-25 12:02:01.701
+cmjle7n4q000eomudufb8utm9	KAMIS	10:45	11:20	cmj5ec9zf0000jsudgpxci2hf	cmj9z7q8q001j5dudx5o1zuri	cmj9z8xvg00245duda7dxbp56	2025-12-25 12:02:15.386	2025-12-25 12:02:15.386
+cmjle7w40000fomudf4jtf81a	KAMIS	11:20	11:55	cmj5ec9zf0000jsudgpxci2hf	cmj9z7q8h001g5dud3cnj22wr	cmj9z8y2q002e5dud69l0gx00	2025-12-25 12:02:27.024	2025-12-25 12:02:27.024
+cmjle81yp000gomudiv4senhp	KAMIS	11:55	12:30	cmj5ec9zf0000jsudgpxci2hf	cmj9z7q8h001g5dud3cnj22wr	cmj9z8y2q002e5dud69l0gx00	2025-12-25 12:02:34.608	2025-12-25 12:02:34.608
+cmjle8605000homudlg0puuff	KAMIS	12:30	13:05	cmj5ec9zf0000jsudgpxci2hf	cmj9z7q8h001g5dud3cnj22wr	cmj9z8y2q002e5dud69l0gx00	2025-12-25 12:02:39.844	2025-12-25 12:02:39.844
+cmjle8k9e000iomudgmpmezmv	KAMIS	07:00	07:38	cmj5eca0e0003jsud1uxj50o4	cmj9z7q90001m5dud5q6cvaku	cmj9z8yhl002y5dudqly12oc3	2025-12-25 12:02:58.321	2025-12-25 12:02:58.321
+cmjle8p85000jomudfxmra6sh	KAMIS	07:38	08:16	cmj5eca0e0003jsud1uxj50o4	cmj9z7q90001m5dud5q6cvaku	cmj9z8yhl002y5dudqly12oc3	2025-12-25 12:03:04.757	2025-12-25 12:03:04.757
+cmjle8xci000komudx6155p78	KAMIS	08:16	08:54	cmj5eca0e0003jsud1uxj50o4	cmj9z7q90001m5dud5q6cvaku	cmj9z8yhl002y5dudqly12oc3	2025-12-25 12:03:15.281	2025-12-25 12:03:15.281
+cmjle9794000lomud6elyt814	KAMIS	08:54	09:32	cmj5eca0e0003jsud1uxj50o4	cmj9z7q7y001c5dudu38a65qb	cmj9z8y4a002g5dudjlq4s2jp	2025-12-25 12:03:28.12	2025-12-25 12:03:28.12
+cmjle9hhk000momudhytuwwiq	KAMIS	10:10	10:45	cmj5eca0e0003jsud1uxj50o4	cmj9z7q7y001c5dudu38a65qb	cmj9z8y4a002g5dudjlq4s2jp	2025-12-25 12:03:41.384	2025-12-25 12:03:41.384
+cmjleafyh000nomudeto6v4ox	KAMIS	10:45	11:20	cmj5eca0e0003jsud1uxj50o4	cmj9z7q87001e5dudb1uk5u9j	cmj9z8xzs002a5dudw0c717l2	2025-12-25 12:04:26.056	2025-12-25 12:04:26.056
+cmjlean30000oomudn27l34ms	KAMIS	11:20	11:55	cmj5eca0e0003jsud1uxj50o4	cmj9z7q87001e5dudb1uk5u9j	cmj9z8xzs002a5dudw0c717l2	2025-12-25 12:04:35.292	2025-12-25 12:04:35.292
+cmjlearce000pomudy8hsv17u	KAMIS	11:55	12:30	cmj5eca0e0003jsud1uxj50o4	cmj9z7q87001e5dudb1uk5u9j	cmj9z8xzs002a5dudw0c717l2	2025-12-25 12:04:40.814	2025-12-25 12:04:40.814
+cmjleawgk000qomudrrdgkzqp	KAMIS	12:30	13:05	cmj5eca0e0003jsud1uxj50o4	cmj9z7q87001e5dudb1uk5u9j	cmj9z8xzs002a5dudw0c717l2	2025-12-25 12:04:47.444	2025-12-25 12:04:47.444
+cmjlebpv9000romudkrdgcvnz	KAMIS	07:00	07:38	cmj5eca130007jsudvzwt5rjx	cmj9z7q8m001i5dudi334c2ms	cmj9z8xyc00285dudgvf5bnnv	2025-12-25 12:05:25.557	2025-12-25 12:05:25.557
+cmjleburm000somud01sda1hv	KAMIS	07:38	08:16	cmj5eca130007jsudvzwt5rjx	cmj9z7q8m001i5dudi334c2ms	cmj9z8xyc00285dudgvf5bnnv	2025-12-25 12:05:31.905	2025-12-25 12:05:31.905
+cmjlec4pi000tomudp7uy09jy	KAMIS	08:16	08:54	cmj5eca130007jsudvzwt5rjx	cmj9z7q8q001j5dudx5o1zuri	cmj9z8xvg00245duda7dxbp56	2025-12-25 12:05:44.788	2025-12-25 12:05:44.788
+cmjlecawk000uomudmb5w2fwb	KAMIS	08:54	09:32	cmj5eca130007jsudvzwt5rjx	cmj9z7q8q001j5dudx5o1zuri	cmj9z8xvg00245duda7dxbp56	2025-12-25 12:05:52.82	2025-12-25 12:05:52.82
+cmjlecjom000vomudfv4w4lff	KAMIS	10:10	10:45	cmj5eca130007jsudvzwt5rjx	cmj9z7q7y001c5dudu38a65qb	cmj9z8yj000305dudtwddc0j1	2025-12-25 12:06:04.198	2025-12-25 12:06:04.198
+cmjlecubz000womud02x1n4pa	KAMIS	10:45	11:20	cmj5eca130007jsudvzwt5rjx	cmj9z7q7y001c5dudu38a65qb	cmj9z8yj000305dudtwddc0j1	2025-12-25 12:06:17.998	2025-12-25 12:06:17.998
+cmjlecxvq000xomudyi7rd9uq	KAMIS	11:20	11:55	cmj5eca130007jsudvzwt5rjx	cmj9z7q7y001c5dudu38a65qb	cmj9z8yj000305dudtwddc0j1	2025-12-25 12:06:22.598	2025-12-25 12:06:22.598
+cmjled15t000yomudvewts84v	KAMIS	11:55	12:30	cmj5eca130007jsudvzwt5rjx	cmj9z7q9f001q5dud3giiabft	cmj9z8y5q002i5dudk3gr40r9	2025-12-25 12:06:26.849	2025-12-25 12:06:46.463
+cmjled46d000zomudpve0hqfy	KAMIS	12:30	13:05	cmj5eca130007jsudvzwt5rjx	cmj9z7q9f001q5dud3giiabft	cmj9z8y5q002i5dudk3gr40r9	2025-12-25 12:06:30.757	2025-12-25 12:06:51.985
+cmjlee1zd0010omud5f3aui6f	KAMIS	07:00	07:38	cmj5ec9zx0001jsud5cnf1k74	cmj9z7q8q001j5dudx5o1zuri	cmj9z8xvg00245duda7dxbp56	2025-12-25 12:07:14.569	2025-12-25 12:07:14.569
+cmjlee5bi0011omudoee9uhkp	KAMIS	07:38	08:16	cmj5ec9zx0001jsud5cnf1k74	cmj9z7q8q001j5dudx5o1zuri	cmj9z8xvg00245duda7dxbp56	2025-12-25 12:07:18.893	2025-12-25 12:07:18.893
+cmjlefht20012omuds2uma0um	KAMIS	08:16	08:54	cmj5ec9zx0001jsud5cnf1k74	cmj9z7q9i001r5dudnscpl8q0	cmj9z8yg3002w5dud29sel0av	2025-12-25 12:08:21.734	2025-12-25 12:08:21.734
+cmjleflj40013omud95mewn2f	KAMIS	08:54	09:32	cmj5ec9zx0001jsud5cnf1k74	cmj9z7q9i001r5dudnscpl8q0	cmj9z8yg3002w5dud29sel0av	2025-12-25 12:08:26.559	2025-12-25 12:08:26.559
+cmjlefvjv0014omudbi1mpy5x	KAMIS	10:10	10:45	cmj5ec9zx0001jsud5cnf1k74	cmj9z7q9i001r5dudnscpl8q0	cmj9z8yg3002w5dud29sel0av	2025-12-25 12:08:39.547	2025-12-25 12:08:39.547
+cmjleg76w0015omudnsgifj3e	KAMIS	10:45	11:20	cmj5ec9zx0001jsud5cnf1k74	cmj9z7q8x001l5dudh15r8ocj	cmj9z8ykj00325dudk20mdgjx	2025-12-25 12:08:54.632	2025-12-25 12:08:54.632
+cmjlegaef0016omud42klgnta	KAMIS	11:20	11:55	cmj5ec9zx0001jsud5cnf1k74	cmj9z7q8x001l5dudh15r8ocj	cmj9z8ykj00325dudk20mdgjx	2025-12-25 12:08:58.791	2025-12-25 12:08:58.791
+cmjlegkqy0017omudwters5lg	KAMIS	11:55	12:30	cmj5ec9zx0001jsud5cnf1k74	cmj9z7q9c001p5dudhh2cp17a	cmj9z8y1b002c5dudh3e7fyuu	2025-12-25 12:09:12.201	2025-12-25 12:09:12.201
+cmjlegq0m0018omud7w2epxqq	KAMIS	12:30	13:05	cmj5ec9zx0001jsud5cnf1k74	cmj9z7q9c001p5dudhh2cp17a	cmj9z8y1b002c5dudh3e7fyuu	2025-12-25 12:09:19.03	2025-12-25 12:09:19.03
+cmjleh9960019omudmq6w8ztd	KAMIS	07:00	07:38	cmj5eca0k0004jsuddjewnal1	cmj9z7q8v001k5dudwd0dr0f2	cmj9z8y77002k5dudwjch4365	2025-12-25 12:09:43.961	2025-12-25 12:09:43.961
+cmjlehcfp001aomudu0p7xo39	KAMIS	07:38	08:16	cmj5eca0k0004jsuddjewnal1	cmj9z7q8v001k5dudwd0dr0f2	cmj9z8y77002k5dudwjch4365	2025-12-25 12:09:48.084	2025-12-25 12:09:48.084
+cmjlehnxu001bomudjmh2tph4	KAMIS	08:16	08:54	cmj5eca0k0004jsuddjewnal1	cmj9z7q9n001s5dudxr525koc	cmj9z8xzs002a5dudw0c717l2	2025-12-25 12:10:02.994	2025-12-25 12:10:02.994
+cmjlehted001comud5gk47o4q	KAMIS	08:54	09:32	cmj5eca0k0004jsuddjewnal1	cmj9z7q9n001s5dudxr525koc	cmj9z8xzs002a5dudw0c717l2	2025-12-25 12:10:10.069	2025-12-25 12:10:10.069
+cmjlei5hr001domudsggm29fb	KAMIS	10:10	10:45	cmj5eca0k0004jsuddjewnal1	cmj9z7q9c001p5dudhh2cp17a	cmj9z8y1b002c5dudh3e7fyuu	2025-12-25 12:10:25.742	2025-12-25 12:10:25.742
+cmjleicno001eomudpvndrb52	KAMIS	10:45	11:20	cmj5eca0k0004jsuddjewnal1	cmj9z7q9c001p5dudhh2cp17a	cmj9z8y1b002c5dudh3e7fyuu	2025-12-25 12:10:35.027	2025-12-25 12:10:35.027
+cmjleirkw001fomud8lxcrx2t	KAMIS	11:20	11:55	cmj5eca0k0004jsuddjewnal1	cmj9z7q90001m5dud5q6cvaku	cmj9z8yhl002y5dudqly12oc3	2025-12-25 12:10:54.368	2025-12-25 12:10:54.368
+cmjleiv59001gomudrdsbuwyj	KAMIS	11:55	12:30	cmj5eca0k0004jsuddjewnal1	cmj9z7q90001m5dud5q6cvaku	cmj9z8yhl002y5dudqly12oc3	2025-12-25 12:10:58.989	2025-12-25 12:10:58.989
+cmjleiyci001homudsmlsg2dc	KAMIS	12:30	13:05	cmj5eca0k0004jsuddjewnal1	cmj9z7q90001m5dud5q6cvaku	cmj9z8yhl002y5dudqly12oc3	2025-12-25 12:11:03.138	2025-12-25 12:11:03.138
+cmjlejfla001iomud1yx9n9zk	KAMIS	07:00	07:38	cmj5eca170008jsudb4r1h58n	cmj9z7q9v001v5dud8r2heab2	cmj9z8xzs002a5dudw0c717l2	2025-12-25 12:11:25.486	2025-12-25 12:11:25.486
+cmjlejkbx001jomudbvvsb4dm	KAMIS	07:38	08:16	cmj5eca170008jsudb4r1h58n	cmj9z7q9v001v5dud8r2heab2	cmj9z8xzs002a5dudw0c717l2	2025-12-25 12:11:31.628	2025-12-25 12:11:31.628
+cmjlejsus001komudzlxyfomi	KAMIS	08:16	08:54	cmj5eca170008jsudb4r1h58n	cmj9z7q9f001q5dud3giiabft	cmj9z8y5q002i5dudk3gr40r9	2025-12-25 12:11:42.675	2025-12-25 12:11:42.675
+cmjlejzgo001lomudzzkt8frb	KAMIS	08:54	09:32	cmj5eca170008jsudb4r1h58n	cmj9z7q9f001q5dud3giiabft	cmj9z8y5q002i5dudk3gr40r9	2025-12-25 12:11:51.239	2025-12-25 12:11:51.239
+cmjlek7ws001momuddzw2zk63	KAMIS	10:10	10:45	cmj5eca170008jsudb4r1h58n	cmj9z7q9f001q5dud3giiabft	cmj9z8y5q002i5dudk3gr40r9	2025-12-25 12:12:02.188	2025-12-25 12:12:02.188
+cmjlekh9o001nomudas8p4r36	KAMIS	07:00	07:38	cmj5eca050002jsudq5rc3oa3	cmj9z7q7y001c5dudu38a65qb	cmj9z8yj000305dudtwddc0j1	2025-12-25 12:12:14.315	2025-12-25 12:12:14.315
+cmjlekju0001oomudvzyk6s9c	KAMIS	07:38	08:16	cmj5eca050002jsudq5rc3oa3	cmj9z7q7y001c5dudu38a65qb	cmj9z8yj000305dudtwddc0j1	2025-12-25 12:12:17.64	2025-12-25 12:12:17.64
+cmjlekqx5001pomudxulo3g24	KAMIS	08:16	08:54	cmj5eca050002jsudq5rc3oa3	cmj9z7q9c001p5dudhh2cp17a	cmj9z8y1b002c5dudh3e7fyuu	2025-12-25 12:12:26.824	2025-12-25 12:12:26.824
+cmjleku6d001qomudtje339t7	KAMIS	08:54	09:32	cmj5eca050002jsudq5rc3oa3	cmj9z7q9c001p5dudhh2cp17a	cmj9z8y1b002c5dudh3e7fyuu	2025-12-25 12:12:31.045	2025-12-25 12:12:31.045
+cmjlel3p4001romud4id24np0	KAMIS	10:10	10:45	cmj5eca050002jsudq5rc3oa3	cmj9z7q9i001r5dudnscpl8q0	cmj9z8yox00385dudt5p2uvo1	2025-12-25 12:12:43.383	2025-12-25 12:12:43.383
+cmjlel8c1001somudsph4yc9n	KAMIS	10:45	11:20	cmj5eca050002jsudq5rc3oa3	cmj9z7q9i001r5dudnscpl8q0	cmj9z8yox00385dudt5p2uvo1	2025-12-25 12:12:49.393	2025-12-25 12:12:49.393
+cmjlelfz1001tomud1t7qzjjy	KAMIS	07:00	07:38	cmj5eca0o0005jsud0ambwla7	cmj9z7q9n001s5dudxr525koc	cmj9z8yem002u5dudolwskcz4	2025-12-25 12:12:59.292	2025-12-25 12:12:59.292
+cmjlelqt3001uomudtj9mytak	KAMIS	07:38	08:16	cmj5eca0o0005jsud0ambwla7	cmj9z7q9n001s5dudxr525koc	cmj9z8yem002u5dudolwskcz4	2025-12-25 12:13:13.334	2025-12-25 12:13:13.334
+cmjlelz1f001vomud8b0coee1	KAMIS	08:16	08:54	cmj5eca0o0005jsud0ambwla7	cmj9z7q9n001s5dudxr525koc	cmj9z8yem002u5dudolwskcz4	2025-12-25 12:13:24.003	2025-12-25 12:13:24.003
+cmjlem28r001womudn0jvar29	KAMIS	08:54	09:32	cmj5eca0o0005jsud0ambwla7	cmj9z7q9n001s5dudxr525koc	cmj9z8yem002u5dudolwskcz4	2025-12-25 12:13:28.154	2025-12-25 12:13:28.154
+cmjlemaye001xomudfgg7jmyk	KAMIS	10:10	10:45	cmj5eca0o0005jsud0ambwla7	cmj9z7q8q001j5dudx5o1zuri	cmj9z8xvg00245duda7dxbp56	2025-12-25 12:13:39.445	2025-12-25 12:13:39.445
 \.
 
 
@@ -1057,6 +1098,7 @@ cmj9z7qa5001x5dudniu477gy	PKKWU TKJ	PKKWU TKJ	4		SEMUA	2025-12-17 12:16:57.293	2
 cmj9z7qa8001y5dud4gjab2sw	PKKWU TKR	PKKWU TKR	4		SEMUA	2025-12-17 12:16:57.296	2025-12-17 12:16:57.296	\N
 cmj9z7qaa001z5dudjfz3mlu8	Pramuka	Pramuka	4		SEMUA	2025-12-17 12:16:57.298	2025-12-17 12:16:57.298	\N
 cmj9z7qae00205dudqey9zf1h	Seni Budaya	Seni Budaya	4		SEMUA	2025-12-17 12:16:57.302	2025-12-17 12:16:57.302	\N
+cmjof810t000005udgq7bzpjh	BK	Bimbingan Konseling	5	\N	SEMUA	2025-12-27 14:53:51.533	2025-12-27 14:53:51.533	\N
 \.
 
 
@@ -1065,10 +1107,6 @@ cmj9z7qae00205dudqey9zf1h	Seni Budaya	Seni Budaya	4		SEMUA	2025-12-17 12:16:57.3
 --
 
 COPY public."Materi" (id, judul, deskripsi, tipe, konten, "mataPelajaranId", "guruId", "kelasId", "isPinned", "isPublished", "viewCount", "createdAt", "updatedAt", "deletedAt") FROM stdin;
-cmjfuw7ew0000ysudu7n9x6xw	aaaaaa	aaaaaa	DOKUMEN	file://1766329358202-32b94ae3450dea8b583bf1f464d0390b.html	cmj9z7q8c001f5dudtoyt49tx	cmj9z8yly00345dudadjrqvfh	cmj5ec9zf0000jsudgpxci2hf	f	t	0	2025-12-21 15:02:38.214	2025-12-22 09:42:04.937	2025-12-22 09:42:04.932
-cmjftvqn90001smud4jqjksz2	tik	tik	TEKS	sdsadasdas das da da da da da das asas d a	cmj9z7q8c001f5dudtoyt49tx	cmj9z8yly00345dudadjrqvfh	cmj5ec9zf0000jsudgpxci2hf	f	t	0	2025-12-21 14:34:16.868	2025-12-22 09:42:07.978	2025-12-22 09:42:07.977
-cmjftfdir0000smudc2j2nr57	ASAS	aSAS	DOKUMEN	\N	cmj9z7q8c001f5dudtoyt49tx	cmj9z8yly00345dudadjrqvfh	cmj5ec9zf0000jsudgpxci2hf	f	t	0	2025-12-21 14:21:33.361	2025-12-22 09:51:50.737	2025-12-22 09:51:50.732
-cmjh2hfwj00006nudambm0s7b	INFORMATIKA	Informatika	DOKUMEN	file://1766402572470-b247b71dcd534a9ee1071c6382b35dcc4.html	cmj9z7q8c001f5dudtoyt49tx	cmj9z8yly00345dudadjrqvfh	cmj5ec9zf0000jsudgpxci2hf	f	t	0	2025-12-22 11:22:52.481	2025-12-22 11:22:52.481	\N
 \.
 
 
@@ -1093,16 +1131,6 @@ COPY public."MateriBookmark" (id, "materiId", "siswaId", "createdAt") FROM stdin
 --
 
 COPY public."Notifikasi" (id, "userId", tipe, judul, pesan, "linkUrl", "isRead", "readAt", metadata, "createdAt") FROM stdin;
-cmjh9si5z0001rvud4s6mycgj	cmj5gwzqp001b35udoas61cxe	TUGAS_BARU	Tugas Baru: Konsentrasi Keahlian AK	Ila Febti Sherly M., S.E memberi tugas baru dengan deadline 26/12/2025	/tugas	f	\N	{"tugasId": "cmjh9si5a0000rvud0p28ibep"}	2025-12-22 14:47:25.943
-cmjh9si640002rvudgmtam2b6	cmj5gx2c1004r35udtqywx9eq	TUGAS_BARU	Tugas Baru: Konsentrasi Keahlian AK	Ila Febti Sherly M., S.E memberi tugas baru dengan deadline 26/12/2025	/tugas	f	\N	{"tugasId": "cmjh9si5a0000rvud0p28ibep"}	2025-12-22 14:47:25.948
-cmjh9si690003rvud1niaqp1r	cmj5gx2zz005n35udbo6v7qv9	TUGAS_BARU	Tugas Baru: Konsentrasi Keahlian AK	Ila Febti Sherly M., S.E memberi tugas baru dengan deadline 26/12/2025	/tugas	f	\N	{"tugasId": "cmjh9si5a0000rvud0p28ibep"}	2025-12-22 14:47:25.953
-cmjibd3we0001s0udetqjnsyh	cmj5gx04g001t35udknq3yqoe	TUGAS_DINILAI	Tugas Telah Dinilai	Tugas "TIK" telah dinilai. Nilai Anda: 80/100	/tugas	t	2025-12-23 08:24:14.915	{"score": 80, "tugasId": "cmjia6tbi00002fudovdit4lo"}	2025-12-23 08:19:13.022
-cmji9fekg0001awudzj069fd5	cmj5gwzqp001b35udoas61cxe	TUGAS_BARU	Tugas Baru: Informatika	Zulfi Amaliyah, S.Kom memberi tugas baru dengan deadline 26/12/2025	/tugas	f	\N	{"tugasId": "cmji9fejl0000awudarrb4ypf"}	2025-12-23 07:25:00.928
-cmji9feko0002awud4dyn0dgo	cmj5gx2c1004r35udtqywx9eq	TUGAS_BARU	Tugas Baru: Informatika	Zulfi Amaliyah, S.Kom memberi tugas baru dengan deadline 26/12/2025	/tugas	f	\N	{"tugasId": "cmji9fejl0000awudarrb4ypf"}	2025-12-23 07:25:00.936
-cmji9fekt0003awudjnjcgo5y	cmj5gx2zz005n35udbo6v7qv9	TUGAS_BARU	Tugas Baru: Informatika	Zulfi Amaliyah, S.Kom memberi tugas baru dengan deadline 26/12/2025	/tugas	f	\N	{"tugasId": "cmji9fejl0000awudarrb4ypf"}	2025-12-23 07:25:00.941
-cmjia812x00042fudur6h3kyf	cmj9z8yly00345dudadjrqvfh	TUGAS_DINILAI	Pengumpulan Tugas Baru	DESY MUSTIKA MAYA SARI telah mengumpulkan tugas "TIK"	/tugas-management	t	2025-12-23 08:01:08.467	{"tugasId": "cmjia6tbi00002fudovdit4lo"}	2025-12-23 07:47:16.473
-cmjia10nj0001ifud3aidxd00	cmj9z8yly00345dudadjrqvfh	TUGAS_DINILAI	Pengumpulan Tugas Baru	DESY MUSTIKA MAYA SARI telah mengumpulkan tugas "asd"	/tugas-management	t	2025-12-23 11:43:31.644	{"tugasId": "cmji9m8160000qyudmt14e3z3"}	2025-12-23 07:41:49.327
-cmjibcz5v0000s0uda6f50mkj	cmj5gx04g001t35udknq3yqoe	TUGAS_DINILAI	Tugas Telah Dinilai	Tugas "TIK" telah dinilai. Nilai Anda: 80/100	/tugas	t	2025-12-23 08:24:12.849	{"score": 80, "tugasId": "cmjia6tbi00002fudovdit4lo"}	2025-12-23 08:19:06.883
 \.
 
 
@@ -1111,7 +1139,6 @@ cmjibcz5v0000s0uda6f50mkj	cmj5gx04g001t35udknq3yqoe	TUGAS_DINILAI	Tugas Telah Di
 --
 
 COPY public."PaketSoal" (id, kode, nama, deskripsi, "mataPelajaranId", "totalSoal", "createdAt", "updatedAt", "deletedAt", "guruId") FROM stdin;
-cmjic35lb000081ud6uexgy91	PKT-00001	TIK	\N	cmj9z7q8c001f5dudtoyt49tx	25	2025-12-23 08:39:28.269	2025-12-23 10:15:18.906	\N	cmj9z8yly00345dudadjrqvfh
 \.
 
 
@@ -1120,31 +1147,14 @@ cmjic35lb000081ud6uexgy91	PKT-00001	TIK	\N	cmj9z7q8c001f5dudtoyt49tx	25	2025-12-
 --
 
 COPY public."PaketSoalItem" (id, "paketSoalId", "bankSoalId", urutan, "createdAt") FROM stdin;
-cmjifiesa0023oludgmx79vnd	cmjic35lb000081ud6uexgy91	cmjifienj001eoludxsig2f5g	1	2025-12-23 10:15:18.859
-cmjifiesa0024oludg6a1ap83	cmjic35lb000081ud6uexgy91	cmjifienv001foluddwaxkhi7	2	2025-12-23 10:15:18.86
-cmjifiesb0026oludncy7vw5i	cmjic35lb000081ud6uexgy91	cmjifieo0001goludfkwbw40k	3	2025-12-23 10:15:18.86
-cmjifiesa0025oludf26ix9id	cmjic35lb000081ud6uexgy91	cmjifieo5001holudft7ycw8s	4	2025-12-23 10:15:18.861
-cmjifiese0027oludojzbmwim	cmjic35lb000081ud6uexgy91	cmjifiep8001ooludxwpc45io	11	2025-12-23 10:15:18.864
-cmjifiesf0028oludj5xvihyo	cmjic35lb000081ud6uexgy91	cmjifiepg001polud7gebv0ux	12	2025-12-23 10:15:18.865
-cmjifiesg0029oludmyzjgtoa	cmjic35lb000081ud6uexgy91	cmjifiepl001qolud1sgehr2f	13	2025-12-23 10:15:18.865
-cmjifiesh002aoludv4rcwh9u	cmjic35lb000081ud6uexgy91	cmjifieps001roludb2jj6cua	14	2025-12-23 10:15:18.865
-cmjifiesk002boludow0nj7rz	cmjic35lb000081ud6uexgy91	cmjifiepx001soludj3cg7ytv	15	2025-12-23 10:15:18.866
-cmjifieso002eolude1w3nry8	cmjic35lb000081ud6uexgy91	cmjifieq5001toludcvqwda78	16	2025-12-23 10:15:18.866
-cmjifiesn002coludqrzbahq5	cmjic35lb000081ud6uexgy91	cmjifieoa001iolud5rcx9rue	5	2025-12-23 10:15:18.861
-cmjifiesn002doludi1itfxit	cmjic35lb000081ud6uexgy91	cmjifieol001koludsgeqqikg	7	2025-12-23 10:15:18.862
-cmjifieso002ioludp4902y9w	cmjic35lb000081ud6uexgy91	cmjifieqc001uoludw4c72r2i	17	2025-12-23 10:15:18.867
-cmjifieso002foludiw4ik3dh	cmjic35lb000081ud6uexgy91	cmjifieov001moluda8w9bi8h	9	2025-12-23 10:15:18.863
-cmjifieso002goludox34ae6k	cmjic35lb000081ud6uexgy91	cmjifieoe001jolud9363qoeg	6	2025-12-23 10:15:18.862
-cmjifieso002holudriu07vpk	cmjic35lb000081ud6uexgy91	cmjifieor001loludmim8twxs	8	2025-12-23 10:15:18.863
-cmjifiesp002joludyuxgn5mv	cmjic35lb000081ud6uexgy91	cmjifieqi001voludsqyo1qmb	18	2025-12-23 10:15:18.867
-cmjifiesq002loludl5eq6jyi	cmjic35lb000081ud6uexgy91	cmjifieqn001woludaaipze17	19	2025-12-23 10:15:18.868
-cmjifiesq002koludsu3cai4e	cmjic35lb000081ud6uexgy91	cmjifiep2001noludwtsuxr11	10	2025-12-23 10:15:18.864
-cmjifiesu002molud7o8b9qig	cmjic35lb000081ud6uexgy91	cmjifieqt001xolud1y9xhes0	20	2025-12-23 10:15:18.869
-cmjifiesv002nolud65vzp035	cmjic35lb000081ud6uexgy91	cmjifieqy001yoludx262gojq	21	2025-12-23 10:15:18.869
-cmjifiesw002ooludlg6s1ajf	cmjic35lb000081ud6uexgy91	cmjifier6001zoludjybxprw5	22	2025-12-23 10:15:18.87
-cmjifiesx002poludk6lputxw	cmjic35lb000081ud6uexgy91	cmjifiera0020oludd6yb0x0l	23	2025-12-23 10:15:18.87
-cmjifiesx002qoludnt4c8jex	cmjic35lb000081ud6uexgy91	cmjifierg0021oludgjbs0dxz	24	2025-12-23 10:15:18.871
-cmjifiesz002roludxhutlptl	cmjic35lb000081ud6uexgy91	cmjifierl0022oludquxabvwz	25	2025-12-23 10:15:18.871
+\.
+
+
+--
+-- Data for Name: Pengumuman; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."Pengumuman" (id, judul, konten, "targetRoles", "authorId", "isActive", "createdAt", "updatedAt", "deletedAt") FROM stdin;
 \.
 
 
@@ -1298,25 +1308,6 @@ cmj5cxv7e00014iudyynxuvmc	2025/2026	2025-12-16 00:00:00	2026-02-19 00:00:00	AKTI
 --
 
 COPY public."Tugas" (id, judul, deskripsi, instruksi, "mataPelajaranId", "guruId", "kelasId", deadline, "maxScore", "tipePenilaian", "allowLateSubmit", "isPublished", "createdAt", "updatedAt", "deletedAt") FROM stdin;
-cmjh88n52000021udce7b91f8	asdasd	asdasd	asdasda	cmj9z7q8c001f5dudtoyt49tx	cmj9z8yly00345dudadjrqvfh	cmj5ec9zf0000jsudgpxci2hf	2025-12-25 14:03:00	100	MANUAL	f	t	2025-12-22 14:03:59.651	2025-12-22 14:04:48.566	2025-12-22 14:04:48.565
-cmjh8a6ns000621udz9fucu3a	sdfdf	sfsf	dfsdf	cmj9z7qae00205dudqey9zf1h	cmj9z8y2q002e5dud69l0gx00	cmj5ec9zf0000jsudgpxci2hf	2025-12-26 14:05:00	100	MANUAL	f	t	2025-12-22 14:05:11.607	2025-12-22 14:07:54.24	2025-12-22 14:07:54.239
-cmjh8nwy6000c21udaifw4sok	dasdasd	asdasd	asdasd	cmj9z7q8c001f5dudtoyt49tx	cmj9z8yly00345dudadjrqvfh	\N	2025-12-26 14:15:00	100	MANUAL	f	t	2025-12-22 14:15:52.205	2025-12-22 14:18:07.018	2025-12-22 14:18:07.014
-cmjh8r6kj0000ipudzukknbpt	asd	asdas	das	cmj9z7q9i001r5dudnscpl8q0	cmj9z8yox00385dudt5p2uvo1	cmj5ec9zf0000jsudgpxci2hf	2025-12-25 14:18:00	100	MANUAL	t	t	2025-12-22 14:18:24.642	2025-12-22 14:20:04.083	2025-12-22 14:20:04.077
-cmjh8totv000068udkizshhjp	asdasd	asd	asdasd	cmj9z7q9i001r5dudnscpl8q0	cmj9z8yox00385dudt5p2uvo1	cmj5ec9zf0000jsudgpxci2hf	2025-12-25 14:20:00	100	MANUAL	f	t	2025-12-22 14:20:21.617	2025-12-22 14:22:36.103	2025-12-22 14:22:36.099
-cmjh8wyqo0000kbudfa3co2b4	sadas	dasdas	dasdasdas	cmj9z7q9i001r5dudnscpl8q0	cmj9z8yox00385dudt5p2uvo1	cmj5ec9zf0000jsudgpxci2hf	2025-12-25 14:22:00	100	MANUAL	f	t	2025-12-22 14:22:54.431	2025-12-22 14:24:33.406	2025-12-22 14:24:33.401
-cmjh8zjp70000itudpps4ygdv	dasdas	dasd	asdasd	cmj9z7q8c001f5dudtoyt49tx	cmj9z8yly00345dudadjrqvfh	cmj5ec9zf0000jsudgpxci2hf	2025-12-25 14:24:00	100	MANUAL	f	t	2025-12-22 14:24:54.906	2025-12-22 14:27:21.184	2025-12-22 14:27:21.184
-cmjh95r3d00000oud9dflc4ek	asdas	dasdasd	asdasda	cmj9z7q9i001r5dudnscpl8q0	cmj9z8yox00385dudt5p2uvo1	cmj5ec9zf0000jsudgpxci2hf	2025-12-24 14:29:00	100	MANUAL	f	t	2025-12-22 14:29:44.423	2025-12-22 14:34:29.989	2025-12-22 14:34:29.985
-cmjh933f00006itudx55dsnz3	asdasd	asdasd	asdad	cmj9z7q9i001r5dudnscpl8q0	cmj9z8yox00385dudt5p2uvo1	cmj5ec9zf0000jsudgpxci2hf	2025-12-25 14:27:00	100	MANUAL	f	t	2025-12-22 14:27:40.428	2025-12-22 14:34:32.064	2025-12-22 14:34:32.063
-cmjh9cbiu000057udo994scza	asdasd	asdasd	dasdasd	cmj9z7q9i001r5dudnscpl8q0	cmj9z8yox00385dudt5p2uvo1	cmj5ec9zf0000jsudgpxci2hf	2025-12-25 14:34:00	100	MANUAL	f	t	2025-12-22 14:34:50.837	2025-12-22 14:37:22.443	2025-12-22 14:37:22.439
-cmjh9iltz0002djudlqkzkgom	asd	asdas	dasd	cmj9z7q8c001f5dudtoyt49tx	cmj9z8yly00345dudadjrqvfh	cmj5ec9zf0000jsudgpxci2hf	2025-12-25 14:39:00	100	MANUAL	f	t	2025-12-22 14:39:44.134	2025-12-22 14:41:58.482	2025-12-22 14:41:58.48
-cmjh9fxkd0000djudrab7yzlj	asdas	dasdasd	asdasda	cmj9z7q9i001r5dudnscpl8q0	cmj9z8yox00385dudt5p2uvo1	\N	2025-12-26 14:37:00	100	MANUAL	f	t	2025-12-22 14:37:39.372	2025-12-22 14:41:59.692	2025-12-22 14:41:59.691
-cmjh9mblt0008djudbkpmcsaa	asdasd	asdasd	asdasd	cmj9z7q9i001r5dudnscpl8q0	cmj9z8yox00385dudt5p2uvo1	cmj5ec9zf0000jsudgpxci2hf	2025-12-26 14:42:00	100	MANUAL	f	t	2025-12-22 14:42:37.504	2025-12-22 14:46:49.424	2025-12-22 14:46:49.419
-cmji9m8160000qyudmt14e3z3	asd	asdasd	sadasd	cmj9z7q8c001f5dudtoyt49tx	cmj9z8yly00345dudadjrqvfh	cmj5ec9zf0000jsudgpxci2hf	2025-12-26 07:30:00	100	MANUAL	f	t	2025-12-23 07:30:19.049	2025-12-23 07:45:42.821	2025-12-23 07:45:42.817
-cmjh9si5a0000rvud0p28ibep	INFORMATIKA			cmj9z7q9i001r5dudnscpl8q0	cmj9z8yox00385dudt5p2uvo1	cmj5ec9zf0000jsudgpxci2hf	2025-12-26 14:47:00	100	MANUAL	f	t	2025-12-22 14:47:25.916	2025-12-23 07:16:56.218	2025-12-23 07:16:56.212
-cmji95m4n0000oeudhpfq70vk	tes	asdasd		cmj9z7q9i001r5dudnscpl8q0	cmj9z8yox00385dudt5p2uvo1	cmj5ec9zf0000jsudgpxci2hf	2025-12-27 07:17:00	100	MANUAL	f	t	2025-12-23 07:17:24.165	2025-12-23 07:18:06.605	2025-12-23 07:18:06.604
-cmji9875l0002oeud62wh8pvn	asdasd	asdasd	asdasdas	cmj9z7q9i001r5dudnscpl8q0	cmj9z8yox00385dudt5p2uvo1	cmj5ec9zf0000jsudgpxci2hf	2025-12-26 07:18:00	100	MANUAL	f	t	2025-12-23 07:19:24.728	2025-12-23 07:24:38.224	2025-12-23 07:24:38.22
-cmji9fejl0000awudarrb4ypf	asdasd	asdasdas	dasd	cmj9z7q8c001f5dudtoyt49tx	cmj9z8yly00345dudadjrqvfh	cmj5ec9zf0000jsudgpxci2hf	2025-12-26 07:24:00	100	MANUAL	f	t	2025-12-23 07:25:00.894	2025-12-23 07:29:51.14	2025-12-23 07:29:51.136
-cmjia6tbi00002fudovdit4lo	TIK	TIK	ASDASD	cmj9z7q8c001f5dudtoyt49tx	cmj9z8yly00345dudadjrqvfh	cmj5ec9zf0000jsudgpxci2hf	2025-12-27 07:46:00	100	MANUAL	f	t	2025-12-23 07:46:19.756	2025-12-23 07:46:19.756	\N
 \.
 
 
@@ -1325,8 +1316,6 @@ cmjia6tbi00002fudovdit4lo	TIK	TIK	ASDASD	cmj9z7q8c001f5dudtoyt49tx	cmj9z8yly0034
 --
 
 COPY public."TugasAttachment" (id, "tugasId", "namaFile", "ukuranFile", "tipeFile", "urlFile", "createdAt") FROM stdin;
-cmji9m81u0001qyudcfyzezgf	cmji9m8160000qyudmt14e3z3	QR_3093967437_DESY_MUSTIKA_MAYA_SARI.png	3129	image/png	tugas-1766475019038-675526247.png	2025-12-23 07:30:19.074
-cmjia6tc800022fud85cpfsjk	cmjia6tbi00002fudovdit4lo	SURAT PERNYATAANok.docx	29179	application/wps-office.docx	tugas-1766475979747-602187071.docx	2025-12-23 07:46:19.784
 \.
 
 
@@ -1335,8 +1324,6 @@ cmjia6tc800022fud85cpfsjk	cmjia6tbi00002fudovdit4lo	SURAT PERNYATAANok.docx	2917
 --
 
 COPY public."TugasSiswa" (id, "tugasId", "siswaId", status, "submittedAt", "gradedAt", konten, score, feedback, "createdAt", "updatedAt") FROM stdin;
-cmjia10n60000ifudy9ibcjxp	cmji9m8160000qyudmt14e3z3	cmj5gx04g001t35udknq3yqoe	DINILAI	2025-12-23 07:41:49.3	2025-12-23 07:42:33.598	tettessfsdfsf	80		2025-12-23 07:41:49.312	2025-12-23 07:42:33.599
-cmjia812l00032fudymr0zx24	cmjia6tbi00002fudovdit4lo	cmj5gx04g001t35udknq3yqoe	DINILAI	2025-12-23 07:47:16.453	2025-12-23 08:19:13.017		80	sipp	2025-12-23 07:47:16.46	2025-12-23 08:19:13.017
 \.
 
 
@@ -1345,8 +1332,6 @@ cmjia812l00032fudymr0zx24	cmjia6tbi00002fudovdit4lo	cmj5gx04g001t35udknq3yqoe	DI
 --
 
 COPY public."TugasSiswaFile" (id, "tugasSiswaId", "namaFile", "ukuranFile", "tipeFile", "urlFile", "createdAt") FROM stdin;
-cmjia10no0002ifudvunjrxow	cmjia10n60000ifudy9ibcjxp	Soal BIN CBT Ganjil XI.docx	23626	application/wps-office.docx	submission-1766475709294-549429986.docx	2025-12-23 07:41:49.332
-cmjia813200052fudo9u41l4c	cmjia812l00032fudymr0zx24	Screenshot_20251219_142722_Chrome.jpg	332098	image/jpeg	submission-1766476036445-982720339.jpg	2025-12-23 07:47:16.478
 \.
 
 
@@ -1354,8 +1339,7 @@ cmjia813200052fudo9u41l4c	cmjia812l00032fudymr0zx24	Screenshot_20251219_142722_C
 -- Data for Name: Ujian; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public."Ujian" (id, kode, judul, deskripsi, "mataPelajaranId", "kelasId", durasi, "tanggalMulai", "tanggalSelesai", "nilaiMinimal", "acakSoal", "tampilkanNilai", status, "createdBy", "createdAt", "updatedAt", "deletedAt", "paketSoalId", "guruId") FROM stdin;
-cmjifj9d6002soludnz59mwwv	UJI-00001	tik		cmj9z7q8c001f5dudtoyt49tx	\N	60	2025-12-23 10:15:00	2025-12-23 11:15:00	70	t	f	PUBLISHED	cmj9z8ylv00335dudr8tet2na	2025-12-23 10:15:58.505	2025-12-23 10:16:02.117	\N	cmjic35lb000081ud6uexgy91	cmj9z8yly00345dudadjrqvfh
+COPY public."Ujian" (id, kode, judul, deskripsi, "mataPelajaranId", "kelasId", durasi, "tanggalMulai", "tanggalSelesai", "nilaiMinimal", "acakSoal", "tampilkanNilai", status, "createdBy", "createdAt", "updatedAt", "deletedAt", "paketSoalId", "guruId", "deteksiKecurangan") FROM stdin;
 \.
 
 
@@ -1364,7 +1348,6 @@ cmjifj9d6002soludnz59mwwv	UJI-00001	tik		cmj9z7q8c001f5dudtoyt49tx	\N	60	2025-12
 --
 
 COPY public."UjianKelas" (id, "ujianId", "kelasId", "createdAt") FROM stdin;
-cmjifj9d9003ioludb1au9jc6	cmjifj9d6002soludnz59mwwv	cmj5ec9zf0000jsudgpxci2hf	2025-12-23 10:15:58.505
 \.
 
 
@@ -1372,11 +1355,7 @@ cmjifj9d9003ioludb1au9jc6	cmjifj9d6002soludnz59mwwv	cmj5ec9zf0000jsudgpxci2hf	20
 -- Data for Name: UjianSiswa; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public."UjianSiswa" (id, "ujianId", "siswaId", "tokenAkses", "waktuMulai", "waktuSelesai", durasi, status, "nilaiTotal", "isPassed", jawaban, "createdAt", "updatedAt") FROM stdin;
-cmjifjcv1003joludodwb367t	cmjifj9d6002soludnz59mwwv	cmj5gwzqp001b35udoas61cxe	\N	\N	\N	\N	BELUM_MULAI	\N	\N	\N	2025-12-23 10:16:03.037	2025-12-23 10:16:03.037
-cmjifjcv1003koludhx5c784l	cmjifj9d6002soludnz59mwwv	cmj5gx2c1004r35udtqywx9eq	\N	\N	\N	\N	BELUM_MULAI	\N	\N	\N	2025-12-23 10:16:03.037	2025-12-23 10:16:03.037
-cmjifjcv1003loludjqwe6xz7	cmjifj9d6002soludnz59mwwv	cmj5gx2zz005n35udbo6v7qv9	\N	\N	\N	\N	BELUM_MULAI	\N	\N	\N	2025-12-23 10:16:03.037	2025-12-23 10:16:03.037
-cmjifjcv1003molud6ycukjm4	cmjifj9d6002soludnz59mwwv	cmj5gx04g001t35udknq3yqoe	\N	2025-12-23 10:16:07.454	2025-12-23 10:22:49.872	6	SELESAI	11	f	[{"soalId": "cmjifieo5001holudft7ycw8s", "jawaban": "B"}, {"soalId": "cmjifieo0001goludfkwbw40k", "jawaban": "A"}, {"soalId": "cmjifieqy001yoludx262gojq", "jawaban": "Makan malam "}, {"soalId": "cmjifieoa001iolud5rcx9rue", "jawaban": "A"}, {"soalId": "cmjifienj001eoludxsig2f5g", "jawaban": "A"}, {"soalId": "cmjifieoe001jolud9363qoeg", "jawaban": "A"}, {"soalId": "cmjifienv001foluddwaxkhi7", "jawaban": "A"}, {"soalId": "cmjifieor001loludmim8twxs", "jawaban": "A"}, {"soalId": "cmjifieqt001xolud1y9xhes0", "jawaban": "A"}]	2025-12-23 10:16:03.037	2025-12-23 10:24:46.004
+COPY public."UjianSiswa" (id, "ujianId", "siswaId", "tokenAkses", "waktuMulai", "waktuSelesai", durasi, status, "nilaiTotal", "isPassed", jawaban, "createdAt", "updatedAt", "manualGrades") FROM stdin;
 \.
 
 
@@ -1385,31 +1364,6 @@ cmjifjcv1003molud6ycukjm4	cmjifj9d6002soludnz59mwwv	cmj5gx04g001t35udknq3yqoe	\N
 --
 
 COPY public."UjianSoal" (id, "ujianId", "bankSoalId", "nomorUrut", bobot, "createdAt") FROM stdin;
-cmjifj9d7002toludfo9kks3b	cmjifj9d6002soludnz59mwwv	cmjifienj001eoludxsig2f5g	1	3	2025-12-23 10:15:58.505
-cmjifj9d7002uoludosujobeh	cmjifj9d6002soludnz59mwwv	cmjifienv001foluddwaxkhi7	2	3	2025-12-23 10:15:58.505
-cmjifj9d7002volud77kkqep3	cmjifj9d6002soludnz59mwwv	cmjifieo0001goludfkwbw40k	3	3	2025-12-23 10:15:58.505
-cmjifj9d7002wolud5c3jl1q1	cmjifj9d6002soludnz59mwwv	cmjifieo5001holudft7ycw8s	4	3	2025-12-23 10:15:58.505
-cmjifj9d7002xoludv5os3n0i	cmjifj9d6002soludnz59mwwv	cmjifieoa001iolud5rcx9rue	5	3	2025-12-23 10:15:58.505
-cmjifj9d7002yoluds84p9jic	cmjifj9d6002soludnz59mwwv	cmjifieoe001jolud9363qoeg	6	3	2025-12-23 10:15:58.505
-cmjifj9d7002zoludr9o6bszl	cmjifj9d6002soludnz59mwwv	cmjifieol001koludsgeqqikg	7	3	2025-12-23 10:15:58.505
-cmjifj9d70030oludkjqfygss	cmjifj9d6002soludnz59mwwv	cmjifieor001loludmim8twxs	8	3	2025-12-23 10:15:58.505
-cmjifj9d70031oludi639k3r7	cmjifj9d6002soludnz59mwwv	cmjifieov001moluda8w9bi8h	9	3	2025-12-23 10:15:58.505
-cmjifj9d70032oludxahkcbd5	cmjifj9d6002soludnz59mwwv	cmjifiep2001noludwtsuxr11	10	3	2025-12-23 10:15:58.505
-cmjifj9d70033oludplq73rjk	cmjifj9d6002soludnz59mwwv	cmjifiep8001ooludxwpc45io	11	3	2025-12-23 10:15:58.505
-cmjifj9d70034oludpfim377l	cmjifj9d6002soludnz59mwwv	cmjifiepg001polud7gebv0ux	12	3	2025-12-23 10:15:58.505
-cmjifj9d70035oludbcarh3e1	cmjifj9d6002soludnz59mwwv	cmjifiepl001qolud1sgehr2f	13	3	2025-12-23 10:15:58.505
-cmjifj9d70036oludo2mtehzr	cmjifj9d6002soludnz59mwwv	cmjifieps001roludb2jj6cua	14	3	2025-12-23 10:15:58.505
-cmjifj9d70037olud4c7225fn	cmjifj9d6002soludnz59mwwv	cmjifiepx001soludj3cg7ytv	15	3	2025-12-23 10:15:58.505
-cmjifj9d70038olud19fovnos	cmjifj9d6002soludnz59mwwv	cmjifieq5001toludcvqwda78	16	3	2025-12-23 10:15:58.505
-cmjifj9d70039oludk0jwh1dc	cmjifj9d6002soludnz59mwwv	cmjifieqc001uoludw4c72r2i	17	3	2025-12-23 10:15:58.505
-cmjifj9d7003aoludrlqw4d60	cmjifj9d6002soludnz59mwwv	cmjifieqi001voludsqyo1qmb	18	3	2025-12-23 10:15:58.505
-cmjifj9d7003boludksu1318x	cmjifj9d6002soludnz59mwwv	cmjifieqn001woludaaipze17	19	3	2025-12-23 10:15:58.505
-cmjifj9d7003coludqp3yakur	cmjifj9d6002soludnz59mwwv	cmjifieqt001xolud1y9xhes0	20	3	2025-12-23 10:15:58.505
-cmjifj9d7003doludqvnyap4m	cmjifj9d6002soludnz59mwwv	cmjifieqy001yoludx262gojq	21	8	2025-12-23 10:15:58.505
-cmjifj9d7003eoluduhr2275u	cmjifj9d6002soludnz59mwwv	cmjifier6001zoludjybxprw5	22	8	2025-12-23 10:15:58.505
-cmjifj9d7003foludt8ye7ult	cmjifj9d6002soludnz59mwwv	cmjifiera0020oludd6yb0x0l	23	8	2025-12-23 10:15:58.505
-cmjifj9d7003goluddvo7uc6w	cmjifj9d6002soludnz59mwwv	cmjifierg0021oludgjbs0dxz	24	8	2025-12-23 10:15:58.505
-cmjifj9d7003holudrznmxscj	cmjifj9d6002soludnz59mwwv	cmjifierl0022oludquxabvwz	25	8	2025-12-23 10:15:58.505
 \.
 
 
@@ -1536,7 +1490,6 @@ cmj9z8y8l002l5dudo8u4k81t	danzia22@gmail.com	Mulyono, S.Th.	2025-12-17 12:17:54.
 cmj9z8ya2002n5dudxxrmi27p	nunungindrawati437@gmail.com	Nunung Indrawati, S.Pd.	2025-12-17 12:17:54.314	2025-12-17 12:17:54.314	$2b$10$W95AlE618b7g2R0jxnAtFurczP4G2yNzJGpuzoj9GcGDahmaYSiT2	GURU
 cmj9z8ybk002p5dudp5man22v	nurmalaevayanti2006@gmail.com	Nurmala Evayanti S.Pd.	2025-12-17 12:17:54.368	2025-12-17 12:17:54.368	$2b$10$JuD9MrSjTnn9JjGXK8s8I.s5gFTVjGYCU/Jl/Sg4A8ZDByCBZSvUa	GURU
 cmj9z8ycz002r5duda3p9ojun	nurulhidayahse485@gmail.com	Nurul Hidayah, S.E.	2025-12-17 12:17:54.419	2025-12-17 12:17:54.419	$2b$10$WCSq4rLN4ICBmTocXomrGOeQeRo2wHcv.9VXzzYb4ms0V561eMzuu	GURU
-cmj9z8yej002t5dudlb0wn4mh	rizkielutfi@gmail.com	Rizky Lutfi Romadona, S.Kom	2025-12-17 12:17:54.475	2025-12-17 12:17:54.475	$2b$10$gGHGtaTIIc86eCW856dfMOa1O9Y6l8TAUuLWAMGy8gCerLv.Q5VS6	GURU
 cmj9z8yfy002v5dudvf51yqq4	purwantisiska25@gmail.com	Siska Purwanti, S.E.	2025-12-17 12:17:54.526	2025-12-17 12:17:54.526	$2b$10$sWRMxFzGkLPqKZWFTV5p5.F9yNbQrpSMpBIn4k/ZWipc2GK1oDQpG	GURU
 cmj9z8yhh002x5dud9my7ci8i	rizalpecintaseni@gmail.com	Syamsul Rizal, S.Pd.I.	2025-12-17 12:17:54.581	2025-12-17 12:17:54.581	$2b$10$CNuEXEu7LJVQRmA.BgEMG.bGjlD36JsK4DkKLfbBV1T/j0XgPIigq	GURU
 cmj9z8yix002z5dudbc4lk8nv	udayaniprayuda@gmail.com	Udayani, S.Pd.	2025-12-17 12:17:54.633	2025-12-17 12:17:54.633	$2b$10$mx2VrBuCGVqaCRIlMCl6kOpaX2BG3iAbUMUB2dijH3rZGl9bMySye	GURU
@@ -1545,6 +1498,7 @@ cmj9z8ynd00355dudycn1e6hi	pa717885@gmail.com	Maulida Putri Lesmana	2025-12-17 12
 cmj9z8you00375dudrf1e71qe	ilafebtisherly@gmail.com	Ila Febti Sherly M., S.E	2025-12-17 12:17:54.846	2025-12-17 12:17:54.846	$2b$10$UB2xcYNx90qbDQQ3LlMkHOCSfQj.XWLldNJ9bmn4LW59GLZvbrYkm	GURU
 cmj5gx04c001s35udal7y6kqp	desimustika@esgriba.com	DESY MUSTIKA MAYA SARI	2025-12-14 08:33:39.036	2025-12-22 11:46:55.996	$2b$10$nOCUVw8yH97gwAqDSQhuV.EQOBRd45gtsB79vTyNrDe3dOTi3IP/y	SISWA
 cmj9z8ylv00335dudr8tet2na	zulfiamaliyah1306@gmail.com	Zulfi Amaliyah, S.Kom	2025-12-17 12:17:54.739	2025-12-23 07:48:07.524	$2b$10$WFyItfPq96XxeDV9hutJweDwS7mRpoHgdeia06BTGTQVYV.upKDkC	GURU
+cmj9z8yej002t5dudlb0wn4mh	rizkielutfi@gmail.com	Rizky Lutfi Romadona, S.Kom	2025-12-17 12:17:54.475	2025-12-25 11:54:51.909	$2b$10$u/GAfkYy./EURPHeBYkbRem3Oro.3AcydU2Ptm3mv0yX1KSB3vnTu	GURU
 \.
 
 
@@ -1559,15 +1513,11 @@ cmj9z8yly00345dudadjrqvfh	cmj9z7q90001m5dud5q6cvaku
 cmj9z8yly00345dudadjrqvfh	cmj9z7qa0001w5dudmau1sngf
 cmj9z8ybn002q5dud7n4058u9	cmj9z7q84001d5dud60yqektg
 cmj9z8y4a002g5dudjlq4s2jp	cmj9z7q7y001c5dudu38a65qb
-cmj9z8yg3002w5dud29sel0av	cmj9z7q94001n5dudvyt50cow
 cmj9z8y77002k5dudwjch4365	cmj9z7q8v001k5dudwd0dr0f2
 cmj9z8yem002u5dudolwskcz4	cmj9z7q87001e5dudb1uk5u9j
 cmj9z8yem002u5dudolwskcz4	cmj9z7q9n001s5dudxr525koc
 cmj9z8xtu00225dudew59ixr7	cmj9z7q8k001h5dudkou2wtsf
-cmj9z8yj000305dudtwddc0j1	cmj9z7q7y001c5dudu38a65qb
 cmj9z8xvg00245duda7dxbp56	cmj9z7q8q001j5dudx5o1zuri
-cmj9z8ya7002o5dudm0yzma1k	cmj9z7q8k001h5dudkou2wtsf
-cmj9z8ya7002o5dudm0yzma1k	cmj9z7q8x001l5dudh15r8ocj
 cmj9z8yd4002s5dudqb9lav2o	cmj9z7q9i001r5dudnscpl8q0
 cmj9z8y5q002i5dudk3gr40r9	cmj9z7q98001o5dudu8zzru3q
 cmj9z8y5q002i5dudk3gr40r9	cmj9z7q9f001q5dud3giiabft
@@ -1580,14 +1530,23 @@ cmj9z8yhl002y5dudqly12oc3	cmj9z7qae00205dudqey9zf1h
 cmj9z8xyc00285dudgvf5bnnv	cmj9z7q8m001i5dudi334c2ms
 cmj9z8xyc00285dudgvf5bnnv	cmj9z7q9i001r5dudnscpl8q0
 cmj9z8xyc00285dudgvf5bnnv	cmj9z7q9v001v5dud8r2heab2
-cmj9z8xzs002a5dudw0c717l2	cmj9z7q9n001s5dudxr525koc
-cmj9z8xzs002a5dudw0c717l2	cmj9z7q9v001v5dud8r2heab2
-cmj9z8xzs002a5dudw0c717l2	cmj9z7qa0001w5dudmau1sngf
 cmj9z8xwv00265dud0w98oh1m	cmj9z7q98001o5dudu8zzru3q
 cmj9z8xwv00265dud0w98oh1m	cmj9z7q9f001q5dud3giiabft
 cmj9z8xwv00265dud0w98oh1m	cmj9z7qa8001y5dud4gjab2sw
 cmj9z8ykj00325dudk20mdgjx	cmj9z7q8x001l5dudh15r8ocj
 cmj9z8y1b002c5dudh3e7fyuu	cmj9z7q9c001p5dudhh2cp17a
+cmj9z8ya7002o5dudm0yzma1k	cmj9z7q8k001h5dudkou2wtsf
+cmj9z8ya7002o5dudm0yzma1k	cmj9z7q8x001l5dudh15r8ocj
+cmj9z8ya7002o5dudm0yzma1k	cmj9z7q9c001p5dudhh2cp17a
+cmj9z8xzs002a5dudw0c717l2	cmj9z7q87001e5dudb1uk5u9j
+cmj9z8xzs002a5dudw0c717l2	cmj9z7q9n001s5dudxr525koc
+cmj9z8xzs002a5dudw0c717l2	cmj9z7q9v001v5dud8r2heab2
+cmj9z8xzs002a5dudw0c717l2	cmj9z7qa0001w5dudmau1sngf
+cmj9z8yg3002w5dud29sel0av	cmj9z7q94001n5dudvyt50cow
+cmj9z8yg3002w5dud29sel0av	cmj9z7q9i001r5dudnscpl8q0
+cmj9z8ynh00365dudxaiuoy08	cmjof810t000005udgq7bzpjh
+cmj9z8yj000305dudtwddc0j1	cmj9z7q7y001c5dudu38a65qb
+cmj9z8yj000305dudtwddc0j1	cmj9z7qaa001z5dudjfz3mlu8
 \.
 
 
@@ -1755,6 +1714,14 @@ ALTER TABLE ONLY public."PaketSoalItem"
 
 ALTER TABLE ONLY public."PaketSoal"
     ADD CONSTRAINT "PaketSoal_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: Pengumuman Pengumuman_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Pengumuman"
+    ADD CONSTRAINT "Pengumuman_pkey" PRIMARY KEY (id);
 
 
 --
@@ -2589,6 +2556,14 @@ ALTER TABLE ONLY public."PaketSoal"
 
 
 --
+-- Name: Pengumuman Pengumuman_authorId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."Pengumuman"
+    ADD CONSTRAINT "Pengumuman_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES public."User"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
 -- Name: ProgressSiswa ProgressSiswa_mataPelajaranId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2816,5 +2791,5 @@ GRANT CREATE ON SCHEMA public TO PUBLIC;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict HKSNvPrwGuavfU1Pns1k1bpqdm4f5iRN8UUh9ZemJQdT0xRcM1MlhRPl6l5xQmD
+\unrestrict reqaxuWCGx6p2shW9aabNXoz2LTnYA54vcJeuWV2yse2ocGiQiWSuxvl3FT63eA
 

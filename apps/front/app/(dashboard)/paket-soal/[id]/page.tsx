@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/api";
 
 import { use, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
@@ -174,7 +175,7 @@ export default function PaketSoalDetailPage({ params }: { params: Promise<{ id: 
     const { data: paketSoal, isLoading } = useQuery({
         queryKey: ["paket-soal", id],
         queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/paket-soal/${id}`, {
+            const res = await fetch(`${API_URL}/paket-soal/${id}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             if (!res.ok) throw new Error("Failed to fetch");
@@ -185,7 +186,7 @@ export default function PaketSoalDetailPage({ params }: { params: Promise<{ id: 
     const removeSoalMutation = useMutation({
         mutationFn: async (itemId: string) => {
             const res = await fetch(
-                `http://localhost:3001/paket-soal/${id}/soal/${itemId}`,
+                `${API_URL}/paket-soal/${id}/soal/${itemId}`,
                 {
                     method: "DELETE",
                     headers: { Authorization: `Bearer ${token}` },
@@ -379,6 +380,7 @@ export default function PaketSoalDetailPage({ params }: { params: Promise<{ id: 
             {showAddModal && addMode === "import" && (
                 <ImportSoalModal
                     paketSoalId={id}
+                    mataPelajaranId={paketSoal?.mataPelajaranId}
                     token={token}
                     onClose={() => {
                         setShowAddModal(false);
@@ -417,7 +419,7 @@ function AddFromBankModal({ paketSoalId, token, onClose, onSuccess }: any) {
             const params = new URLSearchParams({ limit: "50" });
             if (search) params.append("search", search);
 
-            const res = await fetch(`http://localhost:3001/bank-soal?${params.toString()}`, {
+            const res = await fetch(`${API_URL}/bank-soal?${params.toString()}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             return res.json();
@@ -426,7 +428,7 @@ function AddFromBankModal({ paketSoalId, token, onClose, onSuccess }: any) {
 
     const addSoalMutation = useMutation({
         mutationFn: async (bankSoalIds: string[]) => {
-            const res = await fetch(`http://localhost:3001/paket-soal/${paketSoalId}/soal`, {
+            const res = await fetch(`${API_URL}/paket-soal/${paketSoalId}/soal`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -523,7 +525,7 @@ function AddFromBankModal({ paketSoalId, token, onClose, onSuccess }: any) {
     );
 }
 
-function ImportSoalModal({ paketSoalId, token, onClose, onSuccess }: any) {
+function ImportSoalModal({ paketSoalId, mataPelajaranId, token, onClose, onSuccess }: any) {
     const { toast } = useToast();
     const [file, setFile] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
@@ -546,8 +548,11 @@ function ImportSoalModal({ paketSoalId, token, onClose, onSuccess }: any) {
         try {
             const formData = new FormData();
             formData.append("file", file);
+            if (mataPelajaranId) {
+                formData.append("mataPelajaranId", mataPelajaranId);
+            }
 
-            const res = await fetch(`http://localhost:3001/paket-soal/${paketSoalId}/preview`, {
+            const res = await fetch(`${API_URL}/paket-soal/${paketSoalId}/preview`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -574,8 +579,11 @@ function ImportSoalModal({ paketSoalId, token, onClose, onSuccess }: any) {
         try {
             const formData = new FormData();
             formData.append("file", file);
+            if (mataPelajaranId) {
+                formData.append("mataPelajaranId", mataPelajaranId);
+            }
 
-            const res = await fetch(`http://localhost:3001/paket-soal/${paketSoalId}/import`, {
+            const res = await fetch(`${API_URL}/paket-soal/${paketSoalId}/import`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`,

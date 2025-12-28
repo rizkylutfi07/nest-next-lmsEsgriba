@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsString, IsOptional, IsArray } from 'class-validator';
 
 export class CreatePaketSoalDto {
     @IsString()
@@ -21,7 +21,8 @@ export class CreatePaketSoalDto {
     @IsOptional()
     guruId?: string;
 
-    @IsString()
+    @IsArray()
     @IsOptional()
-    kelasId?: string;
+    kelasIds?: string[];
 }
+

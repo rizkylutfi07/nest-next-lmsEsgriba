@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/api";
 
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -89,7 +90,7 @@ export default function JadwalPelajaranPage() {
     const { data: kelasList } = useQuery({
         queryKey: ["kelas-list"],
         queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/kelas?limit=100`, {
+            const res = await fetch(`${API_URL}/kelas?limit=100`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             return res.json();
@@ -101,7 +102,7 @@ export default function JadwalPelajaranPage() {
     const { data: jadwalList, isLoading: isLoadingJadwal } = useQuery({
         queryKey: ["jadwal-pelajaran", selectedHari],
         queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/jadwal-pelajaran?hari=${selectedHari}`, {
+            const res = await fetch(`${API_URL}/jadwal-pelajaran?hari=${selectedHari}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             return res.json();
@@ -113,7 +114,7 @@ export default function JadwalPelajaranPage() {
     const { data: guruList } = useQuery({
         queryKey: ["guru-list"],
         queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/guru?limit=100`, {
+            const res = await fetch(`${API_URL}/guru?limit=100`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             return res.json();
@@ -124,7 +125,7 @@ export default function JadwalPelajaranPage() {
     const { data: mapelList } = useQuery({
         queryKey: ["mapel-list"],
         queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/mata-pelajaran?limit=100`, {
+            const res = await fetch(`${API_URL}/mata-pelajaran?limit=100`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             return res.json();
@@ -135,7 +136,7 @@ export default function JadwalPelajaranPage() {
     // Mutations
     const createMutation = useMutation({
         mutationFn: async (data: any) => {
-            const res = await fetch("http://localhost:3001/jadwal-pelajaran", {
+            const res = await fetch(`${API_URL}/jadwal-pelajaran`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -153,7 +154,7 @@ export default function JadwalPelajaranPage() {
 
     const updateMutation = useMutation({
         mutationFn: async ({ id, data }: { id: string; data: any }) => {
-            const res = await fetch(`http://localhost:3001/jadwal-pelajaran/${id}`, {
+            const res = await fetch(`${API_URL}/jadwal-pelajaran/${id}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -171,7 +172,7 @@ export default function JadwalPelajaranPage() {
 
     const deleteMutation = useMutation({
         mutationFn: async (id: string) => {
-            const res = await fetch(`http://localhost:3001/jadwal-pelajaran/${id}`, {
+            const res = await fetch(`${API_URL}/jadwal-pelajaran/${id}`, {
                 method: "DELETE",
                 headers: { Authorization: `Bearer ${token}` },
             });

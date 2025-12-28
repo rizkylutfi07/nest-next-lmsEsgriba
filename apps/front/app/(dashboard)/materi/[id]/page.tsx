@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/api";
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -192,7 +193,7 @@ export default function MateriDetailPage() {
                                     // Render HTML in iframe
                                     <iframe
                                         id="materi-iframe"
-                                        src={`http://localhost:3001/uploads/materi/${materi.konten.replace('file://', '')}`}
+                                        src={`${API_URL}/uploads/materi/${materi.konten.replace('file://', '')}`}
                                         className="w-full h-[600px] border rounded-lg"
                                         title="Materi Content"
                                         allowFullScreen
@@ -210,7 +211,7 @@ export default function MateriDetailPage() {
                                         </div>
                                         <Button asChild>
                                             <a
-                                                href={`http://localhost:3001/uploads/materi/${materi.konten.replace('file://', '')}`}
+                                                href={`${API_URL}/uploads/materi/${materi.konten.replace('file://', '')}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 download

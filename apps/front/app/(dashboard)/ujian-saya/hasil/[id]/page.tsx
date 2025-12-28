@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/api";
 
 import { useQuery } from "@tanstack/react-query";
 import { useRouter, useParams } from "next/navigation";
@@ -18,7 +19,7 @@ export default function HasilUjianPage() {
         queryKey: ["ujian-result", ujianSiswaId],
         queryFn: async () => {
             const res = await fetch(
-                `http://localhost:3001/ujian-siswa/result/${ujianSiswaId}`,
+                `${API_URL}/ujian-siswa/result/${ujianSiswaId}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             if (!res.ok) throw new Error("Failed to load result");

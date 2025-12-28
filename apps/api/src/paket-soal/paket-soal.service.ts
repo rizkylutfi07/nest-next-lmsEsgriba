@@ -20,11 +20,21 @@ export class PaketSoalService {
             throw new ConflictException(`Kode paket soal ${createPaketSoalDto.kode} sudah digunakan`);
         }
 
+        const { kelasIds, ...paketData } = createPaketSoalDto;
+
         return this.prisma.paketSoal.create({
-            data: createPaketSoalDto,
+            data: {
+                ...paketData,
+                paketSoalKelas: kelasIds && kelasIds.length > 0 ? {
+                    create: kelasIds.map(kelasId => ({ kelasId }))
+                } : undefined,
+            },
             include: {
                 mataPelajaran: true,
                 guru: true,
+                paketSoalKelas: {
+                    include: { kelas: true }
+                },
                 _count: {
                     select: { soalItems: true },
                 },
@@ -63,7 +73,9 @@ export class PaketSoalService {
                 include: {
                     mataPelajaran: true,
                     guru: true,
-                    kelas: true,
+                    paketSoalKelas: {
+                        include: { kelas: true }
+                    },
                     soalItems: {
                         include: {
                             bankSoal: {
@@ -102,6 +114,10 @@ export class PaketSoalService {
             where: { id, deletedAt: null },
             include: {
                 mataPelajaran: true,
+                guru: true,
+                paketSoalKelas: {
+                    include: { kelas: true }
+                },
                 soalItems: {
                     include: {
                         bankSoal: true,
@@ -137,11 +153,35 @@ export class PaketSoalService {
             }
         }
 
+        const { kelasIds, ...paketData } = updatePaketSoalDto;
+
+        // If kelasIds is provided, update the many-to-many relation
+        if (kelasIds !== undefined) {
+            // Delete existing relations
+            await this.prisma.paketSoalKelas.deleteMany({
+                where: { paketSoalId: id }
+            });
+
+            // Create new relations if kelasIds is not empty
+            if (kelasIds.length > 0) {
+                await this.prisma.paketSoalKelas.createMany({
+                    data: kelasIds.map(kelasId => ({
+                        paketSoalId: id,
+                        kelasId
+                    }))
+                });
+            }
+        }
+
         return this.prisma.paketSoal.update({
             where: { id },
-            data: updatePaketSoalDto,
+            data: paketData,
             include: {
                 mataPelajaran: true,
+                guru: true,
+                paketSoalKelas: {
+                    include: { kelas: true }
+                },
                 _count: {
                     select: { soalItems: true },
                 },
@@ -320,8 +360,22 @@ export class PaketSoalService {
                             if (lines[i]) jawaban.push(lines[i]);
                         }
                     } else if (line.match(/^KUNCI JAWABAN:/i)) {
-                        const match = line.match(/KUNCI JAWABAN:\s*([A-E])/i);
-                        if (match) kunciJawaban = match[1].toUpperCase();
+                        // For multiple choice, extract letter (A-E)
+                        // For essay, extract full text answer
+                        if (jenisSoal === 'PILIHAN_GANDA' || jenisSoal === 'BENAR_SALAH') {
+                            const match = line.match(/KUNCI JAWABAN:\s*([A-E])/i);
+                            if (match) kunciJawaban = match[1].toUpperCase();
+                        } else if (jenisSoal === 'ESSAY' || jenisSoal === 'ISIAN_SINGKAT') {
+                            // For essay/short answer, capture multi-line answer
+                            kunciJawaban = line.replace(/^KUNCI JAWABAN:/i, '').trim();
+                            // Collect multi-line answer until end of block
+                            while (i + 1 < lines.length && !lines[i + 1].match(/^\[NOMOR/i)) {
+                                i++;
+                                if (lines[i].trim()) {
+                                    kunciJawaban += ' ' + lines[i].trim();
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -336,12 +390,15 @@ export class PaketSoalService {
                     }
                 }
 
-                if (jenisSoal === 'PILIHAN_GANDA') {
+                if (jenisSoal === 'PILIHAN_GANDA' || jenisSoal === 'BENAR_SALAH') {
                     // Allow fewer text options if there are images in jawaban
                     if (jawaban.length < 2 && !hasImageInJawaban) {
                         issues.push('Pilihan jawaban kurang dari 2');
                     }
                     if (!kunciJawaban) issues.push('Kunci jawaban tidak ditemukan');
+                } else if (jenisSoal === 'ESSAY' || jenisSoal === 'ISIAN_SINGKAT') {
+                    // For essay, kunci jawaban is optional but recommended
+                    if (!kunciJawaban) issues.push('Kunci jawaban/rubrik tidak ditemukan (opsional)');
                 }
 
                 const soalData = {
@@ -446,10 +503,6 @@ export class PaketSoalService {
                     data.jawabanBenar = soalData.jawabanBenar;
                 }
 
-                if (soalData.penjelasan) {
-                    data.penjelasan = soalData.penjelasan;
-                }
-
                 // Create in bank soal
                 const created = await this.prisma.bankSoal.create({
                     data,
@@ -539,13 +592,21 @@ export class PaketSoalService {
                 }
 
                 // Extract KUNCI JAWABAN
-                const kunciMatch = workingBlock.match(/KUNCI JAWABAN:\s*([A-E])/i);
-                if (kunciMatch) {
-                    kunciJawaban = kunciMatch[1].toUpperCase();
+                if (jenisSoal === 'PILIHAN_GANDA' || jenisSoal === 'BENAR_SALAH') {
+                    const kunciMatch = workingBlock.match(/KUNCI JAWABAN:\s*([A-E])/i);
+                    if (kunciMatch) {
+                        kunciJawaban = kunciMatch[1].toUpperCase();
+                    }
+                } else if (jenisSoal === 'ESSAY' || jenisSoal === 'ISIAN_SINGKAT') {
+                    // For essay, extract full text answer
+                    const kunciMatch = workingBlock.match(/KUNCI JAWABAN:([\s\S]*?)(?:<p>\[NOMOR|$)/i);
+                    if (kunciMatch) {
+                        kunciJawaban = this.cleanHtmlContent(kunciMatch[1]).trim();
+                    }
                 }
 
-                // Mark correct answer
-                if (kunciJawaban && jawaban.length > 0) {
+                // Mark correct answer for multiple choice questions
+                if (kunciJawaban && jawaban.length > 0 && (jenisSoal === 'PILIHAN_GANDA' || jenisSoal === 'BENAR_SALAH')) {
                     const correctAnswer = jawaban.find(j => j.id === kunciJawaban);
                     if (correctAnswer) {
                         correctAnswer.isCorrect = true;
@@ -813,16 +874,31 @@ export class PaketSoalService {
                         }
                         console.log(`Total options collected: ${jawaban.length}`);
                     } else if (line.match(/^KUNCI JAWABAN:/i)) {
-                        const match = line.match(/KUNCI JAWABAN:\s*([A-E])/i);
-                        if (match) {
-                            kunciJawaban = match[1].toUpperCase();
-                            console.log('KUNCI JAWABAN:', kunciJawaban);
+                        // For multiple choice, extract letter (A-E)
+                        // For essay, extract full text answer
+                        if (jenisSoal === 'PILIHAN_GANDA' || jenisSoal === 'BENAR_SALAH') {
+                            const match = line.match(/KUNCI JAWABAN:\s*([A-E])/i);
+                            if (match) {
+                                kunciJawaban = match[1].toUpperCase();
+                                console.log('KUNCI JAWABAN (PG):', kunciJawaban);
+                            }
+                        } else if (jenisSoal === 'ESSAY' || jenisSoal === 'ISIAN_SINGKAT') {
+                            // For essay/short answer, capture multi-line answer
+                            kunciJawaban = line.replace(/^KUNCI JAWABAN:/i, '').trim();
+                            // Collect multi-line answer until end of block
+                            while (i + 1 < lines.length && !lines[i + 1].match(/^\[NOMOR/i)) {
+                                i++;
+                                if (lines[i].trim()) {
+                                    kunciJawaban += ' ' + lines[i].trim();
+                                }
+                            }
+                            console.log('KUNCI JAWABAN (ESSAY):', kunciJawaban.substring(0, 100));
                         }
                     }
                 }
 
-                // Mark correct answer
-                if (kunciJawaban && jawaban.length > 0) {
+                // Mark correct answer for multiple choice questions
+                if (kunciJawaban && jawaban.length > 0 && (jenisSoal === 'PILIHAN_GANDA' || jenisSoal === 'BENAR_SALAH')) {
                     const correctAnswer = jawaban.find(j => j.id === kunciJawaban);
                     if (correctAnswer) {
                         correctAnswer.isCorrect = true;

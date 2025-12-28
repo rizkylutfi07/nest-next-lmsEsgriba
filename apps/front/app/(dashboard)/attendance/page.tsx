@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/api";
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -15,7 +16,7 @@ export default function AttendancePage() {
     const { data: todayData, isLoading } = useQuery({
         queryKey: ["attendance-today"],
         queryFn: async () => {
-            const res = await fetch("http://localhost:3001/attendance/today", {
+            const res = await fetch(`${API_URL}/attendance/today`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             return res.json();
@@ -25,7 +26,7 @@ export default function AttendancePage() {
     const { data: absentData, isLoading: isLoadingAbsent } = useQuery({
         queryKey: ["absent-students"],
         queryFn: async () => {
-            const res = await fetch("http://localhost:3001/attendance/absent-students", {
+            const res = await fetch(`${API_URL}/attendance/absent-students`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             return res.json();

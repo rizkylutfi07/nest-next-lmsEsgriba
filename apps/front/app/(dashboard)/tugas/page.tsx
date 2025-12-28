@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/api";
 
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -643,7 +644,7 @@ export default function TugasPage() {
                             ) : (
                                 <div className="space-y-2">
                                     {selectedTugas.attachments.map((file: any) => {
-                                        const fileUrl = `http://localhost:3001/uploads/tugas/${file.urlFile}`;
+                                        const fileUrl = `${API_URL}/uploads/tugas/${file.urlFile}`;
                                         const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(file.namaFile);
                                         const isPdf = /\.pdf$/i.test(file.namaFile);
                                         const canPreview = isImage || isPdf;

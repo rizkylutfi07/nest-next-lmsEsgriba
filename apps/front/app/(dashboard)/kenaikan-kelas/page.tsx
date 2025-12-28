@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/api";
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -24,7 +25,7 @@ export default function KenaikanKelasPage() {
     const { data: kelasList } = useQuery({
         queryKey: ["kelas-all"],
         queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/kelas?limit=100`, {
+            const res = await fetch(`${API_URL}/kelas?limit=100`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             return res.json();
@@ -35,7 +36,7 @@ export default function KenaikanKelasPage() {
     const { data: tahunAjaranList } = useQuery({
         queryKey: ["tahun-ajaran-all"],
         queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/tahun-ajaran?limit=100`, {
+            const res = await fetch(`${API_URL}/tahun-ajaran?limit=100`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             return res.json();
@@ -46,7 +47,7 @@ export default function KenaikanKelasPage() {
     const loadSiswa = async () => {
         if (!kelasAsalId) return;
 
-        const res = await fetch(`http://localhost:3001/siswa?kelasId=${kelasAsalId}&limit=1000`, {
+        const res = await fetch(`${API_URL}/siswa?kelasId=${kelasAsalId}&limit=1000`, {
             headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -57,7 +58,7 @@ export default function KenaikanKelasPage() {
     // Kenaikan kelas mutation
     const kenaikanKelasMutation = useMutation({
         mutationFn: async (data: any) => {
-            const res = await fetch(`http://localhost:3001/siswa/kenaikan-kelas`, {
+            const res = await fetch(`${API_URL}/siswa/kenaikan-kelas`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

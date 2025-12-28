@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/api";
 
 import Link from "next/link";
 import { useMemo } from "react";
@@ -57,12 +58,12 @@ export default function CBTPage() {
       };
 
       const [bankSoal, paketSoal, ujianAll, ujianPublished, ujianOngoing, ujianSelesai] = await Promise.all([
-        fetchJson("http://localhost:3001/bank-soal?limit=1"),
-        fetchJson("http://localhost:3001/paket-soal?limit=1"),
-        fetchJson("http://localhost:3001/ujian?limit=1"),
-        fetchJson("http://localhost:3001/ujian?status=PUBLISHED&limit=1"),
-        fetchJson("http://localhost:3001/ujian?status=ONGOING&limit=1"),
-        fetchJson("http://localhost:3001/ujian?status=SELESAI&limit=1"),
+        fetchJson(`${API_URL}/bank-soal?limit=1`),
+        fetchJson(`${API_URL}/paket-soal?limit=1`),
+        fetchJson(`${API_URL}/ujian?limit=1`),
+        fetchJson(`${API_URL}/ujian?status=PUBLISHED&limit=1`),
+        fetchJson(`${API_URL}/ujian?status=ONGOING&limit=1`),
+        fetchJson(`${API_URL}/ujian?status=SELESAI&limit=1`),
       ]);
 
       return {

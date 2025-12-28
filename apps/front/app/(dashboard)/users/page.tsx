@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/api";
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -88,7 +89,7 @@ export default function UsersPage() {
 
     const resetPasswordMutation = useMutation({
         mutationFn: ({ userId, newPassword }: { userId: string; newPassword: string }) =>
-            fetch("http://localhost:3001/auth/admin/reset-password", {
+            fetch(`${API_URL}/auth/admin/reset-password`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

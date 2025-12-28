@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/api";
 
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -39,18 +40,24 @@ type MonitoringItem = {
   pgSalah?: number;
 };
 
+import { useSearchParams } from "next/navigation";
+
+// ... inside component
 export default function PenilaianPage() {
   const { token } = useRole();
   const { toast } = useToast();
+  const searchParams = useSearchParams();
+  const initialUjianId = searchParams.get("ujianId");
+
   const [selectedMapel, setSelectedMapel] = useState<string>("");
-  const [selectedUjian, setSelectedUjian] = useState<string | null>(null);
+  const [selectedUjian, setSelectedUjian] = useState<string | null>(initialUjianId);
   const [search, setSearch] = useState("");
 
   // Fetch mata pelajaran list
   const { data: mapelList, isLoading: mapelLoading } = useQuery<MataPelajaran[]>({
     queryKey: ["penilaian-mapel-list"],
     queryFn: async () => {
-      const res = await fetch(`http://localhost:3001/mata-pelajaran`, {
+      const res = await fetch(`${API_URL}/mata-pelajaran`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed to load mapel");
@@ -66,8 +73,8 @@ export default function PenilaianPage() {
     queryKey: ["penilaian-ujian-list", selectedMapel],
     queryFn: async () => {
       const url = selectedMapel
-        ? `http://localhost:3001/ujian?limit=200&mataPelajaranId=${selectedMapel}`
-        : `http://localhost:3001/ujian?limit=200`;
+        ? `${API_URL}/ujian?limit=200&mataPelajaranId=${selectedMapel}`
+        : `${API_URL}/ujian?limit=200`;
       const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -84,7 +91,7 @@ export default function PenilaianPage() {
     queryKey: ["penilaian-monitoring", selectedUjian],
     queryFn: async () => {
       if (!selectedUjian) return [];
-      const res = await fetch(`http://localhost:3001/ujian-siswa/monitoring/${selectedUjian}`, {
+      const res = await fetch(`${API_URL}/ujian-siswa/monitoring/${selectedUjian}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed to load data");
@@ -115,7 +122,7 @@ export default function PenilaianPage() {
     queryKey: ["penilaian-review", activeId],
     queryFn: async () => {
       if (!activeId) return null;
-      const res = await fetch(`http://localhost:3001/ujian-siswa/review/${activeId}`, {
+      const res = await fetch(`${API_URL}/ujian-siswa/review/${activeId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed to load review data");
@@ -553,7 +560,7 @@ function GradeModal({ data, onClose, onSaved, isLoading, token }: any) {
 
     setSaving(true);
     try {
-      const res = await fetch(`http://localhost:3001/ujian-siswa/${data.id}/grade`, {
+      const res = await fetch(`${API_URL}/ujian-siswa/${data.id}/grade`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -594,7 +601,7 @@ function GradeModal({ data, onClose, onSaved, isLoading, token }: any) {
           ) : (
             <div className="divide-y divide-border">
               {essayList.map((soal: any, idx: number) => {
-                const ans = jawabanMap[soal.id];
+                const ans = jawabanMap[soal.bankSoalId] || jawabanMap[soal.id];
                 const current = grades[soal.id] ?? null;
                 return (
                   <div key={soal.id} className="p-4 space-y-3">

@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/api";
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -24,7 +25,7 @@ export default function AttendanceReportPage() {
             if (selectedKelas) params.append("kelasId", selectedKelas);
             if (selectedStatus) params.append("status", selectedStatus);
 
-            const res = await fetch(`http://localhost:3001/attendance/report?${params}`, {
+            const res = await fetch(`${API_URL}/attendance/report?${params}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             return res.json();
@@ -34,7 +35,7 @@ export default function AttendanceReportPage() {
     const { data: kelasList } = useQuery({
         queryKey: ["kelas-all"],
         queryFn: async () => {
-            const res = await fetch("http://localhost:3001/kelas", {
+            const res = await fetch(`${API_URL}/kelas`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             return res.json();

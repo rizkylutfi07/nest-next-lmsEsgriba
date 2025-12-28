@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/api";
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
@@ -22,7 +23,7 @@ export default function SelesaiUjianPage() {
         queryFn: async () => {
             if (!token) return null;
             const res = await fetch(
-                `http://localhost:3001/ujian-siswa/review/${ujianSiswaId}`,
+                `${API_URL}/ujian-siswa/review/${ujianSiswaId}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             if (!res.ok) return null;

@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/api";
 
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -201,7 +202,7 @@ export default function KerjakanUjianPage() {
         queryFn: async () => {
             if (!token) return null;
             const res = await fetch(
-                `http://localhost:3001/ujian-siswa/session/${ujianSiswaId}`,
+                `${API_URL}/ujian-siswa/session/${ujianSiswaId}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             if (!res.ok) throw new Error("Failed to load exam");
@@ -219,7 +220,7 @@ export default function KerjakanUjianPage() {
         queryFn: async () => {
             if (!token) return null;
             const res = await fetch(
-                `http://localhost:3001/ujian-siswa/session/${ujianSiswaId}`,
+                `${API_URL}/ujian-siswa/session/${ujianSiswaId}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             if (!res.ok) return null;
@@ -236,7 +237,7 @@ export default function KerjakanUjianPage() {
     const logActivityMutation = useMutation({
         mutationFn: async (activityType: string) => {
             const res = await fetch(
-                `http://localhost:3001/ujian-siswa/log-activity`,
+                `${API_URL}/ujian-siswa/log-activity`,
                 {
                     method: "POST",
                     headers: {
@@ -271,7 +272,7 @@ export default function KerjakanUjianPage() {
             }));
 
             const res = await fetch(
-                `http://localhost:3001/ujian-siswa/submit/${ujianSiswaId}`,
+                `${API_URL}/ujian-siswa/submit/${ujianSiswaId}`,
                 {
                     method: "POST",
                     headers: {
@@ -303,7 +304,7 @@ export default function KerjakanUjianPage() {
     const saveProgressMutation = useMutation({
         mutationFn: async (jawabanPayload: { soalId: string; jawaban: string }[]) => {
             const res = await fetch(
-                `http://localhost:3001/ujian-siswa/progress/${ujianSiswaId}`,
+                `${API_URL}/ujian-siswa/progress/${ujianSiswaId}`,
                 {
                     method: "POST",
                     headers: {
@@ -346,6 +347,8 @@ export default function KerjakanUjianPage() {
     }, []);
 
     // Timer
+    const autoSubmitTriggered = useRef(false);
+
     useEffect(() => {
         if (!session) return;
 
@@ -366,12 +369,24 @@ export default function KerjakanUjianPage() {
 
             if (remaining <= 0) {
                 clearInterval(timer);
-                toast({ title: "Waktu Habis!", description: "Ujian akan dikirim otomatis oleh sistem.", variant: "destructive" });
+                // Auto-submit when time is up
+                if (!autoSubmitTriggered.current && !submitMutation.isPending) {
+                    autoSubmitTriggered.current = true;
+                    toast({
+                        title: "Waktu Habis!",
+                        description: "Ujian akan dikirim otomatis...",
+                        variant: "destructive"
+                    });
+                    // Trigger auto-submit after short delay
+                    setTimeout(() => {
+                        submitMutation.mutate();
+                    }, 1000);
+                }
             }
         }, 1000);
 
         return () => clearInterval(timer);
-    }, [session]);
+    }, [session, submitMutation]);
 
     const requestFullscreen = async () => {
         try {
@@ -589,7 +604,7 @@ export default function KerjakanUjianPage() {
             </div>
 
             {/* Content */}
-            <div className="max-w-4xl mx-auto pt-2 pb-2 space-y-6">
+            <div className="max-w-5xl mx-auto pt-20 pb-2 px-4 space-y-6">
                 <Card>
                     <CardContent className="p-4 space-y-3">
                         <div className="flex items-center justify-between">
@@ -605,27 +620,29 @@ export default function KerjakanUjianPage() {
                                 </span>
                             </div>
                         </div>
-                        <div className="grid grid-cols-5 sm:grid-cols-8 gap-2">
-                            {soalList.map((soal: any, index: number) => {
-                                const soalKey = soal.bankSoalId ?? soal.id;
-                                const isActive = currentIndex === index;
-                                const answered = Boolean(jawaban[soalKey]);
-                                return (
-                                    <button
-                                        key={soalKey}
-                                        type="button"
-                                        onClick={() => handleNavigateSoal(index)}
-                                        className={`rounded-md border px-0 py-2 text-xs font-semibold transition ${isActive
-                                            ? "border-primary bg-primary text-primary-foreground"
-                                            : answered
-                                                ? "border-green-500 bg-green-500/10 text-green-700"
-                                                : "border-muted bg-muted/40 text-muted-foreground"
-                                            }`}
-                                    >
-                                        {index + 1}
-                                    </button>
-                                );
-                            })}
+                        <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+                            <div className="flex gap-2 pb-2" style={{ minWidth: 'max-content' }}>
+                                {soalList.map((soal: any, index: number) => {
+                                    const soalKey = soal.bankSoalId ?? soal.id;
+                                    const isActive = currentIndex === index;
+                                    const answered = Boolean(jawaban[soalKey]);
+                                    return (
+                                        <button
+                                            key={soalKey}
+                                            type="button"
+                                            onClick={() => handleNavigateSoal(index)}
+                                            className={`w-10 h-10 rounded-md border text-xs font-semibold transition flex-shrink-0 ${isActive
+                                                ? "border-primary bg-primary text-primary-foreground"
+                                                : answered
+                                                    ? "border-green-500 bg-green-500/10 text-green-700"
+                                                    : "border-muted bg-muted/40 text-muted-foreground"
+                                                }`}
+                                        >
+                                            {index + 1}
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
@@ -652,11 +669,7 @@ export default function KerjakanUjianPage() {
                         return (
                             <Card>
                                 <CardContent className="p-6 space-y-6">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                        <Badge className="bg-muted text-muted-foreground border border-border">Soal {currentIndex + 1}</Badge>
-                                        <Badge className="bg-blue-500/15 text-blue-600 border-0">{getTipeLabel(tipeSoal)}</Badge>
-                                        <Badge className="bg-purple-500/15 text-purple-600 border-0">Bobot: {bobot}</Badge>
-                                    </div>
+                                    
 
                                     {typeof pertanyaan === "string" && pertanyaan.includes("<") ? (
                                         <div

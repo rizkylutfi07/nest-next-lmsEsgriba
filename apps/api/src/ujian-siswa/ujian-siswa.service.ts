@@ -60,8 +60,18 @@ export class UjianSiswaService {
 
             if (soal.bankSoal.tipe === TipeSoal.PILIHAN_GANDA || soal.bankSoal.tipe === TipeSoal.BENAR_SALAH) {
                 const pilihanJawaban = soal.bankSoal.pilihanJawaban as any[];
-                const correctAnswer = pilihanJawaban?.find((p) => p.isCorrect);
-                if (correctAnswer && jawabanSiswa.jawaban === correctAnswer.id) {
+
+                let isCorrect = false;
+                const correctAnswer = Array.isArray(pilihanJawaban) ? pilihanJawaban.find((p) => p.isCorrect) : null;
+
+                if (correctAnswer) {
+                    isCorrect = jawabanSiswa.jawaban === correctAnswer.id;
+                } else if (soal.bankSoal.jawabanBenar) {
+                    // Fallback using jawabanBenar field if options metadata is missing
+                    isCorrect = jawabanSiswa.jawaban === soal.bankSoal.jawabanBenar;
+                }
+
+                if (isCorrect) {
                     totalScore += bobot;
                 }
             } else if (soal.bankSoal.tipe === TipeSoal.ESSAY || soal.bankSoal.tipe === TipeSoal.ISIAN_SINGKAT) {
@@ -459,6 +469,17 @@ export class UjianSiswaService {
     private async autoSubmit(ujianSiswaId: string, reason: string) {
         const ujianSiswa = await this.prisma.ujianSiswa.findUnique({
             where: { id: ujianSiswaId },
+            include: {
+                ujian: {
+                    include: {
+                        ujianSoal: {
+                            include: {
+                                bankSoal: true,
+                            },
+                        },
+                    },
+                },
+            },
         });
 
         if (!ujianSiswa || ujianSiswa.status === StatusPengerjaan.SELESAI) {
@@ -473,14 +494,18 @@ export class UjianSiswaService {
         const waktuMulai = new Date(ujianSiswa.waktuMulai);
         const durasi = Math.floor((waktuSelesai.getTime() - waktuMulai.getTime()) / 60000);
 
+        // Calculate score based on current answers
+        const jawabanArr = (ujianSiswa.jawaban as any[]) || [];
+        const { score } = this.computeScore(ujianSiswa.ujian.ujianSoal, jawabanArr);
+
         await this.prisma.ujianSiswa.update({
             where: { id: ujianSiswaId },
             data: {
                 waktuSelesai,
                 durasi,
                 status: StatusPengerjaan.SELESAI,
-                nilaiTotal: 0, // Auto-submit gets 0 score
-                isPassed: false,
+                nilaiTotal: score, // Use calculated score
+                isPassed: ujianSiswa.ujian.nilaiMinimal ? score >= ujianSiswa.ujian.nilaiMinimal : null,
             },
         });
 

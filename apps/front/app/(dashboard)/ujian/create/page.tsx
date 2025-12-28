@@ -1,7 +1,8 @@
 "use client";
+import { API_URL } from "@/lib/api";
 
 import { useState, useEffect } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { Loader2, ArrowLeft, Search, Filter, Users, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ export default function CreateUjianPage() {
     const { token, role, user } = useRole();
     const { toast } = useToast();
     const router = useRouter();
+    const queryClient = useQueryClient();
 
     // Basic Form Data
     const [formData, setFormData] = useState({
@@ -55,7 +57,7 @@ export default function CreateUjianPage() {
     const { data: guruList } = useQuery({
         queryKey: ["guru-list"],
         queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/guru?limit=100`, {
+            const res = await fetch(`${API_URL}/guru?limit=100`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             return res.json();
@@ -70,7 +72,7 @@ export default function CreateUjianPage() {
         queryKey: ["guru-detail", formData.guruId],
         queryFn: async () => {
             if (!formData.guruId) return null;
-            const res = await fetch(`http://localhost:3001/guru/${formData.guruId}`, {
+            const res = await fetch(`${API_URL}/guru/${formData.guruId}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             return res.json();
@@ -82,7 +84,7 @@ export default function CreateUjianPage() {
     const { data: kelasList } = useQuery({
         queryKey: ["kelas-list"],
         queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/kelas?limit=100`, {
+            const res = await fetch(`${API_URL}/kelas?limit=100`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             return res.json();
@@ -98,7 +100,7 @@ export default function CreateUjianPage() {
                 params.append("mataPelajaranId", formData.mataPelajaranId);
             }
             const res = await fetch(
-                `http://localhost:3001/paket-soal?${params.toString()}`,
+                `${API_URL}/paket-soal?${params.toString()}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             return res.json();
@@ -114,7 +116,7 @@ export default function CreateUjianPage() {
             const params = new URLSearchParams();
             kelasIds.forEach(id => params.append("kelasIds", id));
 
-            const res = await fetch(`http://localhost:3001/ujian/students-by-classes?${params.toString()}`, {
+            const res = await fetch(`${API_URL}/ujian/students-by-classes?${params.toString()}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             return res.json();
@@ -126,7 +128,7 @@ export default function CreateUjianPage() {
     const { data: generatedKode } = useQuery({
         queryKey: ["generate-kode-ujian"],
         queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/ujian/generate-kode`, {
+            const res = await fetch(`${API_URL}/ujian/generate-kode`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             return res.text();
@@ -135,7 +137,7 @@ export default function CreateUjianPage() {
 
     const createMutation = useMutation({
         mutationFn: async (data: any) => {
-            const res = await fetch("http://localhost:3001/ujian", {
+            const res = await fetch(`${API_URL}/ujian`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -155,38 +157,9 @@ export default function CreateUjianPage() {
             return result;
         },
         onSuccess: async (data, variables) => {
-            // Need to auto-publish and assign? 
-            // Usually creation is just draft. Assignment happens later.
-            // But if user selected specific students, we might want to ensure that persists.
-            // The current backend implementation validates siswaIds during creation but doesn't persist them specifically in the DB
-            // except via metadata response.
-            // However, typical flow is Create -> Publish -> Assign.
-            // For now, let's just create. The user can publish and assign later.
-            // Wait, if we support specific student selection, we want that to be "saved".
-            // Since our backend modification for `create` returns metadata, but doesn't auto-assign.
-            // Let's stick to standard flow: Create Draft -> Redirect to List.
-            // Assignment logic will be handled when publishing/assigning.
-            // BUT: If we "lose" the selected students after creation (because they are not stored in DB until assignment), that's bad UX.
-            // Reviewing backend `create` implementation:
-            // It validates students but DOES NOT create UjianSiswa records (status is DRAFT).
-            // It returns `selectedSiswaIds` in metadata.
-            // We probably need to store these preferences.
-            // Actually, for this specific requirements "memilih siswa", it implies we should probably auto-assign or store the selection.
-            // Since we didn't add a field to store "intended students" in Ujian model, we rely on immediate assignment or re-selection later.
-            // Let's assume the user will assign later, OR we can auto-assign if we auto-publish? 
-            // Better approach: Just create for now. When user clicks "Assign" in the list, they might need to re-select if we didn't save it.
-            // Ah, this is a gap in the implementation plan. 
-            // However, usually "Create Exam" just sets up the exam content. "Assignment" is a separate step.
-            // But the prompt says "pada pembuatan ujian. bisa memilih lebih dari 1 kelas. dan beri fitur untuk memilih siswa."
-            // This suggests doing it during creation.
-            // If I auto-publish and assign effectively making it "Ready", that solves it.
-            // Let's ask the user? No, "lanjutkan".
-            // I will implement it such that after creation, if specific students were selected, 
-            // we perhaps verify the flow. 
-            // Actually, let's just create it. The backend validation ensures the selection is valid.
-            // If the user wants to assign immediately, we can add a "Save & Publish" button?
-            // For now simplest is to just create.
-
+            // Invalidate queries to refresh the list
+            queryClient.invalidateQueries({ queryKey: ["ujian"] });
+            toast({ title: "Berhasil", description: "Ujian berhasil dibuat" });
             router.push("/ujian");
         },
     });

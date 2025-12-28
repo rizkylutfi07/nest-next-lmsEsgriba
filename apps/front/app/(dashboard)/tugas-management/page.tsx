@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/api";
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -1218,7 +1219,7 @@ function SubmissionsView({
                                     </p>
                                     <div className="space-y-2">
                                         {submission.files.map((file: any) => {
-                                            const fileUrl = `http://localhost:3001/uploads/submissions/${file.urlFile}`;
+                                            const fileUrl = `${API_URL}/uploads/submissions/${file.urlFile}`;
                                             const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(file.namaFile);
                                             const isPdf = /\.pdf$/i.test(file.namaFile);
                                             const canPreview = isImage || isPdf;

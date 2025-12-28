@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/api";
 
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -21,7 +22,7 @@ export default function MulaiUjianPage() {
     const { data: ujian, isLoading } = useQuery({
         queryKey: ["ujian-detail", ujianId],
         queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/ujian/${ujianId}`, {
+            const res = await fetch(`${API_URL}/ujian/${ujianId}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             return res.json();
@@ -30,7 +31,7 @@ export default function MulaiUjianPage() {
 
     const startMutation = useMutation({
         mutationFn: async () => {
-            const res = await fetch(`http://localhost:3001/ujian-siswa/start`, {
+            const res = await fetch(`${API_URL}/ujian-siswa/start`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

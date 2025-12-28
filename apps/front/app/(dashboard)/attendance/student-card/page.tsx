@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/api";
 
 import { useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -17,7 +18,7 @@ export default function StudentCardPage() {
     const { data: siswaList } = useQuery({
         queryKey: ["siswa-all"],
         queryFn: async () => {
-            const res = await fetch("http://localhost:3001/siswa?limit=1000", {
+            const res = await fetch(`${API_URL}/siswa?limit=1000`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             return res.json();
@@ -27,7 +28,7 @@ export default function StudentCardPage() {
     const { data: kelasList } = useQuery({
         queryKey: ["kelas-all"],
         queryFn: async () => {
-            const res = await fetch("http://localhost:3001/kelas", {
+            const res = await fetch(`${API_URL}/kelas`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             return res.json();

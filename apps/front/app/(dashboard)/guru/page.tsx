@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/api";
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -32,13 +33,13 @@ const guruApi = {
     if (params.limit) searchParams.set('limit', params.limit.toString());
     if (params.search) searchParams.set('search', params.search);
 
-    const res = await fetch(`http://localhost:3001/guru?${searchParams}`, {
+    const res = await fetch(`${API_URL}/guru?${searchParams}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     return res.json();
   },
   create: async (data: any, token: string | null) => {
-    const res = await fetch(`http://localhost:3001/guru`, {
+    const res = await fetch(`${API_URL}/guru`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify(data),
@@ -50,7 +51,7 @@ const guruApi = {
     return res.json();
   },
   update: async (id: string, data: any, token: string | null) => {
-    const res = await fetch(`http://localhost:3001/guru/${id}`, {
+    const res = await fetch(`${API_URL}/guru/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify(data),
@@ -62,7 +63,7 @@ const guruApi = {
     return res.json();
   },
   delete: async (id: string, token: string | null) => {
-    const res = await fetch(`http://localhost:3001/guru/${id}`, {
+    const res = await fetch(`${API_URL}/guru/${id}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -457,7 +458,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
   const { data: mataPelajaranList } = useQuery({
     queryKey: ["mata-pelajaran-list"],
     queryFn: async () => {
-      const res = await fetch(`http://localhost:3001/mata-pelajaran?limit=100`, {
+      const res = await fetch(`${API_URL}/mata-pelajaran?limit=100`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.json();

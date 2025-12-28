@@ -37,7 +37,7 @@ export class BankSoalService {
     }
 
     async findAll(filterDto: FilterBankSoalDto) {
-        const { search, tipe, mataPelajaranId, mataPelajaranIds, page = 1, limit = 10 } = filterDto;
+        const { search, tipe, mataPelajaranId, mataPelajaranIds, guruId, kelasId, kelasIds, page = 1, limit = 10 } = filterDto;
         const skip = (page - 1) * limit;
 
         const where: any = {
@@ -59,6 +59,16 @@ export class BankSoalService {
             where.mataPelajaranId = mataPelajaranId;
         } else if (mataPelajaranIds && mataPelajaranIds.length > 0) {
             where.mataPelajaranId = { in: mataPelajaranIds };
+        }
+
+        if (guruId) {
+            where.guruId = guruId;
+        }
+
+        if (kelasId) {
+            where.kelasId = kelasId;
+        } else if (kelasIds && kelasIds.length > 0) {
+            where.kelasId = { in: kelasIds };
         }
 
         const [data, total] = await Promise.all([
@@ -194,9 +204,6 @@ export class BankSoalService {
                     data.jawabanBenar = soalData.jawabanBenar;
                 }
 
-                if (soalData.penjelasan) {
-                    data.penjelasan = soalData.penjelasan;
-                }
 
                 // Create
                 const created = await this.prisma.bankSoal.create({

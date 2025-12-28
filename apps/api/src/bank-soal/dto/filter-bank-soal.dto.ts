@@ -25,6 +25,24 @@ export class FilterBankSoalDto {
     })
     mataPelajaranIds?: string[];
 
+    @IsString()
+    @IsOptional()
+    guruId?: string;
+
+    @IsString()
+    @IsOptional()
+    kelasId?: string;
+
+    @IsArray()
+    @IsOptional()
+    @Transform(({ value }) => {
+        if (typeof value === 'string') {
+            return value.split(',');
+        }
+        return value;
+    })
+    kelasIds?: string[];
+
     @IsInt()
     @Min(1)
     @Type(() => Number)
@@ -37,4 +55,3 @@ export class FilterBankSoalDto {
     @IsOptional()
     limit?: number = 10;
 }
-

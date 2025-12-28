@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/api";
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -32,13 +33,13 @@ const matapelajaranApi = {
     if (params.limit) searchParams.set('limit', params.limit.toString());
     if (params.search) searchParams.set('search', params.search);
 
-    const res = await fetch(`http://localhost:3001/mata-pelajaran?${searchParams}`, {
+    const res = await fetch(`${API_URL}/mata-pelajaran?${searchParams}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     return res.json();
   },
   create: async (data: any, token: string | null) => {
-    const res = await fetch(`http://localhost:3001/mata-pelajaran`, {
+    const res = await fetch(`${API_URL}/mata-pelajaran`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify(data),
@@ -46,7 +47,7 @@ const matapelajaranApi = {
     return res.json();
   },
   update: async (id: string, data: any, token: string | null) => {
-    const res = await fetch(`http://localhost:3001/mata-pelajaran/${id}`, {
+    const res = await fetch(`${API_URL}/mata-pelajaran/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify(data),
@@ -54,7 +55,7 @@ const matapelajaranApi = {
     return res.json();
   },
   delete: async (id: string, token: string | null) => {
-    const res = await fetch(`http://localhost:3001/mata-pelajaran/${id}`, {
+    const res = await fetch(`${API_URL}/mata-pelajaran/${id}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     });

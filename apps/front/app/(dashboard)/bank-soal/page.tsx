@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/api";
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -22,6 +23,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import { MultiSelect } from "@/components/ui/multi-select";
 import { useRole } from "../role-context";
 import { useToast } from "@/hooks/use-toast";
 
@@ -32,13 +34,16 @@ export default function BankSoalPage() {
     const [page, setPage] = useState(1);
     const [search, setSearch] = useState("");
     const [filterTipe, setFilterTipe] = useState("");
+    const [filterMataPelajaran, setFilterMataPelajaran] = useState("");
+    const [filterGuru, setFilterGuru] = useState("");
+    const [filterKelas, setFilterKelas] = useState<string[]>([]);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<any>(null);
     const [deletingItem, setDeletingItem] = useState<any>(null);
 
     const { data, isLoading } = useQuery({
-        queryKey: ["bank-soal", page, search, filterTipe],
+        queryKey: ["bank-soal", page, search, filterTipe, filterMataPelajaran, filterGuru, filterKelas],
         queryFn: async () => {
             const params = new URLSearchParams({
                 page: page.toString(),
@@ -46,18 +51,52 @@ export default function BankSoalPage() {
             });
             if (search) params.append("search", search);
             if (filterTipe) params.append("tipe", filterTipe);
+            if (filterMataPelajaran) params.append("mataPelajaranId", filterMataPelajaran);
+            if (filterGuru) params.append("guruId", filterGuru);
+            if (filterKelas.length > 0) params.append("kelasIds", filterKelas.join(","));
 
             const res = await fetch(
-                `http://localhost:3001/bank-soal?${params.toString()}`,
+                `${API_URL}/bank-soal?${params.toString()}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             return res.json();
         },
     });
 
+    // Fetch filter data
+    const { data: mataPelajaranList } = useQuery({
+        queryKey: ["mata-pelajaran-list-filter"],
+        queryFn: async () => {
+            const res = await fetch(`${API_URL}/mata-pelajaran?limit=100`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            return res.json();
+        },
+    });
+
+    const { data: guruList } = useQuery({
+        queryKey: ["guru-list-filter"],
+        queryFn: async () => {
+            const res = await fetch(`${API_URL}/guru?limit=100`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            return res.json();
+        },
+    });
+
+    const { data: kelasList } = useQuery({
+        queryKey: ["kelas-list-filter"],
+        queryFn: async () => {
+            const res = await fetch(`${API_URL}/kelas?limit=100`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            return res.json();
+        },
+    });
+
     const createMutation = useMutation({
         mutationFn: async (data: any) => {
-            const res = await fetch("http://localhost:3001/bank-soal", {
+            const res = await fetch(`${API_URL}/bank-soal`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -76,7 +115,7 @@ export default function BankSoalPage() {
 
     const updateMutation = useMutation({
         mutationFn: async ({ id, data }: any) => {
-            const res = await fetch(`http://localhost:3001/bank-soal/${id}`, {
+            const res = await fetch(`${API_URL}/bank-soal/${id}`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
@@ -95,7 +134,7 @@ export default function BankSoalPage() {
 
     const deleteMutation = useMutation({
         mutationFn: async (id: string) => {
-            const res = await fetch(`http://localhost:3001/bank-soal/${id}`, {
+            const res = await fetch(`${API_URL}/bank-soal/${id}`, {
                 method: "DELETE",
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -147,20 +186,70 @@ export default function BankSoalPage() {
                             className="w-full rounded-lg border border-border bg-background py-2 px-4 text-sm outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
                         />
 
-                        <select
-                            value={filterTipe}
-                            onChange={(e) => {
-                                setFilterTipe(e.target.value);
-                                setPage(1);
-                            }}
-                            className="rounded-lg border border-border bg-background px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-                        >
-                            <option value="">Semua Tipe</option>
-                            <option value="PILIHAN_GANDA">Pilihan Ganda</option>
-                            <option value="ESSAY">Essay</option>
-                            <option value="BENAR_SALAH">Benar/Salah</option>
-                            <option value="ISIAN_SINGKAT">Isian Singkat</option>
-                        </select>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            <select
+                                value={filterTipe}
+                                onChange={(e) => {
+                                    setFilterTipe(e.target.value);
+                                    setPage(1);
+                                }}
+                                className="rounded-lg border border-border bg-background px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                            >
+                                <option value="">Semua Tipe</option>
+                                <option value="PILIHAN_GANDA">Pilihan Ganda</option>
+                                <option value="ESSAY">Essay</option>
+                                <option value="BENAR_SALAH">Benar/Salah</option>
+                                <option value="ISIAN_SINGKAT">Isian Singkat</option>
+                            </select>
+
+                            <select
+                                value={filterMataPelajaran}
+                                onChange={(e) => {
+                                    setFilterMataPelajaran(e.target.value);
+                                    setPage(1);
+                                }}
+                                className="rounded-lg border border-border bg-background px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                            >
+                                <option value="">Semua Mapel</option>
+                                {mataPelajaranList?.data?.map((mp: any) => (
+                                    <option key={mp.id} value={mp.id}>
+                                        {mp.nama}
+                                    </option>
+                                ))}
+                            </select>
+
+                            <select
+                                value={filterGuru}
+                                onChange={(e) => {
+                                    setFilterGuru(e.target.value);
+                                    setPage(1);
+                                }}
+                                className="rounded-lg border border-border bg-background px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                            >
+                                <option value="">Semua Guru</option>
+                                {guruList?.data?.map((guru: any) => (
+                                    <option key={guru.id} value={guru.id}>
+                                        {guru.nama}
+                                    </option>
+                                ))}
+                            </select>
+
+                            <MultiSelect
+                                options={(kelasList?.data ?? []).map((kelas: any) => ({
+                                    value: kelas.id,
+                                    label: kelas.nama,
+                                    description: kelas.tingkat ? `Tingkat ${kelas.tingkat}` : undefined,
+                                }))}
+                                values={filterKelas}
+                                onChange={(values) => {
+                                    setFilterKelas(values);
+                                    setPage(1);
+                                }}
+                                placeholder="Semua Kelas"
+                                searchPlaceholder="Cari kelas..."
+                                emptyMessage="Tidak ada kelas"
+                            />
+                        </div>
                     </div>
                 </CardHeader>
 
@@ -321,7 +410,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
     const { data: mataPelajaranList } = useQuery({
         queryKey: ["mata-pelajaran-list"],
         queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/mata-pelajaran?limit=100`, {
+            const res = await fetch(`${API_URL}/mata-pelajaran?limit=100`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             return res.json();
@@ -332,7 +421,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
     const { data: generatedKode } = useQuery({
         queryKey: ["generate-kode-soal"],
         queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/bank-soal/generate-kode`, {
+            const res = await fetch(`${API_URL}/bank-soal/generate-kode`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             return res.text();
@@ -342,32 +431,43 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const submitData: any = { ...formData };
+        // Construct payload manually to avoid sending extra fields (like relations) that are forbidden by backend
+        const payload: any = {
+            pertanyaan: formData.pertanyaan,
+            tipe: formData.tipe,
+            bobot: formData.bobot,
+            mataPelajaranId: formData.mataPelajaranId,
+        };
 
-        // Add generated kode for new items
-        if (!item && generatedKode) {
-            submitData.kode = generatedKode;
+        if (item && item.kode) {
+            payload.kode = item.kode;
+        } else if (generatedKode) {
+            payload.kode = generatedKode;
         }
 
-        // Ensure pertanyaan is present
-        if (!submitData.pertanyaan) {
+        // Validate payload
+        if (!payload.pertanyaan) {
             toast({ title: "Perhatian", description: "Pertanyaan harus diisi!", variant: "destructive" });
             return;
         }
 
-        // Clean up based on type
-        if (submitData.tipe !== "PILIHAN_GANDA" && submitData.tipe !== "BENAR_SALAH") {
-            delete submitData.pilihanJawaban;
-        } else {
+        if (payload.tipe === "PILIHAN_GANDA" || payload.tipe === "BENAR_SALAH") {
+            payload.pilihanJawaban = formData.pilihanJawaban;
+
             // Ensure at least one answer is marked as correct for multiple choice
-            const hasCorrect = submitData.pilihanJawaban?.some((p: any) => p.isCorrect);
+            const hasCorrect = payload.pilihanJawaban?.some((p: any) => p.isCorrect);
             if (!hasCorrect) {
                 toast({ title: "Perhatian", description: "Pilih minimal satu jawaban yang benar!", variant: "destructive" });
                 return;
             }
         }
 
-        onSubmit(submitData);
+        // For essay/short answer, include jawabanBenar
+        if (payload.tipe === "ESSAY" || payload.tipe === "ISIAN_SINGKAT") {
+            payload.jawabanBenar = formData.jawabanBenar || "";
+        }
+
+        onSubmit(payload);
     };
 
     return (
@@ -518,26 +618,37 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
                             </div>
                         )}
 
-                    <div>
-                        <label className="mb-2 block text-sm font-medium">
-                            Penjelasan
-                        </label>
-                        <textarea
-                            value={formData.penjelasan || ""}
-                            onChange={(e) =>
-                                setFormData({ ...formData, penjelasan: e.target.value })
-                            }
-                            className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-                            rows={3}
-                        />
-                    </div>
+                        {/* Kunci Jawaban untuk Essay/Isian Singkat */}
+                        {(formData.tipe === "ESSAY" || formData.tipe === "ISIAN_SINGKAT") && (
+                            <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                    Kunci Jawaban {formData.tipe === "ESSAY" ? "(Rubrik Penilaian)" : ""}
+                                </label>
+                                <textarea
+                                    value={formData.jawabanBenar || ""}
+                                    onChange={(e) =>
+                                        setFormData({ ...formData, jawabanBenar: e.target.value })
+                                    }
+                                    className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                                    rows={4}
+                                    placeholder={formData.tipe === "ESSAY" 
+                                        ? "Masukkan kunci jawaban atau rubrik penilaian untuk soal essay..."
+                                        : "Masukkan jawaban yang benar..."
+                                    }
+                                />
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    {formData.tipe === "ESSAY" 
+                                        ? "Kunci jawaban akan digunakan sebagai referensi saat mengoreksi jawaban siswa"
+                                        : "Jawaban yang diharapkan dari siswa"
+                                    }
+                                </p>
+                            </div>
+                        )}
 
                     <div className="flex gap-2 pt-4">
                         <Button
                             type="button"
-                            className="border border-border bg-transparent text-muted-foreground"
-                            onClick={onClose}
-                            className="flex-1"
+                            className="border border-border bg-transparent text-muted-foreground flex-1"
                         >
                             Batal
                         </Button>
@@ -586,7 +697,7 @@ function ImportModal({ onClose, token, queryClient }: any) {
     const { data: mataPelajaranList } = useQuery({
         queryKey: ["mata-pelajaran-list"],
         queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/mata-pelajaran?limit=100`, {
+            const res = await fetch(`${API_URL}/mata-pelajaran?limit=100`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             return res.json();
@@ -595,7 +706,7 @@ function ImportModal({ onClose, token, queryClient }: any) {
 
     const handleDownloadTemplate = async () => {
         try {
-            const res = await fetch(`http://localhost:3001/bank-soal/template/word`, {
+            const res = await fetch(`${API_URL}/bank-soal/template/word`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             const data = await res.json();
@@ -635,7 +746,7 @@ function ImportModal({ onClose, token, queryClient }: any) {
                 formData.append("mataPelajaranId", mataPelajaranId);
             }
 
-            const res = await fetch(`http://localhost:3001/bank-soal/import/file`, {
+            const res = await fetch(`${API_URL}/bank-soal/import/file`, {
                 method: "POST",
                 headers: { Authorization: `Bearer ${token}` },
                 body: formData,
@@ -729,7 +840,7 @@ function ImportModal({ onClose, token, queryClient }: any) {
 
                         {/* Actions */}
                         <div className="flex gap-2">
-                            <Button className="border border-border bg-transparent text-muted-foreground" onClick={onClose} className="flex-1">
+                            <Button className="border border-border bg-transparent text-muted-foreground flex-1" onClick={onClose}>
                                 Batal
                             </Button>
                             <Button

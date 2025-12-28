@@ -1,18 +1,12 @@
 "use client";
+import { API_URL } from "@/lib/api";
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Pencil, Trash2, Plus, X, FileCheck, Eye, Send, Activity } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
     AlertDialog,
     AlertDialogCancel,
@@ -35,22 +29,26 @@ export default function UjianPage() {
     const [page, setPage] = useState(1);
     const [search, setSearch] = useState("");
     const [filterStatus, setFilterStatus] = useState("");
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [editingItem, setEditingItem] = useState<any>(null);
     const [deletingItem, setDeletingItem] = useState<any>(null);
 
     const { data, isLoading } = useQuery({
-        queryKey: ["ujian", page, search, filterStatus],
+        queryKey: ["ujian", "list", "akan-datang", page, search, filterStatus],
         queryFn: async () => {
             const params = new URLSearchParams({
                 page: page.toString(),
                 limit: "10",
             });
             if (search) params.append("search", search);
-            if (filterStatus) params.append("status", filterStatus);
+            // Filter untuk ujian akan datang: hanya DRAFT dan PUBLISHED
+            if (filterStatus) {
+                params.append("status", filterStatus);
+            } else {
+                // Jika tidak ada filter, tampilkan DRAFT dan PUBLISHED saja
+                params.append("status", "DRAFT,PUBLISHED");
+            }
 
             const res = await fetch(
-                `http://localhost:3001/ujian?${params.toString()}`,
+                `${API_URL}/ujian?${params.toString()}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             return res.json();
@@ -59,7 +57,7 @@ export default function UjianPage() {
 
     const publishMutation = useMutation({
         mutationFn: async (id: string) => {
-            const res = await fetch(`http://localhost:3001/ujian/${id}/publish`, {
+            const res = await fetch(`${API_URL}/ujian/${id}/publish`, {
                 method: "POST",
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -73,7 +71,7 @@ export default function UjianPage() {
 
     const assignMutation = useMutation({
         mutationFn: async (id: string) => {
-            const res = await fetch(`http://localhost:3001/ujian/${id}/assign`, {
+            const res = await fetch(`${API_URL}/ujian/${id}/assign`, {
                 method: "POST",
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -88,7 +86,7 @@ export default function UjianPage() {
 
     const deleteMutation = useMutation({
         mutationFn: async (id: string) => {
-            const res = await fetch(`http://localhost:3001/ujian/${id}`, {
+            const res = await fetch(`${API_URL}/ujian/${id}`, {
                 method: "DELETE",
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -103,7 +101,7 @@ export default function UjianPage() {
 
     const updateStatusMutation = useMutation({
         mutationFn: async ({ id, status }: { id: string; status: string }) => {
-            const res = await fetch(`http://localhost:3001/ujian/${id}/status`, {
+            const res = await fetch(`${API_URL}/ujian/${id}/status`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -119,7 +117,6 @@ export default function UjianPage() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["ujian"] });
-            setEditingItem(null);
             toast({ title: "Berhasil!", description: "Status ujian berhasil diupdate" });
         },
         onError: (err) => {
@@ -129,11 +126,11 @@ export default function UjianPage() {
 
     const getStatusBadge = (status: string) => {
         const statusConfig: any = {
-            DRAFT: { className: "bg-gray-500/15 text-gray-600", label: "Draft" },
-            PUBLISHED: { className: "bg-blue-500/15 text-blue-600", label: "Published" },
-            ONGOING: { className: "bg-green-500/15 text-green-600", label: "Ongoing" },
-            SELESAI: { className: "bg-purple-500/15 text-purple-600", label: "Selesai" },
-            DIBATALKAN: { className: "bg-red-500/15 text-red-600", label: "Dibatalkan" },
+            DRAFT: { className: "bg-gray-500/15 text-gray-400", label: "Draft" },
+            PUBLISHED: { className: "bg-blue-500/15 text-blue-500", label: "Siap Dimulai" },
+            ONGOING: { className: "bg-green-500/15 text-green-500", label: "Sedang Berlangsung" },
+            SELESAI: { className: "bg-purple-500/15 text-purple-500", label: "Selesai" },
+            DIBATALKAN: { className: "bg-red-500/15 text-red-500", label: "Dibatalkan" },
         };
         const config = statusConfig[status] || statusConfig.DRAFT;
         return <Badge className={config.className}>{config.label}</Badge>;
@@ -147,10 +144,10 @@ export default function UjianPage() {
                         <div>
                             <h1 className="text-3xl font-bold flex items-center gap-2">
                                 <FileCheck className="h-8 w-8" />
-                                Kelola Ujian
+                                Ujian Akan Datang
                             </h1>
                             <p className="text-sm text-muted-foreground">
-                                Buat dan kelola paket ujian
+                                Buat dan kelola ujian yang akan dilaksanakan
                             </p>
                         </div>
 
@@ -184,126 +181,210 @@ export default function UjianPage() {
                         >
                             <option value="">Semua Status</option>
                             <option value="DRAFT">Draft</option>
-                            <option value="PUBLISHED">Published</option>
-                            <option value="ONGOING">Ongoing</option>
-                            <option value="SELESAI">Selesai</option>
+                            <option value="PUBLISHED">Siap Dimulai</option>
                         </select>
                     </div>
                 </CardHeader>
 
                 <CardContent className="p-2 md:p-4">
-                    <div className="space-y-2">
-                        {isLoading ? (
-                            Array.from({ length: 5 }).map((_, i) => (
-                                <div
-                                    key={i}
-                                    className="h-32 animate-pulse rounded-lg bg-muted/50"
-                                />
-                            ))
-                        ) : data?.data?.length === 0 ? (
-                            <div className="py-8 text-center text-muted-foreground">
-                                Data tidak ditemukan
-                            </div>
-                        ) : (
-                            data?.data?.map((item: any) => (
-                                <Card key={item.id} className="p-4">
-                                    <div className="flex items-start justify-between gap-4">
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <Badge className="border border-border bg-transparent text-muted-foreground">{item.kode}</Badge>
-                                                {getStatusBadge(item.status)}
-                                                {item.mataPelajaran && (
-                                                    <Badge className="bg-indigo-500/15 text-indigo-600">
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead>
+                                <tr className="border-b border-border">
+                                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">Kode</th>
+                                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">Judul</th>
+                                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">Mata Pelajaran</th>
+                                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">Kelas</th>
+                                    <th className="text-center py-3 px-4 text-sm font-semibold text-muted-foreground">Durasi</th>
+                                    <th className="text-center py-3 px-4 text-sm font-semibold text-muted-foreground">Peserta</th>
+                                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">Jadwal</th>
+                                    <th className="text-center py-3 px-4 text-sm font-semibold text-muted-foreground">Status</th>
+                                    <th className="text-right py-3 px-4 text-sm font-semibold text-muted-foreground">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {isLoading ? (
+                                    Array.from({ length: 5 }).map((_, i) => (
+                                        <tr key={i}>
+                                            <td colSpan={9} className="py-4">
+                                                <div className="h-12 animate-pulse rounded bg-muted/50" />
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : data?.data?.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={9} className="py-8 text-center text-muted-foreground">
+                                            Data tidak ditemukan
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    data?.data?.map((item: any) => (
+                                        <tr key={item.id} className="border-b border-border hover:bg-muted/30 transition">
+                                            <td className="py-4 px-4">
+                                                <Badge className="border border-border bg-transparent text-muted-foreground font-mono">
+                                                    {item.kode}
+                                                </Badge>
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <div>
+                                                    <p className="font-medium">{item.judul}</p>
+                                                    {item.deskripsi && (
+                                                        <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                                                            {item.deskripsi}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                {item.mataPelajaran ? (
+                                                    <Badge className="bg-indigo-500/15 text-indigo-500">
                                                         {item.mataPelajaran.nama}
                                                     </Badge>
+                                                ) : (
+                                                    <span className="text-muted-foreground">-</span>
                                                 )}
-                                            </div>
-                                            <h3 className="text-lg font-semibold">{item.judul}</h3>
-                                            {item.deskripsi && (
-                                                <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                                                    {item.deskripsi}
-                                                </p>
-                                            )}
-                                            <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
-                                                <span>📝 {item._count?.ujianSoal || 0} soal</span>
-                                                <span>👥 {item._count?.ujianSiswa || 0} siswa</span>
-                                                <span>⏱️ {item.durasi} menit</span>
-                                                {item.kelas && <span>🏫 {item.kelas.nama}</span>}
-                                            </div>
-                                            <div className="flex gap-2 mt-2 text-xs text-muted-foreground">
-                                                <span>
-                                                    Mulai: {new Date(item.tanggalMulai).toLocaleString("id-ID")}
-                                                </span>
-                                                <span>•</span>
-                                                <span>
-                                                    Selesai: {new Date(item.tanggalSelesai).toLocaleString("id-ID")}
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex flex-col gap-1">
-                                            {item.status === "DRAFT" && (
-                                                <Button
-                                                    className="border border-border bg-transparent text-muted-foreground"
-                                                    size="sm"
-                                                    onClick={() => publishMutation.mutate(item.id)}
-                                                    disabled={publishMutation.isPending}
-                                                >
-                                                    <Send size={14} />
-                                                    Publish
-                                                </Button>
-                                            )}
-                                            {(item.status === "PUBLISHED" || item.status === "ONGOING") && (
-                                                <>
-                                                    <Button
-                                                        className="border border-border bg-transparent text-muted-foreground"
-                                                        size="sm"
-                                                        onClick={() => assignMutation.mutate(item.id)}
-                                                        disabled={assignMutation.isPending}
-                                                    >
-                                                        <Send size={14} />
-                                                        Assign
-                                                    </Button>
-                                                    <Button
-                                                        className="border border-border bg-transparent text-muted-foreground"
-                                                        size="sm"
-                                                        onClick={() => router.push(`/ujian/monitoring/${item.id}`)}
-                                                    >
-                                                        <Eye size={14} />
-                                                        Monitor
-                                                    </Button>
-                                                </>
-                                            )}
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => setEditingItem(item)}
-                                            >
-                                                <Activity size={14} />
-                                                Status
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => router.push(`/ujian/edit/${item.id}`)}
-                                            >
-                                                <Pencil size={14} />
-                                                Edit
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => setDeletingItem(item)}
-                                                className="text-destructive"
-                                            >
-                                                <Trash2 size={14} />
-                                                Hapus
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </Card>
-                            ))
-                        )}
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <div className="flex flex-wrap gap-1">
+                                                    {item.ujianKelas?.length > 0 ? (
+                                                        item.ujianKelas.map((uk: any) => (
+                                                            <Badge key={uk.id} className="bg-emerald-500/15 text-emerald-500">
+                                                                {uk.kelas?.nama}
+                                                            </Badge>
+                                                        ))
+                                                    ) : item.kelas ? (
+                                                        <Badge className="bg-emerald-500/15 text-emerald-500">
+                                                            {item.kelas.nama}
+                                                        </Badge>
+                                                    ) : (
+                                                        <span className="text-muted-foreground">-</span>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="py-4 px-4 text-center">
+                                                <span className="text-sm">{item.durasi} menit</span>
+                                            </td>
+                                            <td className="py-4 px-4 text-center">
+                                                <div className="flex flex-col items-center gap-0.5">
+                                                    <span className="text-sm font-medium">{item._count?.ujianSiswa || 0}</span>
+                                                    <span className="text-xs text-muted-foreground">siswa</span>
+                                                </div>
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <div className="text-xs space-y-1">
+                                                    <div className="flex items-center gap-1">
+                                                        <span className="text-muted-foreground">Mulai:</span>
+                                                        <span>{new Date(item.tanggalMulai).toLocaleString("id-ID", {
+                                                            day: "2-digit",
+                                                            month: "short",
+                                                            year: "numeric",
+                                                            hour: "2-digit",
+                                                            minute: "2-digit"
+                                                        })}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1">
+                                                        <span className="text-muted-foreground">Selesai:</span>
+                                                        <span>{new Date(item.tanggalSelesai).toLocaleString("id-ID", {
+                                                            day: "2-digit",
+                                                            month: "short",
+                                                            year: "numeric",
+                                                            hour: "2-digit",
+                                                            minute: "2-digit"
+                                                        })}</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="py-4 px-4 text-center">
+                                                {getStatusBadge(item.status)}
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <div className="flex justify-end gap-1">
+                                                    {/* Tombol sesuai status */}
+                                                    {item.status === "DRAFT" && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => updateStatusMutation.mutate({ id: item.id, status: "PUBLISHED" })}
+                                                            disabled={updateStatusMutation.isPending}
+                                                            className="text-blue-500 hover:text-blue-600"
+                                                        >
+                                                            <Send size={14} />
+                                                            Aktifkan
+                                                        </Button>
+                                                    )}
+                                                    {item.status === "PUBLISHED" && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => updateStatusMutation.mutate({ id: item.id, status: "ONGOING" })}
+                                                            disabled={updateStatusMutation.isPending}
+                                                            className="text-green-500 hover:text-green-600"
+                                                        >
+                                                            <Activity size={14} />
+                                                            Mulai
+                                                        </Button>
+                                                    )}
+                                                    {item.status === "ONGOING" && (
+                                                        <>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => router.push(`/ujian/monitoring/${item.id}`)}
+                                                            >
+                                                                <Eye size={14} />
+                                                                Monitor
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => updateStatusMutation.mutate({ id: item.id, status: "SELESAI" })}
+                                                                disabled={updateStatusMutation.isPending}
+                                                                className="text-purple-500 hover:text-purple-600"
+                                                            >
+                                                                <FileCheck size={14} />
+                                                                Selesaikan
+                                                            </Button>
+                                                        </>
+                                                    )}
+                                                    {item.status === "SELESAI" && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => router.push(`/ujian/monitoring/${item.id}`)}
+                                                        >
+                                                            <Eye size={14} />
+                                                            Lihat Hasil
+                                                        </Button>
+                                                    )}
+                                                    {/* Edit dan Hapus selalu tampil kecuali sudah selesai */}
+                                                    {item.status !== "SELESAI" && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => router.push(`/ujian/edit/${item.id}`)}
+                                                        >
+                                                            <Pencil size={14} />
+                                                            Edit
+                                                        </Button>
+                                                    )}
+                                                    {item.status === "DRAFT" && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => setDeletingItem(item)}
+                                                            className="text-destructive"
+                                                        >
+                                                            <Trash2 size={14} />
+                                                            Hapus
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
                     </div>
 
                     {!isLoading && data?.meta && (
@@ -344,15 +425,6 @@ export default function UjianPage() {
                     isLoading={deleteMutation.isPending}
                 />
             )}
-
-            {editingItem && (
-                <StatusModal
-                    item={editingItem}
-                    onClose={() => setEditingItem(null)}
-                    onConfirm={(id: string, status: string) => updateStatusMutation.mutate({ id, status })}
-                    isLoading={updateStatusMutation.isPending}
-                />
-            )}
         </div>
     );
 }
@@ -375,85 +447,5 @@ function DeleteModal({ item, onClose, onConfirm, isLoading }: any) {
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
-    );
-}
-
-function StatusModal({ item, onClose, onConfirm, isLoading }: any) {
-    const [status, setStatus] = useState(item.status);
-
-    const allowedTransitions: any = {
-        DRAFT: ["PUBLISHED", "DIBATALKAN"],
-        PUBLISHED: ["ONGOING", "DRAFT", "DIBATALKAN"],
-        ONGOING: ["SELESAI", "DIBATALKAN"],
-        SELESAI: [],
-        DIBATALKAN: ["DRAFT"],
-    };
-
-    const options = allowedTransitions[item.status] || [];
-
-    const getLabel = (s: string) => {
-        switch (s) {
-            case "DRAFT": return "Draft";
-            case "PUBLISHED": return "Published";
-            case "ONGOING": return "Ongoing";
-            case "SELESAI": return "Selesai";
-            case "DIBATALKAN": return "Dibatalkan";
-            default: return s;
-        }
-    };
-
-    return (
-        <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="max-w-md">
-                <DialogHeader>
-                    <DialogTitle>Update Status Ujian</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                    <div>
-                        <p className="text-sm text-muted-foreground mb-2">Status Saat Ini</p>
-                        <Badge className="border border-border bg-transparent text-muted-foreground">{getLabel(item.status)}</Badge>
-                    </div>
-
-                    <div className="space-y-2">
-                        <p className="text-sm font-medium">Pilih Status Baru</p>
-                        {options.length === 0 ? (
-                            <p className="text-sm text-yellow-500">
-                                Tidak ada perubahan status yang tersedia dari status saat ini.
-                            </p>
-                        ) : (
-                            <div className="grid grid-cols-2 gap-2">
-                                {options.map((opt: string) => (
-                                    <Button
-                                        key={opt}
-                                        variant={status === opt ? "default" : "outline"}
-                                        onClick={() => setStatus(opt)}
-                                        className={status === opt ? "bg-primary text-primary-foreground" : ""}
-                                    >
-                                        {getLabel(opt)}
-                                    </Button>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="flex gap-2 pt-4">
-                        <Button variant="ghost" onClick={onClose} className="flex-1 bg-red-500 text-white-500">
-                            Batal
-                        </Button>
-                        <Button
-                            onClick={() => onConfirm(item.id, status)}
-                            disabled={isLoading || status === item.status}
-                            className="flex-1"
-                        >
-                            {isLoading ? (
-                                <Loader2 className="animate-spin" size={16} />
-                            ) : (
-                                "Simpan"
-                            )}
-                        </Button>
-                    </div>
-                </div>
-            </DialogContent>
-        </Dialog>
     );
 }

@@ -177,13 +177,45 @@ export class UjianService {
                     },
                 });
 
-                // Store siswaIds in the response metadata (we'll use this during assignment)
-                // Note: We're not storing siswaIds in the database directly, 
-                // but will use them when assignToStudents is called
+                // Auto-assign students from selected classes
+                let siswaToAssign: any[] = [];
+
+                if (siswaIds && siswaIds.length > 0) {
+                    // Use specific students if provided
+                    siswaToAssign = await this.prisma.siswa.findMany({
+                        where: {
+                            id: { in: siswaIds },
+                            status: 'AKTIF',
+                            deletedAt: null,
+                        },
+                    });
+                } else if (kelasIds && kelasIds.length > 0) {
+                    // Otherwise get all students from selected classes
+                    siswaToAssign = await this.prisma.siswa.findMany({
+                        where: {
+                            kelasId: { in: kelasIds },
+                            status: 'AKTIF',
+                            deletedAt: null,
+                        },
+                    });
+                }
+
+                // Create UjianSiswa records for each student
+                if (siswaToAssign.length > 0) {
+                    await this.prisma.ujianSiswa.createMany({
+                        data: siswaToAssign.map((s) => ({
+                            ujianId: ujian.id,
+                            siswaId: s.id,
+                            status: StatusPengerjaan.BELUM_MULAI,
+                        })),
+                        skipDuplicates: true,
+                    });
+                }
+
                 return {
                     ...ujian,
                     _metadata: {
-                        selectedSiswaIds: siswaIds || [],
+                        assignedStudentCount: siswaToAssign.length,
                     },
                 };
             } catch (error) {
@@ -248,7 +280,12 @@ export class UjianService {
         }
 
         if (status) {
-            where.status = status;
+            // Support for comma-separated multiple status values
+            if (status.includes(',')) {
+                where.status = { in: status.split(',') };
+            } else {
+                where.status = status;
+            }
         }
 
         const [data, total] = await Promise.all([
@@ -261,6 +298,11 @@ export class UjianService {
                     guru: true,
                     paketSoal: true,
                     kelas: true,
+                    ujianKelas: {
+                        include: {
+                            kelas: true,
+                        },
+                    },
                     _count: {
                         select: {
                             ujianSoal: true,
@@ -494,6 +536,37 @@ export class UjianService {
                 `Tidak dapat mengubah status dari ${currentStatus} ke ${newStatus}. ` +
                 `Status yang diperbolehkan: ${allowed.length > 0 ? allowed.join(', ') : 'tidak ada'}`
             );
+        }
+
+        // Validation: Check if trying to finish exam while students are still working
+        if (newStatus === StatusUjian.SELESAI && currentStatus === StatusUjian.ONGOING) {
+            // Get ujian details for time check
+            const ujianFull = await this.prisma.ujian.findUnique({
+                where: { id },
+                select: {
+                    tanggalSelesai: true,
+                    durasi: true,
+                },
+            });
+
+            const now = new Date();
+            const endTime = ujianFull?.tanggalSelesai ? new Date(ujianFull.tanggalSelesai) : null;
+            const isTimeUp = endTime ? now >= endTime : false;
+
+            // Count students still working (status SEDANG_MENGERJAKAN)
+            const activeStudentsCount = await this.prisma.ujianSiswa.count({
+                where: {
+                    ujianId: id,
+                    status: StatusPengerjaan.SEDANG_MENGERJAKAN,
+                },
+            });
+
+            // If time is not up and there are students still working, block the action
+            if (!isTimeUp && activeStudentsCount > 0) {
+                throw new BadRequestException(
+                    `Tidak dapat menyelesaikan ujian. Masih ada ${activeStudentsCount} siswa yang sedang mengerjakan ujian dan waktu belum habis.`
+                );
+            }
         }
 
         return this.prisma.ujian.update({

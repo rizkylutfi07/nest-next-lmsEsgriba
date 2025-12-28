@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/api";
 
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -55,7 +56,7 @@ export default function MonitoringPage() {
     // Mutation untuk toggle deteksi kecurangan
     const toggleDetectionMutation = useMutation({
         mutationFn: async (enabled: boolean) => {
-            const res = await fetch(`http://localhost:3001/ujian/${ujianId}/toggle-detection`, {
+            const res = await fetch(`${API_URL}/ujian/${ujianId}/toggle-detection`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -67,7 +68,7 @@ export default function MonitoringPage() {
             return res.json();
         },
         onSuccess: (data) => {
-            queryClient.invalidateQueries({ queryKey: ["ujian-detail", ujianId] });
+            queryClient.invalidateQueries({ queryKey: ["ujian"] });
             toast({
                 title: "Berhasil",
                 description: `Deteksi Kecurangan ${data.deteksiKecurangan ? "diaktifkan" : "dinonaktifkan"}`,
@@ -86,7 +87,7 @@ export default function MonitoringPage() {
     const { data: ujian, isLoading: ujianLoading } = useQuery({
         queryKey: ["ujian-detail", ujianId],
         queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/ujian/${ujianId}`, {
+            const res = await fetch(`${API_URL}/ujian/${ujianId}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             return res.json();
@@ -98,7 +99,7 @@ export default function MonitoringPage() {
         queryKey: ["ujian-students", ujianId],
         queryFn: async () => {
             const res = await fetch(
-                `http://localhost:3001/ujian-siswa/monitoring/${ujianId}`,
+                `${API_URL}/ujian-siswa/monitoring/${ujianId}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             if (!res.ok) throw new Error("Failed to fetch students");
@@ -117,7 +118,7 @@ export default function MonitoringPage() {
         queryFn: async () => {
             if (!selectedStudent?.id) return [];
             const res = await fetch(
-                `http://localhost:3001/ujian-siswa/activity-logs/${selectedStudent.id}`,
+                `${API_URL}/ujian-siswa/activity-logs/${selectedStudent.id}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             return res.json();
@@ -166,7 +167,7 @@ export default function MonitoringPage() {
 
     const handleBlockStudent = async (studentId: string) => {
         try {
-            const res = await fetch(`http://localhost:3001/ujian-siswa/${studentId}/block`, {
+            const res = await fetch(`${API_URL}/ujian-siswa/${studentId}/block`, {
                 method: "POST",
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -180,7 +181,7 @@ export default function MonitoringPage() {
 
     const handleUnblockStudent = async (studentId: string) => {
         try {
-            const res = await fetch(`http://localhost:3001/ujian-siswa/${studentId}/unblock`, {
+            const res = await fetch(`${API_URL}/ujian-siswa/${studentId}/unblock`, {
                 method: "POST",
                 headers: { Authorization: `Bearer ${token}` },
             });

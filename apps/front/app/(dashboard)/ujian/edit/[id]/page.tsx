@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/api";
 
 import { useState, useEffect, use } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -45,7 +46,7 @@ export default function EditUjianPage({ params }: { params: Promise<{ id: string
     const { data: ujianData, isLoading: isLoadingUjian } = useQuery({
         queryKey: ["ujian-edit", id],
         queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/ujian/${id}`, {
+            const res = await fetch(`${API_URL}/ujian/${id}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             if (!res.ok) throw new Error("Failed to load ujian");
@@ -95,7 +96,7 @@ export default function EditUjianPage({ params }: { params: Promise<{ id: string
     const { data: guruList } = useQuery({
         queryKey: ["guru-list"],
         queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/guru?limit=100`, {
+            const res = await fetch(`${API_URL}/guru?limit=100`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             return res.json();
@@ -107,7 +108,7 @@ export default function EditUjianPage({ params }: { params: Promise<{ id: string
         queryKey: ["guru-detail", formData.guruId],
         queryFn: async () => {
             if (!formData.guruId) return null;
-            const res = await fetch(`http://localhost:3001/guru/${formData.guruId}`, {
+            const res = await fetch(`${API_URL}/guru/${formData.guruId}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             return res.json();
@@ -119,7 +120,7 @@ export default function EditUjianPage({ params }: { params: Promise<{ id: string
     const { data: kelasList } = useQuery({
         queryKey: ["kelas-list"],
         queryFn: async () => {
-            const res = await fetch(`http://localhost:3001/kelas?limit=100`, {
+            const res = await fetch(`${API_URL}/kelas?limit=100`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             return res.json();
@@ -135,7 +136,7 @@ export default function EditUjianPage({ params }: { params: Promise<{ id: string
                 params.append("mataPelajaranId", formData.mataPelajaranId);
             }
             const res = await fetch(
-                `http://localhost:3001/paket-soal?${params.toString()}`,
+                `${API_URL}/paket-soal?${params.toString()}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             return res.json();
@@ -151,7 +152,7 @@ export default function EditUjianPage({ params }: { params: Promise<{ id: string
             const params = new URLSearchParams();
             kelasIds.forEach(id => params.append("kelasIds", id));
 
-            const res = await fetch(`http://localhost:3001/ujian/students-by-classes?${params.toString()}`, {
+            const res = await fetch(`${API_URL}/ujian/students-by-classes?${params.toString()}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             return res.json();
@@ -161,7 +162,7 @@ export default function EditUjianPage({ params }: { params: Promise<{ id: string
 
     const updateMutation = useMutation({
         mutationFn: async (data: any) => {
-            const res = await fetch(`http://localhost:3001/ujian/${id}`, {
+            const res = await fetch(`${API_URL}/ujian/${id}`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",

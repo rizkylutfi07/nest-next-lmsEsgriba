@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/api";
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -31,13 +32,13 @@ const tahunajaranApi = {
     if (params.limit) searchParams.set('limit', params.limit.toString());
     if (params.search) searchParams.set('search', params.search);
 
-    const res = await fetch(`http://localhost:3001/tahun-ajaran?${searchParams}`, {
+    const res = await fetch(`${API_URL}/tahun-ajaran?${searchParams}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     return res.json();
   },
   create: async (data: any, token: string | null) => {
-    const res = await fetch(`http://localhost:3001/tahun-ajaran`, {
+    const res = await fetch(`${API_URL}/tahun-ajaran`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify(data),
@@ -45,7 +46,7 @@ const tahunajaranApi = {
     return res.json();
   },
   update: async (id: string, data: any, token: string | null) => {
-    const res = await fetch(`http://localhost:3001/tahun-ajaran/${id}`, {
+    const res = await fetch(`${API_URL}/tahun-ajaran/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify(data),
@@ -53,14 +54,14 @@ const tahunajaranApi = {
     return res.json();
   },
   delete: async (id: string, token: string | null) => {
-    const res = await fetch(`http://localhost:3001/tahun-ajaran/${id}`, {
+    const res = await fetch(`${API_URL}/tahun-ajaran/${id}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     });
     return res.json();
   },
   setActive: async (id: string, token: string | null) => {
-    const res = await fetch(`http://localhost:3001/tahun-ajaran/${id}/set-active`, {
+    const res = await fetch(`${API_URL}/tahun-ajaran/${id}/set-active`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
     });

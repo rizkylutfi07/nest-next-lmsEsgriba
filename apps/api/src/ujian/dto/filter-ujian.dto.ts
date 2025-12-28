@@ -19,9 +19,9 @@ export class FilterUjianDto {
     @IsOptional()
     guruId?: string;
 
-    @IsEnum(StatusUjian)
+    @IsString()
     @IsOptional()
-    status?: StatusUjian;
+    status?: string;
 
     @IsInt()
     @Min(1)

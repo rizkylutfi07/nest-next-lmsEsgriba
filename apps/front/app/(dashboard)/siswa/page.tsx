@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/api";
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -56,7 +57,7 @@ export default function SiswaPage() {
       if (filterTahunAjaran) params.append('tahunAjaranId', filterTahunAjaran);
 
       const res = await fetch(
-        `http://localhost:3001/siswa?${params.toString()}`,
+        `${API_URL}/siswa?${params.toString()}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       return res.json();
@@ -76,7 +77,7 @@ export default function SiswaPage() {
   const { data: kelasList } = useQuery({
     queryKey: ["kelas-list"],
     queryFn: async () => {
-      const res = await fetch(`http://localhost:3001/kelas?limit=100`, {
+      const res = await fetch(`${API_URL}/kelas?limit=100`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.json();
@@ -87,7 +88,7 @@ export default function SiswaPage() {
   const { data: activeTahunAjaran } = useQuery({
     queryKey: ["active-tahun-ajaran"],
     queryFn: async () => {
-      const res = await fetch(`http://localhost:3001/tahun-ajaran/active/current`, {
+      const res = await fetch(`${API_URL}/tahun-ajaran/active/current`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) return null;
@@ -97,7 +98,7 @@ export default function SiswaPage() {
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
-      const res = await fetch("http://localhost:3001/siswa", {
+      const res = await fetch(`${API_URL}/siswa`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(data),
@@ -117,7 +118,7 @@ export default function SiswaPage() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: any) => {
-      const res = await fetch(`http://localhost:3001/siswa/${id}`, {
+      const res = await fetch(`${API_URL}/siswa/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(data),
@@ -140,7 +141,7 @@ export default function SiswaPage() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`http://localhost:3001/siswa/${id}`, {
+      const res = await fetch(`${API_URL}/siswa/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -477,7 +478,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
   const { data: kelasList } = useQuery({
     queryKey: ["kelas-list"],
     queryFn: async () => {
-      const res = await fetch(`http://localhost:3001/kelas?limit=100`, {
+      const res = await fetch(`${API_URL}/kelas?limit=100`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.json();

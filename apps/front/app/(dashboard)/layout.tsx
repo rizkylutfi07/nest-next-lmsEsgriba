@@ -394,10 +394,25 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                     >
                       {group.items.map((item) => {
                         const Icon = item.icon;
-                        const isActive =
-                          item.href !== "/" && pathname.startsWith(item.href) && item.href !== "/cbt"
-                            ? true
-                            : pathname === item.href;
+                        // Special handling for /ujian paths to match correctly
+                        let isActive = false;
+                        if (item.href === "/ujian") {
+                          // "Ujian Akan Datang" - hanya aktif untuk /ujian, /ujian/create, /ujian/edit
+                          isActive = pathname === "/ujian" ||
+                            pathname.startsWith("/ujian/create") ||
+                            pathname.startsWith("/ujian/edit");
+                        } else if (item.href === "/ujian/berlangsung") {
+                          // "Pelaksanaan Ujian" - aktif untuk /ujian/berlangsung dan /ujian/monitoring
+                          isActive = pathname.startsWith("/ujian/berlangsung") ||
+                            pathname.startsWith("/ujian/monitoring");
+                        } else if (item.href === "/ujian/hasil") {
+                          // "Hasil Ujian" - hanya /ujian/hasil
+                          isActive = pathname.startsWith("/ujian/hasil");
+                        } else if (item.href !== "/" && item.href !== "/cbt") {
+                          isActive = pathname.startsWith(item.href);
+                        } else {
+                          isActive = pathname === item.href;
+                        }
 
                         return (
                           <Link

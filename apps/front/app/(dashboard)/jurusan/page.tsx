@@ -1,8 +1,9 @@
 "use client";
+import { API_URL } from "@/lib/api";
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Search, Pencil, Trash2, Loader2, X } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Loader2, X, Download, Upload, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -23,6 +24,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useRole } from "../role-context";
+import { useToast } from "@/hooks/use-toast";
 
 const jurusanApi = {
   getAll: async (params: any, token: string | null) => {
@@ -31,13 +33,13 @@ const jurusanApi = {
     if (params.limit) searchParams.set('limit', params.limit.toString());
     if (params.search) searchParams.set('search', params.search);
 
-    const res = await fetch(`http://localhost:3001/jurusan?${searchParams}`, {
+    const res = await fetch(`${API_URL}/jurusan?${searchParams}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     return res.json();
   },
   create: async (data: any, token: string | null) => {
-    const res = await fetch(`http://localhost:3001/jurusan`, {
+    const res = await fetch(`${API_URL}/jurusan`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify(data),
@@ -45,7 +47,7 @@ const jurusanApi = {
     return res.json();
   },
   update: async (id: string, data: any, token: string | null) => {
-    const res = await fetch(`http://localhost:3001/jurusan/${id}`, {
+    const res = await fetch(`${API_URL}/jurusan/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify(data),
@@ -53,7 +55,7 @@ const jurusanApi = {
     return res.json();
   },
   delete: async (id: string, token: string | null) => {
-    const res = await fetch(`http://localhost:3001/jurusan/${id}`, {
+    const res = await fetch(`${API_URL}/jurusan/${id}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -63,12 +65,14 @@ const jurusanApi = {
 
 export default function JurusanPage() {
   const { token } = useRole();
+  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [deletingItem, setDeletingItem] = useState<any>(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["jurusan", page, search],
@@ -99,6 +103,46 @@ export default function JurusanPage() {
     },
   });
 
+  const handleExport = async () => {
+    try {
+      const res = await fetch(`${API_URL}/jurusan/export/excel`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Data_Jurusan_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast({ title: "Berhasil", description: "Data berhasil diexport" });
+    } catch (error) {
+      toast({ title: "Error", description: "Gagal export data", variant: "destructive" });
+    }
+  };
+
+  const handleDownloadTemplate = async () => {
+    try {
+      const res = await fetch(`${API_URL}/jurusan/template/excel`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'Template_Import_Jurusan.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast({ title: "Berhasil", description: "Template berhasil didownload" });
+    } catch (error) {
+      toast({ title: "Error", description: "Gagal download template", variant: "destructive" });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -108,10 +152,20 @@ export default function JurusanPage() {
               <h1 className="text-3xl font-bold">Data Jurusan</h1>
               <p className="text-sm text-muted-foreground">Kelola data jurusan/program studi</p>
             </div>
-            <Button onClick={() => setIsCreateModalOpen(true)} className="mt-4 md:mt-0">
-              <Plus size={16} />
-              Tambah Jurusan
-            </Button>
+            <div className="mt-4 md:mt-0 flex gap-2">
+              <Button onClick={handleExport} variant="outline">
+                <Download size={16} />
+                Export
+              </Button>
+              <Button onClick={() => setIsImportModalOpen(true)} variant="outline">
+                <Upload size={16} />
+                Import
+              </Button>
+              <Button onClick={() => setIsCreateModalOpen(true)}>
+                <Plus size={16} />
+                Tambah Jurusan
+              </Button>
+            </div>
           </div>
 
           <div className="mt-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -237,6 +291,18 @@ export default function JurusanPage() {
           isLoading={deleteMutation.isPending}
         />
       )}
+
+      {isImportModalOpen && (
+        <ImportModal
+          token={token}
+          onClose={() => setIsImportModalOpen(false)}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ["jurusan"] });
+            setIsImportModalOpen(false);
+          }}
+          onDownloadTemplate={handleDownloadTemplate}
+        />
+      )}
     </div>
   );
 }
@@ -296,6 +362,149 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
             </Button>
           </div>
         </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ImportModal({ token, onClose, onSuccess, onDownloadTemplate }: any) {
+  const { toast } = useToast();
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [result, setResult] = useState<any>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0]);
+      setResult(null);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch(`${API_URL}/jurusan/import/excel`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error('Upload failed');
+
+      const data = await res.json();
+      setResult(data);
+
+      if (data.success?.length > 0) {
+        toast({ title: "Berhasil", description: data.message });
+        setTimeout(() => onSuccess(), 1500);
+      }
+    } catch (error) {
+      toast({ title: "Error", description: "Gagal mengupload file", variant: "destructive" });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Import Data Jurusan</DialogTitle>
+          <DialogDescription>
+            Upload file Excel untuk import data jurusan
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="rounded-lg border border-border bg-muted/30 p-4">
+            <div className="flex items-start gap-3">
+              <FileSpreadsheet className="text-primary" size={20} />
+              <div className="flex-1">
+                <p className="text-sm font-medium">Download Template Excel</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Gunakan template ini sebagai format import data
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onDownloadTemplate}
+                  className="mt-2"
+                >
+                  <Download size={14} />
+                  Download Template
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium">Pilih File Excel</label>
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleFileChange}
+              className="w-full rounded-lg border border-border bg-background px-4 py-2 text-sm outline-none transition focus:border-primary/60"
+            />
+            {file && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                File dipilih: {file.name}
+              </p>
+            )}
+          </div>
+
+          {result && (
+            <div className="rounded-lg border border-border p-4 space-y-3">
+              <h3 className="font-medium">Hasil Import:</h3>
+              <div className="space-y-2 text-sm">
+                <p className="text-green-600">✓ Berhasil: {result.success?.length || 0} data</p>
+                <p className="text-red-600">✗ Gagal: {result.failed?.length || 0} data</p>
+              </div>
+
+              {result.failed?.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-sm font-medium mb-2">Detail Error:</p>
+                  <div className="max-h-40 overflow-y-auto space-y-1">
+                    {result.failed.map((item: any, idx: number) => (
+                      <div key={idx} className="text-xs p-2 bg-red-50 dark:bg-red-950/20 rounded">
+                        <p>Baris {item.row}: {item.kode} - {item.nama}</p>
+                        <p className="text-red-600">{item.error}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="flex gap-2 pt-4">
+            <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+              {result?.success?.length > 0 ? 'Tutup' : 'Batal'}
+            </Button>
+            <Button
+              onClick={handleUpload}
+              disabled={!file || uploading}
+              className="flex-1"
+            >
+              {uploading ? (
+                <>
+                  <Loader2 className="animate-spin" size={16} />
+                  Mengupload...
+                </>
+              ) : (
+                <>
+                  <Upload size={16} />
+                  Upload & Import
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

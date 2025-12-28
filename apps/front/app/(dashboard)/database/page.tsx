@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/api";
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -53,7 +54,7 @@ export default function DatabasePage() {
 
     const deleteMutation = useMutation({
         mutationFn: async (filename: string) => {
-            const res = await fetch(`http://localhost:3001/database/backups/${filename}`, {
+            const res = await fetch(`${API_URL}/database/backups/${filename}`, {
                 method: 'DELETE',
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -66,7 +67,7 @@ export default function DatabasePage() {
     });
 
     const handleDownloadBackup = async (filename: string) => {
-        const res = await fetch(`http://localhost:3001/database/backups/${filename}`, {
+        const res = await fetch(`${API_URL}/database/backups/${filename}`, {
             headers: { Authorization: `Bearer ${token}` },
         });
         const blob = await res.blob();
@@ -246,7 +247,7 @@ function ImportModal({ onClose, onSuccess, token }: { onClose: () => void; onSuc
         formData.append('file', file);
 
         try {
-            const res = await fetch(`http://localhost:3001/database/import?createBackup=${createBackup}`, {
+            const res = await fetch(`${API_URL}/database/import?createBackup=${createBackup}`, {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${token}` },
                 body: formData,

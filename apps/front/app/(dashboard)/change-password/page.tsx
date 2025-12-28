@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/api";
 
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
@@ -23,7 +24,7 @@ export default function ChangePasswordPage() {
 
     const changePasswordMutation = useMutation({
         mutationFn: async (data: { oldPassword: string; newPassword: string }) => {
-            const res = await fetch("http://localhost:3001/auth/change-password", {
+            const res = await fetch(`${API_URL}/auth/change-password`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

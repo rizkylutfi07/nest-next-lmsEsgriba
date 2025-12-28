@@ -1,47 +1,60 @@
 "use client";
 import { API_URL } from "@/lib/api";
 
-import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { Loader2, ArrowLeft, Search } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { MultiSelect } from "@/components/ui/multi-select";
-import { useRole } from "../../role-context";
-import { useRouter } from "next/navigation";
+import { useRole } from "../../../role-context";
+import { useRouter, useParams } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 
-export default function CreatePaketSoalPage() {
+export default function EditPaketSoalPage() {
     const { token, role } = useRole();
     const { toast } = useToast();
     const router = useRouter();
+    const params = useParams();
+    const queryClient = useQueryClient();
+    const id = params.id as string;
+
     const [formData, setFormData] = useState({
-        kode: "",
         nama: "",
         deskripsi: "",
         mataPelajaranId: "",
         guruId: "",
         kelasIds: [] as string[],
     });
-    const [mapelTouched, setMapelTouched] = useState(false);
-    // Search state no longer needed with SearchableSelect
-    // const [mapelSearch, setMapelSearch] = useState("");
+    const [isInitialized, setIsInitialized] = useState(false);
 
-    const { data: generatedKode, isLoading: isLoadingKode } = useQuery({
-        queryKey: ["generate-kode-paket"],
+    // Fetch paket soal data
+    const { data: paketSoal, isLoading: isLoadingPaket } = useQuery({
+        queryKey: ["paket-soal", id],
         queryFn: async () => {
-            const res = await fetch(`${API_URL}/paket-soal/generate-kode`, {
+            const res = await fetch(`${API_URL}/paket-soal/${id}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            if (!res.ok) throw new Error("Failed to generate kode");
-            const data = await res.json();
-            return data.kode || "";
+            if (!res.ok) throw new Error("Failed to fetch");
+            return res.json();
         },
-        enabled: !!token,
+        enabled: !!token && !!id,
     });
 
-
+    // Initialize form data when paket soal is loaded
+    useEffect(() => {
+        if (paketSoal && !isInitialized) {
+            setFormData({
+                nama: paketSoal.nama || "",
+                deskripsi: paketSoal.deskripsi || "",
+                mataPelajaranId: paketSoal.mataPelajaranId || "",
+                guruId: paketSoal.guruId || "",
+                kelasIds: paketSoal.paketSoalKelas?.map((psk: any) => psk.kelasId) || [],
+            });
+            setIsInitialized(true);
+        }
+    }, [paketSoal, isInitialized]);
 
     const { data: mataPelajaranList } = useQuery({
         queryKey: ["mata-pelajaran-list", role],
@@ -72,24 +85,29 @@ export default function CreatePaketSoalPage() {
             });
             return res.json();
         },
-        enabled: role === "ADMIN", // Only fetch if admin
+        enabled: role === "ADMIN",
     });
 
-    const createMutation = useMutation({
+    const updateMutation = useMutation({
         mutationFn: async (data: any) => {
-            const res = await fetch(`${API_URL}/paket-soal`, {
-                method: "POST",
+            const res = await fetch(`${API_URL}/paket-soal/${id}`, {
+                method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify(data),
             });
-            if (!res.ok) throw new Error("Failed to create");
+            if (!res.ok) throw new Error("Failed to update");
             return res.json();
         },
-        onSuccess: (data) => {
-            router.push(`/paket-soal/${data.id}`);
+        onSuccess: () => {
+            toast({ title: "Berhasil", description: "Paket soal berhasil diperbarui" });
+            queryClient.invalidateQueries({ queryKey: ["paket-soal"] });
+            router.push(`/paket-soal/${id}`);
+        },
+        onError: () => {
+            toast({ title: "Error", description: "Gagal memperbarui paket soal", variant: "destructive" });
         },
     });
 
@@ -97,10 +115,6 @@ export default function CreatePaketSoalPage() {
         e.preventDefault();
 
         const submitData: any = { ...formData };
-
-        if (generatedKode) {
-            submitData.kode = generatedKode;
-        }
 
         if (!submitData.nama) {
             toast({ title: "Perhatian", description: "Nama paket soal harus diisi!", variant: "destructive" });
@@ -110,10 +124,9 @@ export default function CreatePaketSoalPage() {
         // Remove empty optional fields
         if (!submitData.mataPelajaranId) delete submitData.mataPelajaranId;
         if (!submitData.guruId) delete submitData.guruId;
-        if (!submitData.kelasIds || submitData.kelasIds.length === 0) delete submitData.kelasIds;
         if (!submitData.deskripsi) delete submitData.deskripsi;
 
-        createMutation.mutate(submitData);
+        updateMutation.mutate(submitData);
     };
 
     const mataPelajaranOptions = (mataPelajaranList?.data ?? [])
@@ -134,111 +147,102 @@ export default function CreatePaketSoalPage() {
 
     const handleMataPelajaranChange = (value: string) => {
         setFormData((prev) => {
-            const next = { ...prev, mataPelajaranId: value };
-            if (prev.guruId) {
-                const guru = guruOptions.find((g: any) => g.id === prev.guruId);
-                const guruHasMapel = guru?.mataPelajaran?.some((mp: any) => mp.id === value);
-                if (!guruHasMapel) {
-                    next.guruId = "";
-                }
-            }
-            return next;
+            const newGuruId =
+                prev.guruId &&
+                    guruOptions.find((g: any) => g.id === prev.guruId)?.mataPelajaran?.some(
+                        (mp: any) => mp.id === value
+                    )
+                    ? prev.guruId
+                    : "";
+            return { ...prev, mataPelajaranId: value, guruId: newGuruId };
         });
-        setMapelTouched(true);
     };
 
     const handleGuruChange = (value: string) => {
-        if (!value) {
-            setFormData((prev) => ({ ...prev, guruId: "", mataPelajaranId: mapelTouched ? prev.mataPelajaranId : "" }));
-            return;
-        }
-
-        const guru = guruOptions.find((g: any) => g.id === value);
-        const guruMapelIds = (guru?.mataPelajaran || []).map((mp: any) => mp.id);
-
-        setFormData((prev) => {
-            const next = { ...prev, guruId: value };
-
-            if (guruMapelIds.length === 1) {
-                next.mataPelajaranId = guruMapelIds[0];
-            } else if (prev.mataPelajaranId && !guruMapelIds.includes(prev.mataPelajaranId)) {
-                next.mataPelajaranId = "";
-            } else if (!prev.mataPelajaranId && guruMapelIds.length > 0) {
-                // Default to the first mapel the guru teaches to keep the relation valid
-                next.mataPelajaranId = guruMapelIds[0];
-            }
-
-            return next;
-        });
+        setFormData((prev) => ({ ...prev, guruId: value }));
     };
 
-    return (
-        <div className="space-y-6">
-            <div className="flex items-center gap-4">
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => router.back()}
-                >
-                    <ArrowLeft size={20} />
-                </Button>
-                <div>
-                    <h1 className="text-3xl font-bold">Buat Paket Soal Baru</h1>
-                    <p className="text-sm text-muted-foreground">
-                        Isi informasi paket soal di bawah ini
-                    </p>
-                </div>
+    if (isLoadingPaket) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <Loader2 className="animate-spin" size={32} />
             </div>
+        );
+    }
 
+    return (
+        <div className="space-y-6 max-w-3xl mx-auto">
             <Card>
                 <CardHeader>
-                    <CardTitle>Informasi Paket Soal</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        {generatedKode && (
-                            <div>
-                                <label className="mb-2 block text-sm font-medium">
-                                    Kode Paket
-                                </label>
-                                <input
-                                    type="text"
-                                    value={generatedKode}
-                                    disabled
-                                    className="w-full rounded-lg border border-border bg-muted/40 px-4 py-2 text-sm text-muted-foreground outline-none opacity-80"
-                                />
-                            </div>
-                        )}
-
+                    <div className="flex items-center gap-4">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => router.back()}
+                        >
+                            <ArrowLeft size={20} />
+                        </Button>
                         <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Nama Paket Soal *
-                            </label>
-                            <input
-                                type="text"
-                                value={formData.nama}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, nama: e.target.value })
-                                }
-                                placeholder="Contoh: Paket Soal Matematika Kelas XII"
-                                className="w-full rounded-lg border border-border bg-background px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:ring-1 focus:ring-primary/40"
-                                required
-                            />
+                            <h1 className="text-2xl font-bold">Edit Paket Soal</h1>
+                            <p className="text-sm text-muted-foreground">
+                                Edit informasi paket soal - Kode: {paketSoal?.kode}
+                            </p>
                         </div>
+                    </div>
+                </CardHeader>
 
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Deskripsi
-                            </label>
-                            <textarea
-                                value={formData.deskripsi}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, deskripsi: e.target.value })
-                                }
-                                placeholder="Deskripsi paket soal..."
-                                rows={3}
-                                className="w-full rounded-lg border border-border bg-background px-4 py-2 text-sm outline-none transition focus:border-primary/60 focus:ring-1 focus:ring-primary/40"
-                            />
+                <CardContent>
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        <div className="p-4 bg-muted/30 rounded-lg">
+                            <h3 className="font-semibold mb-4">Informasi Paket Soal</h3>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="mb-2 block text-sm font-medium">
+                                        Kode Paket
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={paketSoal?.kode || ""}
+                                        disabled
+                                        className="w-full rounded-lg border border-border bg-muted px-4 py-2 outline-none opacity-60"
+                                    />
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        Kode paket tidak dapat diubah
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <label className="mb-2 block text-sm font-medium">
+                                        Nama Paket Soal *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        required
+                                        placeholder="Contoh: Paket Soal Matematika Kelas XII"
+                                        value={formData.nama}
+                                        onChange={(e) =>
+                                            setFormData({ ...formData, nama: e.target.value })
+                                        }
+                                        className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="mb-2 block text-sm font-medium">
+                                        Deskripsi
+                                    </label>
+                                    <textarea
+                                        placeholder="Deskripsi paket soal..."
+                                        value={formData.deskripsi}
+                                        onChange={(e) =>
+                                            setFormData({ ...formData, deskripsi: e.target.value })
+                                        }
+                                        rows={3}
+                                        className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20 resize-none"
+                                    />
+                                </div>
+                            </div>
                         </div>
 
                         <div>
@@ -257,11 +261,6 @@ export default function CreatePaketSoalPage() {
                                 searchPlaceholder="Cari mata pelajaran..."
                                 emptyMessage="Tidak ada mata pelajaran yang cocok"
                             />
-                            {formData.guruId && !selectedGuru?.mataPelajaran?.some((mp: any) => mp.id === formData.mataPelajaranId) && (
-                                <p className="mt-1 text-xs text-muted-foreground">
-                                    Guru yang dipilih tidak mengajar mapel ini. Pilih mapel yang sesuai.
-                                </p>
-                            )}
                         </div>
 
                         {role === "ADMIN" && (
@@ -280,11 +279,6 @@ export default function CreatePaketSoalPage() {
                                     searchPlaceholder="Cari guru..."
                                     emptyMessage={formData.mataPelajaranId ? "Tidak ada guru yang mengajar mapel ini" : "Guru tidak ditemukan"}
                                 />
-                                {formData.guruId && selectedGuru && !selectedGuru.mataPelajaran?.length && (
-                                    <p className="mt-1 text-xs text-muted-foreground">
-                                        Guru belum memiliki mata pelajaran terhubung.
-                                    </p>
-                                )}
                             </div>
                         )}
 
@@ -317,16 +311,16 @@ export default function CreatePaketSoalPage() {
                             </Button>
                             <Button
                                 type="submit"
-                                disabled={createMutation.isPending}
+                                disabled={updateMutation.isPending}
                                 className="flex-1"
                             >
-                                {createMutation.isPending ? (
+                                {updateMutation.isPending ? (
                                     <>
                                         <Loader2 className="animate-spin mr-2" size={16} />
                                         Menyimpan...
                                     </>
                                 ) : (
-                                    "Buat Paket Soal"
+                                    "Simpan Perubahan"
                                 )}
                             </Button>
                         </div>

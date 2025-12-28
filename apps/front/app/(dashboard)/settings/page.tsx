@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/api";
 
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -17,7 +18,7 @@ export default function SettingsPage() {
     const { data: settings, isLoading } = useQuery({
         queryKey: ["settings"],
         queryFn: async () => {
-            const res = await fetch("http://localhost:3001/settings", {
+            const res = await fetch(`${API_URL}/settings`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             return res.json();
@@ -35,7 +36,7 @@ export default function SettingsPage() {
 
     const updateMutation = useMutation({
         mutationFn: async (value: string) => {
-            const res = await fetch("http://localhost:3001/settings", {
+            const res = await fetch(`${API_URL}/settings`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",

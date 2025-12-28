@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/lib/api";
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -32,13 +33,13 @@ const kelasApi = {
     if (params.limit) searchParams.set('limit', params.limit.toString());
     if (params.search) searchParams.set('search', params.search);
 
-    const res = await fetch(`http://localhost:3001/kelas?${searchParams}`, {
+    const res = await fetch(`${API_URL}/kelas?${searchParams}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     return res.json();
   },
   create: async (data: any, token: string | null) => {
-    const res = await fetch(`http://localhost:3001/kelas`, {
+    const res = await fetch(`${API_URL}/kelas`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify(data),
@@ -50,7 +51,7 @@ const kelasApi = {
     return res.json();
   },
   update: async (id: string, data: any, token: string | null) => {
-    const res = await fetch(`http://localhost:3001/kelas/${id}`, {
+    const res = await fetch(`${API_URL}/kelas/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify(data),
@@ -69,7 +70,7 @@ const kelasApi = {
     return res.json();
   },
   delete: async (id: string, token: string | null) => {
-    const res = await fetch(`http://localhost:3001/kelas/${id}`, {
+    const res = await fetch(`${API_URL}/kelas/${id}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -93,7 +94,7 @@ export default function KelasPage() {
   const { data: activeTahunAjaran } = useQuery({
     queryKey: ["active-tahun-ajaran"],
     queryFn: async () => {
-      const res = await fetch(`http://localhost:3001/tahun-ajaran/active/current`, {
+      const res = await fetch(`${API_URL}/tahun-ajaran/active/current`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) return null;
@@ -468,7 +469,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
   const { data: jurusanList } = useQuery({
     queryKey: ["jurusan-list"],
     queryFn: async () => {
-      const res = await fetch(`http://localhost:3001/jurusan?limit=100`, {
+      const res = await fetch(`${API_URL}/jurusan?limit=100`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.json();
@@ -479,7 +480,7 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
   const { data: guruList } = useQuery({
     queryKey: ["guru-list"],
     queryFn: async () => {
-      const res = await fetch(`http://localhost:3001/guru?limit=100`, {
+      const res = await fetch(`${API_URL}/guru?limit=100`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       return res.json();
