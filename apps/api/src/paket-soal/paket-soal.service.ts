@@ -63,6 +63,7 @@ export class PaketSoalService {
                 include: {
                     mataPelajaran: true,
                     guru: true,
+                    kelas: true,
                     soalItems: {
                         include: {
                             bankSoal: {

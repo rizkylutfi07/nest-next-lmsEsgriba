@@ -136,6 +136,7 @@ model Kelas {
   ujian             Ujian[]
   ujianKelas        UjianKelas[] // Many-to-many relationship with Ujian
   jadwalPelajaran   JadwalPelajaran[]
+  paketSoal         PaketSoal[]
   
   // LMS Relations
   materi Materi[]
@@ -279,6 +280,8 @@ model PaketSoal {
   mataPelajaran    MataPelajaran? @relation(fields: [mataPelajaranId], references: [id])
   guruId           String?
   guru             Guru?          @relation(fields: [guruId], references: [id])
+  kelasId          String?
+  kelas            Kelas?         @relation(fields: [kelasId], references: [id])
   totalSoal        Int            @default(0)
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
@@ -289,6 +292,7 @@ model PaketSoal {
 
   @@index([mataPelajaranId])
   @@index([guruId])
+  @@index([kelasId])
 }
 
 model PaketSoalItem {

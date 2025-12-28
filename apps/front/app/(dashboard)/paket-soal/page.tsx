@@ -124,66 +124,110 @@ export default function PaketSoalPage() {
                 </CardHeader>
 
                 <CardContent className="p-2 md:p-4">
-                    <div className="space-y-2">
-                        {isLoading ? (
-                            Array.from({ length: 5 }).map((_, i) => (
-                                <div
-                                    key={i}
-                                    className="h-32 animate-pulse rounded-lg bg-muted/50"
-                                />
-                            ))
-                        ) : data?.data?.length === 0 ? (
-                            <div className="py-8 text-center text-muted-foreground">
-                                Data tidak ditemukan
-                            </div>
-                        ) : (
-                            data?.data?.map((item: any) => (
-                                <Card key={item.id} className="p-4">
-                                    <div className="flex items-start justify-between gap-4">
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <Badge className="border border-border bg-transparent text-muted-foreground">{item.kode}</Badge>
-                                                {item.mataPelajaran && (
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead>
+                                <tr className="border-b border-border">
+                                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">Kode</th>
+                                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">Nama Paket</th>
+                                    <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">Mata Pelajaran</th>
+                                    <th className="text-center py-3 px-4 text-sm font-semibold text-muted-foreground">Kelas</th>
+                                    <th className="text-center py-3 px-4 text-sm font-semibold text-muted-foreground">Jumlah Soal</th>
+                                    <th className="text-center py-3 px-4 text-sm font-semibold text-muted-foreground">Total Point</th>
+                                    <th className="text-right py-3 px-4 text-sm font-semibold text-muted-foreground">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {isLoading ? (
+                                    Array.from({ length: 5 }).map((_, i) => (
+                                        <tr key={i} className="border-b border-border/50">
+                                            <td className="py-4 px-4"><div className="h-5 w-20 animate-pulse rounded bg-muted/50" /></td>
+                                            <td className="py-4 px-4"><div className="h-5 w-40 animate-pulse rounded bg-muted/50" /></td>
+                                            <td className="py-4 px-4"><div className="h-5 w-24 animate-pulse rounded bg-muted/50" /></td>
+                                            <td className="py-4 px-4"><div className="h-5 w-12 mx-auto animate-pulse rounded bg-muted/50" /></td>
+                                            <td className="py-4 px-4"><div className="h-5 w-12 mx-auto animate-pulse rounded bg-muted/50" /></td>
+                                            <td className="py-4 px-4"><div className="h-5 w-12 mx-auto animate-pulse rounded bg-muted/50" /></td>
+                                            <td className="py-4 px-4"><div className="h-5 w-20 ml-auto animate-pulse rounded bg-muted/50" /></td>
+                                        </tr>
+                                    ))
+                                ) : data?.data?.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={7} className="py-8 text-center text-muted-foreground">
+                                            Data tidak ditemukan
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    data?.data?.map((item: any) => (
+                                        <tr key={item.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                                            <td className="py-4 px-4">
+                                                <Badge className="border border-border bg-transparent text-muted-foreground font-mono">
+                                                    {item.kode}
+                                                </Badge>
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <div>
+                                                    <p className="font-medium">{item.nama}</p>
+                                                    {item.deskripsi && (
+                                                        <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                                                            {item.deskripsi}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                {item.mataPelajaran ? (
                                                     <Badge className="bg-indigo-500/15 text-indigo-600">
                                                         {item.mataPelajaran.nama}
                                                     </Badge>
+                                                ) : (
+                                                    <span className="text-muted-foreground">-</span>
                                                 )}
-                                            </div>
-                                            <h3 className="text-lg font-semibold">{item.nama}</h3>
-                                            {item.deskripsi && (
-                                                <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                                                    {item.deskripsi}
-                                                </p>
-                                            )}
-                                            <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
-                                                <span>📝 {item._count?.soalItems || item.totalSoal || 0} soal</span>
-                                                <span>⭐ {item.totalPoint || 0} point</span>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex flex-col gap-1">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => router.push(`/paket-soal/${item.id}`)}
-                                            >
-                                                <Eye size={14} />
-                                                Detail
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => setDeletingItem(item)}
-                                                className="text-destructive"
-                                            >
-                                                <Trash2 size={14} />
-                                                Hapus
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </Card>
-                            ))
-                        )}
+                                            </td>
+                                            <td className="py-4 px-4 text-center">
+                                                {item.kelas ? (
+                                                    <Badge className="bg-emerald-500/15 text-emerald-600">
+                                                        {item.kelas.nama}
+                                                    </Badge>
+                                                ) : (
+                                                    <span className="text-muted-foreground">-</span>
+                                                )}
+                                            </td>
+                                            <td className="py-4 px-4 text-center">
+                                                <span className="text-sm">
+                                                    {item._count?.soalItems || item.totalSoal || 0}
+                                                </span>
+                                            </td>
+                                            <td className="py-4 px-4 text-center">
+                                                <span className="text-sm">
+                                                    {item.totalPoint || 0}
+                                                </span>
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <div className="flex justify-end gap-1">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => router.push(`/paket-soal/${item.id}`)}
+                                                    >
+                                                        <Eye size={14} />
+                                                        Detail
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => setDeletingItem(item)}
+                                                        className="text-destructive"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                        Hapus
+                                                    </Button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
                     </div>
 
                     {!isLoading && data?.meta && (

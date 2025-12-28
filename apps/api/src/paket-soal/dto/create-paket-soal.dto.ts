@@ -20,4 +20,8 @@ export class CreatePaketSoalDto {
     @IsString()
     @IsOptional()
     guruId?: string;
+
+    @IsString()
+    @IsOptional()
+    kelasId?: string;
 }

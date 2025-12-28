@@ -20,6 +20,7 @@ export default function CreatePaketSoalPage() {
         deskripsi: "",
         mataPelajaranId: "",
         guruId: "",
+        kelasId: "",
     });
     const [mapelTouched, setMapelTouched] = useState(false);
     // Search state no longer needed with SearchableSelect
@@ -45,6 +46,16 @@ export default function CreatePaketSoalPage() {
         queryFn: async () => {
             const queryParams = role === "GURU" ? "?mySubjects=true&limit=100" : "?limit=100";
             const res = await fetch(`http://localhost:3001/mata-pelajaran${queryParams}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            return res.json();
+        },
+    });
+
+    const { data: kelasList } = useQuery({
+        queryKey: ["kelas-list"],
+        queryFn: async () => {
+            const res = await fetch(`http://localhost:3001/kelas?limit=100`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             return res.json();
@@ -97,12 +108,16 @@ export default function CreatePaketSoalPage() {
         // Remove empty optional fields
         if (!submitData.mataPelajaranId) delete submitData.mataPelajaranId;
         if (!submitData.guruId) delete submitData.guruId;
+        if (!submitData.kelasId) delete submitData.kelasId;
         if (!submitData.deskripsi) delete submitData.deskripsi;
 
         createMutation.mutate(submitData);
     };
 
     const mataPelajaranOptions = (mataPelajaranList?.data ?? [])
+        .sort((a: any, b: any) => a.nama.localeCompare(b.nama, "id", { sensitivity: "base" }));
+
+    const kelasOptions = (kelasList?.data ?? [])
         .sort((a: any, b: any) => a.nama.localeCompare(b.nama, "id", { sensitivity: "base" }));
 
     const guruOptions = (guruList?.data ?? []).sort((a: any, b: any) =>
@@ -270,6 +285,24 @@ export default function CreatePaketSoalPage() {
                                 )}
                             </div>
                         )}
+
+                        <div>
+                            <label className="mb-2 block text-sm font-medium">
+                                Kelas
+                            </label>
+                            <SearchableSelect
+                                options={kelasOptions.map((kelas: any) => ({
+                                    value: kelas.id,
+                                    label: kelas.nama,
+                                    description: kelas.tingkat ? `Tingkat ${kelas.tingkat}` : undefined,
+                                }))}
+                                value={formData.kelasId}
+                                onChange={(value) => setFormData({ ...formData, kelasId: value })}
+                                placeholder="Pilih Kelas (Opsional)"
+                                searchPlaceholder="Cari kelas..."
+                                emptyMessage="Tidak ada kelas yang cocok"
+                            />
+                        </div>
 
                         <div className="flex gap-2 pt-4">
                             <Button
