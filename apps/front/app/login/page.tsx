@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, ArrowRight, Loader2, Sparkles, UserCircle } from "lucide-react";
+import Image from "next/image";
+import { Lock, ArrowRight, Loader2, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiFetch } from "@/lib/api-client";
@@ -71,14 +72,20 @@ export default function LoginPage() {
         >
           {/* Logo/Brand Section */}
           <div className="mb-8 text-center">
-            <div className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-blue-600 p-3 shadow-lg shadow-primary/25 mb-4">
-              <Sparkles className="h-8 w-8 text-white" />
+            <div className="inline-flex items-center justify-center mb-4">
+              <Image
+                src="/logo.png"
+                alt="Esgriba"
+                width={80}
+                height={80}
+                className="object-contain"
+              />
             </div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">
               Selamat Datang
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Masuk untuk mengakses Arunika LMS
+              Masuk untuk mengakses Esgriba LMS
             </p>
           </div>
 
@@ -157,7 +164,7 @@ export default function LoginPage() {
           </div>
 
           <p className="mt-8 text-center text-xs text-muted-foreground/60">
-            Powered by <span className="font-semibold text-foreground/80">Arunika Team</span>
+            Powered by <span className="font-semibold text-foreground/80">Esgriba Team</span>
             <br />
             &copy; 2025 All rights reserved.
           </p>

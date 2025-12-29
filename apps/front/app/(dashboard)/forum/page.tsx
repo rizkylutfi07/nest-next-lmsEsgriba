@@ -10,6 +10,7 @@ import {
     Lock,
     Eye,
     MessageCircle,
+    Loader2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,57 +23,39 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRole } from "../role-context";
-
-const forumCategories = [
-    { id: "1", nama: "Pemrograman", warna: "#3b82f6", icon: "💻", threadCount: 24 },
-    { id: "2", nama: "Matematika", warna: "#8b5cf6", icon: "📐", threadCount: 18 },
-    { id: "3", nama: "Umum", warna: "#10b981", icon: "💬", threadCount: 32 },
-];
-
-const forumThreads = [
-    {
-        id: "1",
-        judul: "Cara Optimal Belajar Algoritma?",
-        kategori: "Pemrograman",
-        author: "Ahmad Rizki",
-        authorType: "SISWA",
-        replyCount: 15,
-        viewCount: 234,
-        isPinned: true,
-        isLocked: false,
-        createdAt: "2025-01-20T10:30:00",
-        latestReply: "2025-01-21T15:45:00",
-    },
-    {
-        id: "2",
-        judul: "Tips Mengerjakan Soal Limit",
-        kategori: "Matematika",
-        author: "Bu Siti (Guru)",
-        authorType: "GURU",
-        replyCount: 8,
-        viewCount: 156,
-        isPinned: false,
-        isLocked: false,
-        createdAt: "2025-01-19T14:20:00",
-        latestReply: "2025-01-20T09:15:00",
-    },
-    {
-        id: "3",
-        judul: "Diskusi Tugas Database Minggu Ini",
-        kategori: "Pemrograman",
-        author: "Sari Indah",
-        authorType: "SISWA",
-        replyCount: 23,
-        viewCount: 189,
-        isPinned: false,
-        isLocked: false,
-        createdAt: "2025-01-18T16:00:00",
-        latestReply: "2025-01-21T11:30:00",
-    },
-];
+import { useQuery } from "@tanstack/react-query";
+import { API_URL } from "@/lib/api";
 
 export default function ForumPage() {
-    const { role } = useRole();
+    const { role, token } = useRole();
+
+    // Fetch forum threads from API
+    const { data: threadsData, isLoading: isLoadingThreads } = useQuery({
+        queryKey: ["forum-threads"],
+        queryFn: async () => {
+            const res = await fetch(`${API_URL}/forum/threads`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            return res.json();
+        },
+        enabled: !!token,
+    });
+
+    const forumThreads = Array.isArray(threadsData) ? threadsData : [];
+
+    // Count threads by kategori
+    const kategoriCounts = forumThreads.reduce((acc: any, thread: any) => {
+        const kategoriNama = thread.kategori?.nama || "Umum";
+        acc[kategoriNama] = (acc[kategoriNama] || 0) + 1;
+        return acc;
+    }, {});
+
+    // Create categories from actual thread data
+    const forumCategories = [
+        { id: "pemrograman", nama: "Pemrograman", warna: "#3b82f6", icon: "💻", threadCount: kategoriCounts["Pemrograman"] || 0 },
+        { id: "matematika", nama: "Matematika", warna: "#8b5cf6", icon: "📐", threadCount: kategoriCounts["Matematika"] || 0 },
+        { id: "umum", nama: "Umum", warna: "#10b981", icon: "💬", threadCount: kategoriCounts["Umum"] || 0 },
+    ];
 
     const headerSubtitle = role === "GURU"
         ? "Jawab pertanyaan siswa dan moderasi diskusi kelas"
@@ -141,55 +124,68 @@ export default function ForumPage() {
                     <CardTitle>Diskusi Terbaru</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                    {forumThreads.map((thread) => (
-                        <Card key={thread.id} className="group transition-all hover:border-primary/50 hover:bg-muted/30">
-                            <CardContent className="pt-6">
-                                <div className="space-y-3">
-                                    {/* Title & Badges */}
-                                    <div className="flex items-start gap-3">
-                                        <MessageCircle size={20} className="mt-1 text-primary" />
-                                        <div className="flex-1 space-y-2">
-                                            <div className="flex flex-wrap items-center gap-2">
-                                                {thread.isPinned && <Pin size={14} className="text-amber-500" />}
-                                                {thread.isLocked && <Lock size={14} className="text-muted-foreground" />}
-                                                <h3 className="font-semibold group-hover:text-primary">
-                                                    {thread.judul}
-                                                </h3>
-                                            </div>
+                    {isLoadingThreads ? (
+                        <div className="flex items-center justify-center py-12">
+                            <Loader2 className="animate-spin text-primary" size={32} />
+                        </div>
+                    ) : forumThreads.length === 0 ? (
+                        <div className="text-center py-10 text-muted-foreground">
+                            <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                            <p>Belum ada diskusi. Mulai diskusi pertama!</p>
+                        </div>
+                    ) : (
+                        forumThreads.map((thread: any) => (
+                            <Card key={thread.id} className="group transition-all hover:border-primary/50 hover:bg-muted/30">
+                                <CardContent className="pt-6">
+                                    <div className="space-y-3">
+                                        {/* Title & Badges */}
+                                        <div className="flex items-start gap-3">
+                                            <MessageCircle size={20} className="mt-1 text-primary" />
+                                            <div className="flex-1 space-y-2">
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    {thread.isPinned && <Pin size={14} className="text-amber-500" />}
+                                                    {thread.isLocked && <Lock size={14} className="text-muted-foreground" />}
+                                                    <h3 className="font-semibold group-hover:text-primary">
+                                                        {thread.judul}
+                                                    </h3>
+                                                </div>
 
-                                            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                                                <Badge tone="info" className="text-xs">
-                                                    {thread.kategori}
-                                                </Badge>
-                                                <span>•</span>
-                                                <span>
-                                                    oleh <strong>{thread.author}</strong>
-                                                    {thread.authorType === "GURU" && " 👨‍🏫"}
-                                                </span>
-                                                <span>•</span>
-                                                <span>{new Date(thread.createdAt).toLocaleDateString("id-ID")}</span>
+                                                <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                                                    <Badge tone="info" className="text-xs">
+                                                        {thread.kategori?.nama || "Umum"}
+                                                    </Badge>
+                                                    <span>•</span>
+                                                    <span>
+                                                        oleh <strong>{thread.author?.nama || thread.user?.nama || "Unknown"}</strong>
+                                                        {thread.authorType === "GURU" && " 👨‍🏫"}
+                                                    </span>
+                                                    <span>•</span>
+                                                    <span>{new Date(thread.createdAt).toLocaleDateString("id-ID")}</span>
+                                                </div>
                                             </div>
+                                        </div>
+
+                                        {/* Stats */}
+                                        <div className="flex items-center gap-6 text-sm text-muted-foreground pl-9">
+                                            <div className="flex items-center gap-2">
+                                                <MessageSquare size={14} />
+                                                <span>{thread._count?.posts || thread.replyCount || 0} replies</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Eye size={14} />
+                                                <span>{thread.viewCount || 0} views</span>
+                                            </div>
+                                            {thread.updatedAt && (
+                                                <div className="ml-auto text-xs">
+                                                    Terakhir: {new Date(thread.updatedAt).toLocaleDateString("id-ID")}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
-
-                                    {/* Stats */}
-                                    <div className="flex items-center gap-6 text-sm text-muted-foreground pl-9">
-                                        <div className="flex items-center gap-2">
-                                            <MessageSquare size={14} />
-                                            <span>{thread.replyCount} replies</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <Eye size={14} />
-                                            <span>{thread.viewCount} views</span>
-                                        </div>
-                                        <div className="ml-auto text-xs">
-                                            Terakhir: {new Date(thread.latestReply).toLocaleDateString("id-ID")}
-                                        </div>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))}
+                                </CardContent>
+                            </Card>
+                        ))
+                    )}
                 </CardContent>
             </Card>
 

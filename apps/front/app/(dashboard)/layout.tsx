@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import {
@@ -39,7 +40,7 @@ import { useRole, Role, NavItem, NavGroup } from "./role-context";
 const accessByRole: Record<Role, string[]> = {
   ADMIN: ["/", "/profile", "/change-password", "/users", "/siswa", "/kenaikan-kelas", "/guru", "/kelas", "/jurusan", "/tahun-ajaran", "/mata-pelajaran", "/jadwal-pelajaran", "/materi", "/materi-management", "/tugas", "/tugas-management", "/forum", "/attendance", "/database", "/cbt", "/bank-soal", "/paket-soal", "/ujian", "/penilaian", "/laporan", "/keuangan", "/keamanan", "/settings", "/pengumuman"],
   GURU: ["/", "/profile", "/change-password", "/kelas", "/mata-pelajaran", "/jadwal-pelajaran", "/materi", "/materi-management", "/tugas", "/tugas-management", "/forum", "/pengumuman", "/attendance", "/cbt", "/bank-soal", "/paket-soal", "/ujian", "/penilaian", "/laporan"],
-  SISWA: ["/", "/profile", "/change-password", "/jadwal-pelajaran", "/materi", "/tugas", "/forum", "/pengumuman", "/cbt", "/ujian-saya", "/keamanan"],
+  SISWA: ["/", "/profile", "/change-password", "/jadwal-pelajaran", "/kehadiran-saya", "/materi", "/tugas", "/forum", "/pengumuman", "/cbt", "/ujian-saya", "/keamanan"],
   PETUGAS_ABSENSI: ["/", "/profile", "/change-password", "/attendance"],
 };
 
@@ -316,15 +317,31 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                   sidebarCollapsed && "justify-center gap-0",
                 )}
               >
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-secondary text-background shadow-lg shadow-primary/40">
-                  <Sparkles size={20} />
-                </div>
-                {!sidebarCollapsed && (
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.26em] text-muted-foreground">
-                      Arunika
-                    </p>
-                    <p className="text-lg font-semibold">LMS + School</p>
+                {sidebarCollapsed ? (
+                  <div className="h-11 w-11 relative">
+                    <Image
+                      src="/logo.png"
+                      alt="Esgriba"
+                      width={44}
+                      height={44}
+                      className="object-contain"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <div className="h-11 w-11 relative flex-shrink-0">
+                      <Image
+                        src="/logo.png"
+                        alt="Esgriba"
+                        width={44}
+                        height={44}
+                        className="object-contain"
+                      />
+                    </div>
+                    <div>
+                      <p className="text-xl font-bold tracking-tight">Esgriba</p>
+                      <p className="text-xs text-muted-foreground">Learning Management System</p>
+                    </div>
                   </div>
                 )}
               </div>
@@ -436,10 +453,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                             />
                             {!sidebarCollapsed && (
                               <div className="flex flex-1 items-center justify-between gap-2">
-                                <div>
-                                  <p>{item.label}</p>
-                                  <p className="text-xs font-normal text-muted-foreground">{item.note}</p>
-                                </div>
+                                <p>{item.label}</p>
                                 {item.badge && (
                                   <Badge tone="warning" className="px-2 py-1 text-[10px] uppercase">
                                     {item.badge}

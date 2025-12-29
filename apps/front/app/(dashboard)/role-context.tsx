@@ -190,6 +190,7 @@ const navByRole: Record<Role, NavGroup[]> = {
       collapsible: true,
       items: [
         { label: "Jadwal Pelajaran", icon: CalendarRange, href: "/jadwal-pelajaran", note: "Jadwal kelas" },
+        { label: "Kehadiran Saya", icon: ClipboardCheck, href: "/kehadiran-saya", note: "Riwayat kehadiran" },
         { label: "Materi Pelajaran", icon: BookOpen, href: "/materi", note: "Bank materi" },
         { label: "Tugas & PR", icon: ClipboardList, href: "/tugas", note: "Kumpulkan tugas" },
         { label: "Forum Diskusi", icon: Activity, href: "/forum", note: "Tanya & diskusi" },

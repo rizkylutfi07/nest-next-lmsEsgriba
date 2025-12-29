@@ -3,7 +3,7 @@ import { API_URL } from "@/lib/api";
 
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Plus, X, Calendar, Clock, BookOpen, User } from "lucide-react";
+import { Loader2, Plus, X, Calendar, Clock, BookOpen, User, Download, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -83,6 +83,9 @@ export default function JadwalPelajaranPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<any>(null);
     const [modalSlot, setModalSlot] = useState<{ jamKe: number | null; jamMulai: string; jamSelesai: string; kelasId?: string } | null>(null);
+    const [isExporting, setIsExporting] = useState(false);
+    const [isImporting, setIsImporting] = useState(false);
+    const { toast } = useToast();
 
     const isReadOnly = role === 'SISWA';
 
@@ -288,6 +291,103 @@ export default function JadwalPelajaranPage() {
                     </h1>
                     <p className="text-muted-foreground mt-1">Kelola jadwal pelajaran per hari</p>
                 </div>
+                {!isReadOnly && (
+                    <div className="flex gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={async () => {
+                                setIsExporting(true);
+                                try {
+                                    const res = await fetch(`${API_URL}/jadwal-pelajaran/export/xlsx`, {
+                                        headers: { Authorization: `Bearer ${token}` },
+                                    });
+                                    if (!res.ok) throw new Error('Export failed');
+                                    const blob = await res.blob();
+                                    const url = window.URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = 'jadwal-pelajaran.xlsx';
+                                    a.click();
+                                    window.URL.revokeObjectURL(url);
+                                    toast({ title: "Export berhasil", description: "File jadwal pelajaran telah diunduh" });
+                                } catch (error) {
+                                    toast({ title: "Export gagal", description: (error as Error).message, variant: "destructive" });
+                                } finally {
+                                    setIsExporting(false);
+                                }
+                            }}
+                            disabled={isExporting}
+                        >
+                            {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                            Export XLSX
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={async () => {
+                                try {
+                                    const res = await fetch(`${API_URL}/jadwal-pelajaran/template/xlsx`, {
+                                        headers: { Authorization: `Bearer ${token}` },
+                                    });
+                                    if (!res.ok) throw new Error('Template download failed');
+                                    const blob = await res.blob();
+                                    const url = window.URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = 'template-jadwal-pelajaran.xlsx';
+                                    a.click();
+                                    window.URL.revokeObjectURL(url);
+                                    toast({ title: "Template berhasil diunduh", description: "Silakan isi template dan import kembali" });
+                                } catch (error) {
+                                    toast({ title: "Download gagal", description: (error as Error).message, variant: "destructive" });
+                                }
+                            }}
+                        >
+                            <Download className="mr-2 h-4 w-4" />
+                            Download Template
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                const input = document.createElement('input');
+                                input.type = 'file';
+                                input.accept = '.xlsx,.xls';
+                                input.onchange = async (e: any) => {
+                                    const file = e.target.files[0];
+                                    if (!file) return;
+                                    setIsImporting(true);
+                                    try {
+                                        const formData = new FormData();
+                                        formData.append('file', file);
+                                        const res = await fetch(`${API_URL}/jadwal-pelajaran/import/xlsx`, {
+                                            method: 'POST',
+                                            headers: { Authorization: `Bearer ${token}` },
+                                            body: formData,
+                                        });
+                                        const result = await res.json();
+                                        if (!res.ok) throw new Error(result.message || 'Import failed');
+                                        queryClient.invalidateQueries({ queryKey: ['jadwal-pelajaran'] });
+                                        toast({
+                                            title: "Import berhasil",
+                                            description: `${result.success} data berhasil, ${result.failed} gagal`
+                                        });
+                                        if (result.errors?.length > 0) {
+                                            console.error('Import errors:', result.errors);
+                                        }
+                                    } catch (error) {
+                                        toast({ title: "Import gagal", description: (error as Error).message, variant: "destructive" });
+                                    } finally {
+                                        setIsImporting(false);
+                                    }
+                                };
+                                input.click();
+                            }}
+                            disabled={isImporting}
+                        >
+                            {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                            Import XLSX
+                        </Button>
+                    </div>
+                )}
             </div>
 
             {/* Hari Selector */}
@@ -357,15 +457,26 @@ export default function JadwalPelajaranPage() {
                                                 const item = scheduleGrid[kelas.id]?.[`${slot.mulai}-${slot.selesai}`];
                                                 const isBreakSlot = slot.isBreak;
 
+                                                // Check if this class is currently ongoing
+                                                const now = new Date();
+                                                const currentTime = now.getHours() * 60 + now.getMinutes();
+                                                const [startHour, startMin] = slot.mulai.split(':').map(Number);
+                                                const [endHour, endMin] = slot.selesai.split(':').map(Number);
+                                                const startTime = startHour * 60 + startMin;
+                                                const endTime = endHour * 60 + endMin;
+                                                const isOngoing = item && currentTime >= startTime && currentTime < endTime && selectedHari === getCurrentDay();
+
                                                 return (
                                                     <td
                                                         key={`${kelas.id}-${slot.mulai}`}
-                                                        className={`border border-border p-1 transition ${isBreakSlot
-                                                            ? "bg-amber-500/10 cursor-not-allowed"
-                                                            : isReadOnly
-                                                                ? "cursor-default"
-                                                                : "cursor-pointer hover:bg-muted/50"
-                                                            }`}
+                                                        className={`border transition ${isBreakSlot
+                                                                ? "bg-amber-500/10 cursor-not-allowed border-border"
+                                                                : isOngoing
+                                                                    ? "bg-emerald-500/10 border-emerald-500/50 shadow-inner border-2"
+                                                                    : isReadOnly
+                                                                        ? "cursor-default border-border"
+                                                                        : "cursor-pointer hover:bg-muted/50 border-border"
+                                                            } p-1`}
                                                         onClick={() => !isBreakSlot && openModal(slot.jamKe, slot.mulai, slot.selesai, kelas.id, item)}
                                                     >
                                                         {isBreakSlot ? (
@@ -373,13 +484,22 @@ export default function JadwalPelajaranPage() {
                                                                 {slot.label || "Istirahat"}
                                                             </div>
                                                         ) : item ? (
-                                                            <div className="bg-primary/10 border border-primary/30 rounded-lg p-2 text-xs min-h-[48px]">
-                                                                <p className="font-semibold text-primary truncate">
+                                                            <div className={`rounded-lg p-2 text-xs min-h-[48px] ${isOngoing
+                                                                    ? 'bg-emerald-500/20 border-2 border-emerald-500/50'
+                                                                    : 'bg-primary/10 border border-primary/30'
+                                                                }`}>
+                                                                <p className={`font-semibold truncate ${isOngoing ? 'text-emerald-700 dark:text-emerald-400' : 'text-primary'
+                                                                    }`}>
                                                                     {item.mataPelajaran?.nama?.substring(0, 22) || "-"}
                                                                 </p>
                                                                 <p className="text-muted-foreground truncate text-[10px]">
                                                                     {item.guru?.nama?.substring(0, 22) || "-"}
                                                                 </p>
+                                                                {isOngoing && (
+                                                                    <p className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 mt-1">
+                                                                        ● SEDANG BERLANGSUNG
+                                                                    </p>
+                                                                )}
                                                             </div>
                                                         ) : (
                                                             <div className="h-12 flex items-center justify-center opacity-0 hover:opacity-100 transition">
