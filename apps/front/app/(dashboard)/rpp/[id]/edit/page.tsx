@@ -55,7 +55,7 @@ export default function EditRppPage({ params }: { params: Promise<{ id: string }
     const fetchRpp = async () => {
         try {
             setLoading(true);
-            const data: RPP = await rppApi.getOne(id);
+            const data = await rppApi.getOne(id) as RPP;
 
             // Convert RPP data to form data
             setFormData({
@@ -97,7 +97,7 @@ export default function EditRppPage({ params }: { params: Promise<{ id: string }
 
     const fetchMataPelajaran = async () => {
         try {
-            const response = await mataPelajaranApi.getAll({ limit: 100 });
+            const response = await mataPelajaranApi.getAll({ limit: 100 }) as { data: any[] };
             setMataPelajaranList(response.data || []);
         } catch (error) {
             console.error('Failed to fetch mata pelajaran:', error);
@@ -106,7 +106,7 @@ export default function EditRppPage({ params }: { params: Promise<{ id: string }
 
     const fetchKelas = async () => {
         try {
-            const response = await kelasApi.getAll({ limit: 100 });
+            const response = await kelasApi.getAll({ limit: 100 }) as { data: any[] };
             setKelasList(response.data || []);
         } catch (error) {
             console.error('Failed to fetch kelas:', error);

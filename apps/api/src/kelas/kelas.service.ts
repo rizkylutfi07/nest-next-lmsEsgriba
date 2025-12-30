@@ -43,6 +43,13 @@ export class KelasService {
               nama: true,
             },
           },
+          waliKelas: {
+            select: {
+              id: true,
+              nama: true,
+              nip: true,
+            },
+          },
           _count: {
             select: { siswa: true },
           },
