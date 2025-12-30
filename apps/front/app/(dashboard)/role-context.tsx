@@ -128,7 +128,7 @@ const navByRole: Record<Role, NavGroup[]> = {
       label: "Sistem",
       collapsible: true,
       items: [
-        { label: "Pengaturan", icon: Settings, href: "/settings", note: "Konfigurasi sistem" },
+        { label: "Identitas Sekolah", icon: Settings, href: "/settings/school", note: "Profil sekolah" },
         { label: "Kelola User", icon: Users2, href: "/users", note: "Manajemen pengguna" },
         { label: "Pengumuman", icon: MessageSquare, href: "/pengumuman", note: "Info sekolah" },
         { label: "Database", icon: Database, href: "/database", note: "Backup & restore" },

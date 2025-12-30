@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { GeneratedRppContent } from '../types/rpp';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
 interface GenerateRppInput {
     mataPelajaran: string;
     materi: string;
@@ -18,11 +20,17 @@ export function useAiRppGenerator() {
         setError(null);
 
         try {
-            const response = await fetch('/api/rpp/generate', {
+            // Get token from localStorage (matching app's auth pattern)
+            const authData = typeof window !== 'undefined'
+                ? JSON.parse(localStorage.getItem('arunika-auth') || '{}')
+                : {};
+            const token = authData.token;
+
+            const response = await fetch(`${API_BASE_URL}/rpp/generate`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${localStorage.getItem('token')}`,
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
                 body: JSON.stringify(input),
             });

@@ -1,28 +1,67 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { rppApi } from '@/lib/api';
+import { rppApi, settingsApi } from '@/lib/api';
 import { RPP, DimensiProfilLulusanLabels } from '@/types/rpp';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { ChevronLeft, Printer, Edit, Copy } from 'lucide-react';
+import { ChevronLeft, Printer, Edit } from 'lucide-react';
+import { cleanMarkdown, PAPER_SIZES, PaperSize } from '@/hooks/use-rpp-pdf';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 
-export default function RppDetailPage({ params }: { params: { id: string } }) {
+export default function RppDetailPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params);
     const router = useRouter();
     const [rpp, setRpp] = useState<RPP | null>(null);
     const [loading, setLoading] = useState(true);
+    const [paperSize, setPaperSize] = useState<PaperSize>('A4');
+    const [schoolSettings, setSchoolSettings] = useState({
+        name: '',
+        principalName: '',
+        principalNip: '',
+        location: '',
+    });
 
     useEffect(() => {
         fetchRpp();
-    }, [params.id]);
+        fetchSchoolSettings();
+    }, [id]);
+
+    const fetchSchoolSettings = async () => {
+        try {
+            const settings = await settingsApi.getSchoolSettings();
+            // Extract location from address (e.g., "Jl. Raya Bandongan" -> "Bandongan")
+            const address = settings.school_address || '';
+            const location = address.split(',').pop()?.trim() || address.split(' ').pop() || 'Bandongan';
+            setSchoolSettings({
+                name: settings.school_name || 'SMA NEGERI 1 BANDONGAN',
+                principalName: settings.school_principal_name || '',
+                principalNip: settings.school_principal_nip || '',
+                location: location,
+            });
+        } catch {
+            setSchoolSettings({
+                name: 'SMA NEGERI 1 BANDONGAN',
+                principalName: '',
+                principalNip: '',
+                location: 'Bandongan',
+            });
+        }
+    };
 
     const fetchRpp = async () => {
         try {
             setLoading(true);
-            const data = await rppApi.getOne(params.id);
-            setRpp(data);
+            const data = await rppApi.getOne(id);
+            setRpp(data as RPP);
         } catch (error: any) {
             toast.error(error.message || 'Gagal memuat RPP');
             router.push('/rpp');
@@ -56,7 +95,19 @@ export default function RppDetailPage({ params }: { params: { id: string } }) {
                     <ChevronLeft className="h-4 w-4 mr-2" />
                     Kembali
                 </Button>
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-center">
+                    <Select value={paperSize} onValueChange={(v) => setPaperSize(v as PaperSize)}>
+                        <SelectTrigger className="w-[160px]">
+                            <SelectValue placeholder="Ukuran Kertas" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {(Object.entries(PAPER_SIZES) as [PaperSize, { width: number; height: number; label: string }][]).map(([key, { label }]) => (
+                                <SelectItem key={key} value={key}>
+                                    {label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                     <Button variant="outline" onClick={() => router.push(`/rpp/${rpp.id}/edit`)}>
                         <Edit className="h-4 w-4 mr-2" />
                         Edit
@@ -73,39 +124,44 @@ export default function RppDetailPage({ params }: { params: { id: string } }) {
                 <CardContent className="p-8 print:p-12">
                     {/* Header */}
                     <div className="text-center mb-8">
-                        <h1 className="text-xl font-bold mb-1">SMA NEGERI 1 BANDONGAN</h1>
+                        <h1 className="text-xl font-bold mb-1">{schoolSettings.name.toUpperCase()}</h1>
                         <h2 className="text-lg font-bold mb-1">RENCANA PELAKSANAAN PEMBELAJARAN (RPP)</h2>
                         <h3 className="text-base font-bold mb-4">PENDEKATAN DEEP LEARNING</h3>
                     </div>
 
                     {/* Header Information Table */}
                     <div className="mb-8 text-sm">
-                        <table className="w-full">
-                            <tbody>
-                                <tr>
-                                    <td className="py-1 w-1/4">Nama Guru</td>
-                                    <td className="py-1 w-1">:</td>
-                                    <td className="py-1">{rpp.guru?.nama || rpp.namaGuru || '...'}</td>
-                                </tr>
-                                <tr>
-                                    <td className="py-1">Mata Pelajaran</td>
-                                    <td className="py-1">:</td>
-                                    <td className="py-1">{rpp.mataPelajaran?.nama || '...'}</td>
-                                    <td className="py-1 pl-8">Materi</td>
-                                    <td className="py-1">:</td>
-                                    <td className="py-1">{rpp.materi}</td>
-                                </tr>
-                                <tr>
-                                    <td className="py-1">Fase/Kelas/Smt</td>
-                                    <td className="py-1">:</td>
-                                    <td className="py-1">{rpp.fase || '...'}</td>
-                                    <td className="py-1 pl-8">Alokasi Waktu</td>
-                                    <td className="py-1">:</td>
-                                    <td className="py-1">{rpp.alokasiWaktu} menit</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <p className="text-center mt-2 font-semibold">
+                        <div className="grid grid-cols-2 gap-x-8 gap-y-1">
+                            <div className="flex">
+                                <span className="w-32 shrink-0">Nama Guru</span>
+                                <span className="shrink-0">: </span>
+                                <span className="whitespace-nowrap">{rpp.guru?.nama || rpp.namaGuru || '...'}</span>
+                            </div>
+                            <div></div>
+
+                            <div className="flex">
+                                <span className="w-32 shrink-0">Mata Pelajaran</span>
+                                <span className="shrink-0">: </span>
+                                <span>{rpp.mataPelajaran?.nama || '...'}</span>
+                            </div>
+                            <div className="flex">
+                                <span className="w-24 shrink-0">Materi</span>
+                                <span className="shrink-0">: </span>
+                                <span>{rpp.materi}</span>
+                            </div>
+
+                            <div className="flex">
+                                <span className="w-32 shrink-0">Fase/Kelas/Smt</span>
+                                <span className="shrink-0">: </span>
+                                <span>{rpp.fase || '...'}</span>
+                            </div>
+                            <div className="flex">
+                                <span className="w-24 shrink-0">Alokasi Waktu</span>
+                                <span className="shrink-0">: </span>
+                                <span>{rpp.alokasiWaktu} menit</span>
+                            </div>
+                        </div>
+                        <p className="text-center mt-4 font-semibold">
                             TAHUN AJARAN {rpp.tahunAjaran || '2025/2026'}
                         </p>
                     </div>
@@ -117,14 +173,14 @@ export default function RppDetailPage({ params }: { params: { id: string } }) {
                         <div className="mb-3">
                             <h4 className="font-semibold text-sm mb-1">A. Peserta Didik:</h4>
                             <p className="text-sm text-justify whitespace-pre-wrap">
-                                {rpp.identifikasiPesertaDidik || 'Belum diisi'}
+                                {cleanMarkdown(rpp.identifikasiPesertaDidik) || 'Belum diisi'}
                             </p>
                         </div>
 
                         <div className="mb-3">
                             <h4 className="font-semibold text-sm mb-1">B. Materi Pembelajaran:</h4>
                             <p className="text-sm text-justify whitespace-pre-wrap">
-                                {rpp.identifikasiMateri || 'Belum diisi'}
+                                {cleanMarkdown(rpp.identifikasiMateri) || 'Belum diisi'}
                             </p>
                         </div>
 
@@ -148,13 +204,13 @@ export default function RppDetailPage({ params }: { params: { id: string } }) {
 
                         <div className="mb-3">
                             <h4 className="font-semibold text-sm mb-1">A. Capaian Pembelajaran:</h4>
-                            <p className="text-sm text-justify whitespace-pre-wrap">{rpp.capaianPembelajaran}</p>
+                            <p className="text-sm text-justify whitespace-pre-wrap">{cleanMarkdown(rpp.capaianPembelajaran)}</p>
                         </div>
 
                         {rpp.lintasDisiplinIlmu && (
                             <div className="mb-3">
                                 <h4 className="font-semibold text-sm mb-1">B. Lintas Disiplin Ilmu:</h4>
-                                <p className="text-sm text-justify whitespace-pre-wrap">{rpp.lintasDisiplinIlmu}</p>
+                                <p className="text-sm text-justify whitespace-pre-wrap">{cleanMarkdown(rpp.lintasDisiplinIlmu)}</p>
                             </div>
                         )}
 
@@ -162,41 +218,41 @@ export default function RppDetailPage({ params }: { params: { id: string } }) {
                             <h4 className="font-semibold text-sm mb-1">C. Tujuan Pembelajaran:</h4>
                             <ul className="text-sm list-decimal list-inside">
                                 {(rpp.tujuanPembelajaran as string[]).map((tujuan, idx) => (
-                                    <li key={idx} className="mb-1">{tujuan}</li>
+                                    <li key={idx} className="mb-1">{cleanMarkdown(tujuan)}</li>
                                 ))}
                             </ul>
                         </div>
 
                         <div className="mb-3">
                             <h4 className="font-semibold text-sm mb-1">D. Topik Pembelajaran:</h4>
-                            <p className="text-sm text-justify whitespace-pre-wrap">{rpp.topikPembelajaran}</p>
+                            <p className="text-sm text-justify whitespace-pre-wrap">{cleanMarkdown(rpp.topikPembelajaran)}</p>
                         </div>
 
                         {rpp.praktikPedagogik && (
                             <div className="mb-3">
                                 <h4 className="font-semibold text-sm mb-1">E. Praktik Pedagogik:</h4>
-                                <p className="text-sm text-justify whitespace-pre-wrap">{rpp.praktikPedagogik}</p>
+                                <p className="text-sm text-justify whitespace-pre-wrap">{cleanMarkdown(rpp.praktikPedagogik)}</p>
                             </div>
                         )}
 
                         {rpp.kemitraanPembelajaran && (
                             <div className="mb-3">
                                 <h4 className="font-semibold text-sm mb-1">F. Kemitraan Pembelajaran:</h4>
-                                <p className="text-sm text-justify whitespace-pre-wrap">{rpp.kemitraanPembelajaran}</p>
+                                <p className="text-sm text-justify whitespace-pre-wrap">{cleanMarkdown(rpp.kemitraanPembelajaran)}</p>
                             </div>
                         )}
 
                         {rpp.lingkunganPembelajaran && (
                             <div className="mb-3">
                                 <h4 className="font-semibold text-sm mb-1">G. Lingkungan Pembelajaran:</h4>
-                                <p className="text-sm text-justify whitespace-pre-wrap">{rpp.lingkunganPembelajaran}</p>
+                                <p className="text-sm text-justify whitespace-pre-wrap">{cleanMarkdown(rpp.lingkunganPembelajaran)}</p>
                             </div>
                         )}
 
                         {rpp.pemanfaatanDigital && (
                             <div className="mb-3">
                                 <h4 className="font-semibold text-sm mb-1">H. Pemanfaatan Digital:</h4>
-                                <p className="text-sm text-justify whitespace-pre-wrap">{rpp.pemanfaatanDigital}</p>
+                                <p className="text-sm text-justify whitespace-pre-wrap">{cleanMarkdown(rpp.pemanfaatanDigital)}</p>
                             </div>
                         )}
                     </section>
@@ -214,7 +270,7 @@ export default function RppDetailPage({ params }: { params: { id: string } }) {
                                     A. Awal ({(rpp.kegiatanAwal as any).prinsip?.join(', ') || ''})
                                 </h4>
                                 <p className="text-sm text-justify whitespace-pre-wrap">
-                                    {(rpp.kegiatanAwal as any).kegiatan}
+                                    {cleanMarkdown((rpp.kegiatanAwal as any).kegiatan)}
                                 </p>
                             </div>
                         )}
@@ -228,7 +284,7 @@ export default function RppDetailPage({ params }: { params: { id: string } }) {
                                         1. Memahami ({(rpp.kegiatanMemahami as any).prinsip?.join(', ') || ''})
                                     </h5>
                                     <p className="text-sm text-justify whitespace-pre-wrap">
-                                        {(rpp.kegiatanMemahami as any).kegiatan}
+                                        {cleanMarkdown((rpp.kegiatanMemahami as any).kegiatan)}
                                     </p>
                                 </div>
                             )}
@@ -239,7 +295,7 @@ export default function RppDetailPage({ params }: { params: { id: string } }) {
                                         2. Mengaplikasi ({(rpp.kegiatanMengaplikasi as any).prinsip?.join(', ') || ''})
                                     </h5>
                                     <p className="text-sm text-justify whitespace-pre-wrap">
-                                        {(rpp.kegiatanMengaplikasi as any).kegiatan}
+                                        {cleanMarkdown((rpp.kegiatanMengaplikasi as any).kegiatan)}
                                     </p>
                                 </div>
                             )}
@@ -250,7 +306,7 @@ export default function RppDetailPage({ params }: { params: { id: string } }) {
                                         3. Merefleksi ({(rpp.kegiatanMerefleksi as any).prinsip?.join(', ') || ''})
                                     </h5>
                                     <p className="text-sm text-justify whitespace-pre-wrap">
-                                        {(rpp.kegiatanMerefleksi as any).kegiatan}
+                                        {cleanMarkdown((rpp.kegiatanMerefleksi as any).kegiatan)}
                                     </p>
                                 </div>
                             )}
@@ -262,7 +318,7 @@ export default function RppDetailPage({ params }: { params: { id: string } }) {
                                     C. Penutup ({(rpp.kegiatanPenutup as any).prinsip?.join(', ') || ''})
                                 </h4>
                                 <p className="text-sm text-justify whitespace-pre-wrap">
-                                    {(rpp.kegiatanPenutup as any).kegiatan}
+                                    {cleanMarkdown((rpp.kegiatanPenutup as any).kegiatan)}
                                 </p>
                             </div>
                         )}
@@ -275,21 +331,21 @@ export default function RppDetailPage({ params }: { params: { id: string } }) {
                         {rpp.asesmenAwal && (
                             <div className="mb-3">
                                 <h4 className="font-semibold text-sm mb-1">A. Asesmen pada Awal Pembelajaran</h4>
-                                <p className="text-sm text-justify whitespace-pre-wrap">{rpp.asesmenAwal}</p>
+                                <p className="text-sm text-justify whitespace-pre-wrap">{cleanMarkdown(rpp.asesmenAwal)}</p>
                             </div>
                         )}
 
                         {rpp.asesmenProses && (
                             <div className="mb-3">
                                 <h4 className="font-semibold text-sm mb-1">B. Asesmen pada Proses Pembelajaran</h4>
-                                <p className="text-sm text-justify whitespace-pre-wrap">{rpp.asesmenProses}</p>
+                                <p className="text-sm text-justify whitespace-pre-wrap">{cleanMarkdown(rpp.asesmenProses)}</p>
                             </div>
                         )}
 
                         {rpp.asesmenAkhir && (
                             <div className="mb-3">
                                 <h4 className="font-semibold text-sm mb-1">C. Asesmen pada Akhir Pembelajaran</h4>
-                                <p className="text-sm text-justify whitespace-pre-wrap">{rpp.asesmenAkhir}</p>
+                                <p className="text-sm text-justify whitespace-pre-wrap">{cleanMarkdown(rpp.asesmenAkhir)}</p>
                             </div>
                         )}
                     </section>
@@ -300,11 +356,11 @@ export default function RppDetailPage({ params }: { params: { id: string } }) {
                             <div className="text-center">
                                 <p className="text-sm">Mengetahui,</p>
                                 <p className="text-sm font-semibold mb-16">Kepala Sekolah</p>
-                                <p className="text-sm font-semibold">_______________________</p>
-                                <p className="text-sm">NIP. </p>
+                                <p className="text-sm font-semibold">{schoolSettings.principalName || '_______________________'}</p>
+                                <p className="text-sm">NIP. {schoolSettings.principalNip}</p>
                             </div>
                             <div className="text-center">
-                                <p className="text-sm">Bandongan, _______________</p>
+                                <p className="text-sm">{schoolSettings.location}, _______________</p>
                                 <p className="text-sm font-semibold mb-16">Guru,</p>
                                 <p className="text-sm font-semibold">{rpp.guru?.nama || '___________________'}</p>
                                 <p className="text-sm">NIP. {rpp.guru?.nip || ''}</p>
@@ -317,12 +373,43 @@ export default function RppDetailPage({ params }: { params: { id: string } }) {
             {/* Print styles */}
             <style jsx global>{`
                 @media print {
-                    body {
+                    /* Hide navigation elements and images */
+                    aside,
+                    header,
+                    nav,
+                    img,
+                    svg,
+                    [class*="MobileBottomNav"],
+                    [class*="bottom-nav"],
+                    .print\\:hidden {
+                        display: none !important;
+                    }
+                    
+                    /* Reset body and html for print */
+                    html, body {
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        background: white !important;
                         print-color-adjust: exact;
                         -webkit-print-color-adjust: exact;
                     }
-                    .print\\:hidden {
-                        display: none !important;
+                    
+                    /* Make main content full width */
+                    main,
+                    main > div,
+                    [class*="flex-1"],
+                    [class*="container"] {
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        width: 100% !important;
+                        max-width: none !important;
+                        padding-left: 0 !important;
+                    }
+                    
+                    /* Clean up card styles and remove all shadows */
+                    * {
+                        box-shadow: none !important;
+                        text-shadow: none !important;
                     }
                     .print\\:shadow-none {
                         box-shadow: none !important;
@@ -330,9 +417,41 @@ export default function RppDetailPage({ params }: { params: { id: string } }) {
                     .print\\:border-0 {
                         border: 0 !important;
                     }
+                    
+                    /* Page settings with proper margins */
                     @page {
-                        size: A4;
-                        margin: 2cm;
+                        size: ${paperSize === 'F4' ? '215.9mm 330.2mm' : 'A4'};
+                        margin: 1.2cm 1cm;
+                    }
+                    
+                    /* Content padding for better readability */
+                    [data-print-content] {
+                        padding: 0 !important;
+                    }
+                    
+                    /* Better typography for print */
+                    p, li, td {
+                        font-size: 11pt !important;
+                        line-height: 1.6 !important;
+                        text-align: justify !important;
+                    }
+                    
+                    /* Proper list styling */
+                    ul, ol {
+                        padding-left: 1.5em !important;
+                        margin-left: 0 !important;
+                    }
+                    
+                    li {
+                        padding-left: 0.5em !important;
+                    }
+                    
+                    h1, h2, h3, h4, h5, h6 {
+                        page-break-after: avoid;
+                    }
+                    
+                    section {
+                        page-break-inside: avoid;
                     }
                 }
             `}</style>

@@ -17,6 +17,12 @@ export class SettingsController {
         return this.settingsService.getAllSettings();
     }
 
+    @Get('school')
+    @Roles(Role.ADMIN, Role.GURU, Role.SISWA, Role.PETUGAS_ABSENSI)
+    getSchoolSettings() {
+        return this.settingsService.getSchoolSettings();
+    }
+
     @Get(':key')
     @Roles(Role.ADMIN, Role.GURU, Role.PETUGAS_ABSENSI)
     getSetting(@Param('key') key: string) {
@@ -27,5 +33,11 @@ export class SettingsController {
     @Roles(Role.ADMIN)
     updateSetting(@Body() dto: UpdateSettingsDto) {
         return this.settingsService.updateSetting(dto);
+    }
+
+    @Put('school')
+    @Roles(Role.ADMIN)
+    updateSchoolSettings(@Body() data: Record<string, string>) {
+        return this.settingsService.updateSchoolSettings(data);
     }
 }

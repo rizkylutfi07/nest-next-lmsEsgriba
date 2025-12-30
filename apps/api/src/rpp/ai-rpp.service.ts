@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { openai } from '@ai-sdk/openai';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { generateText } from 'ai';
 import { ConfigService } from '@nestjs/config';
 
@@ -60,16 +60,16 @@ export class AiRppService {
     private readonly apiKey: string;
 
     constructor(private configService: ConfigService) {
-        const apiKey = this.configService.get<string>('OPENAI_API_KEY');
+        const apiKey = this.configService.get<string>('GOOGLE_GENERATIVE_AI_API_KEY');
         this.apiKey = apiKey || '';
         if (!this.apiKey) {
-            this.logger.warn('OPENAI_API_KEY not configured. AI RPP generation will not work.');
+            this.logger.warn('GOOGLE_GENERATIVE_AI_API_KEY not configured. AI RPP generation will not work.');
         }
     }
 
     async generateRpp(input: GenerateRppInput): Promise<GeneratedRppContent> {
         if (!this.apiKey) {
-            throw new Error('OpenAI API key not configured. Please set OPENAI_API_KEY in environment variables.');
+            throw new Error('Google Gemini API key not configured. Please set GOOGLE_GENERATIVE_AI_API_KEY in environment variables.');
         }
 
         this.logger.log(`Generating RPP for: ${input.mataPelajaran} - ${input.materi}`);
@@ -104,6 +104,7 @@ INSTRUKSI PENTING:
 3. Gunakan prinsip pembelajaran: Mindful (berkesadaran), Meaningful (bermakna), Joyful (menyenangkan)
 4. Kegiatan harus konkret, aplikatif, dan student-centered
 5. Asesmen harus autentik dan holistik
+6. JANGAN gunakan format markdown seperti **, *, #, atau simbol lainnya. Tulis teks polos saja.
 
 Format output dalam JSON dengan struktur:
 {
@@ -145,21 +146,63 @@ Format output dalam JSON dengan struktur:
 PASTIKAN output adalah valid JSON yang dapat di-parse.`;
 
         try {
+            // Create a Google AI instance with the API key
+            const google = createGoogleGenerativeAI({
+                apiKey: this.apiKey,
+            });
+
             const { text } = await generateText({
-                model: openai('gpt-4-turbo'),
+                model: google('gemini-2.5-flash'),
                 prompt,
                 temperature: 0.7,
             });
 
             this.logger.log('AI generation completed');
 
-            // Parse JSON response
-            const jsonMatch = text.match(/\{[\s\S]*\}/);
-            if (!jsonMatch) {
+            // Parse JSON response - extract the first valid JSON object
+            let jsonString = '';
+            let braceCount = 0;
+            let inString = false;
+            let escapeNext = false;
+            let started = false;
+
+            for (const char of text) {
+                if (escapeNext) {
+                    if (started) jsonString += char;
+                    escapeNext = false;
+                    continue;
+                }
+
+                if (char === '\\' && inString) {
+                    if (started) jsonString += char;
+                    escapeNext = true;
+                    continue;
+                }
+
+                if (char === '"' && !escapeNext) {
+                    inString = !inString;
+                }
+
+                if (!inString) {
+                    if (char === '{') {
+                        if (!started) started = true;
+                        braceCount++;
+                    } else if (char === '}') {
+                        braceCount--;
+                    }
+                }
+
+                if (started) {
+                    jsonString += char;
+                    if (braceCount === 0) break;
+                }
+            }
+
+            if (!jsonString) {
                 throw new Error('Failed to extract JSON from AI response');
             }
 
-            const generated: GeneratedRppContent = JSON.parse(jsonMatch[0]);
+            const generated: GeneratedRppContent = JSON.parse(jsonString);
 
             // Validate required fields
             if (!generated.capaianPembelajaran || !generated.tujuanPembelajaran) {

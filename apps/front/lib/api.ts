@@ -313,3 +313,15 @@ export const rppApi = {
             method: 'POST',
         }),
 };
+
+// Settings API
+export const settingsApi = {
+    getSchoolSettings: () =>
+        fetchApi<Record<string, string>>('/settings/school'),
+
+    updateSchoolSettings: (data: Record<string, string>) =>
+        fetchApi<Record<string, string>>('/settings/school', {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        }),
+};

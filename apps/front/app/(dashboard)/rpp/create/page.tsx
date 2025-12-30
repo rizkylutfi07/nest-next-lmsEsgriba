@@ -64,7 +64,7 @@ export default function CreateRppPage() {
 
     const fetchMataPelajaran = async () => {
         try {
-            const response = await mataPelajaranApi.getAll({ limit: 100 });
+            const response: any = await mataPelajaranApi.getAll({ limit: 100 });
             setMataPelajaranList(response.data || []);
         } catch (error) {
             console.error('Failed to fetch mata pelajaran:', error);
@@ -73,7 +73,7 @@ export default function CreateRppPage() {
 
     const fetchKelas = async () => {
         try {
-            const response = await kelasApi.getAll({ limit: 100 });
+            const response: any = await kelasApi.getAll({ limit: 100 });
             setKelasList(response.data || []);
         } catch (error) {
             console.error('Failed to fetch kelas:', error);
@@ -275,6 +275,61 @@ export default function CreateRppPage() {
                                 ))}
                             </div>
                         </div>
+
+                        {/* Dimensi Profil Lulusan - moved from Step 2 */}
+                        <div>
+                            <Label>Dimensi Profil Lulusan *</Label>
+                            <p className="text-sm text-gray-600 mb-2">Pilih minimal 1 dimensi profil lulusan (diperlukan untuk AI generation)</p>
+                            <div className="space-y-2">
+                                {Object.entries(DimensiProfilLulusanLabels).map(([key, label]) => (
+                                    <div key={key} className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id={`dpl-step1-${key}`}
+                                            checked={(formData.dimensiProfilLulusan || []).includes(key)}
+                                            onCheckedChange={(checked) => {
+                                                const current = formData.dimensiProfilLulusan || [];
+                                                updateFormData(
+                                                    'dimensiProfilLulusan',
+                                                    checked
+                                                        ? [...current, key]
+                                                        : current.filter(d => d !== key)
+                                                );
+                                            }}
+                                        />
+                                        <Label htmlFor={`dpl-step1-${key}`} className="text-sm font-normal">
+                                            {label}
+                                        </Label>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* AI Generator Button */}
+                        <div className="pt-6 border-t">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="w-full"
+                                onClick={handleGenerateWithAI}
+                                disabled={isGenerating || !formData.mataPelajaranId || !formData.materi}
+                            >
+                                {isGenerating ? (
+                                    <>
+                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                        Generating dengan AI...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Sparkles className="h-4 w-4 mr-2" />
+                                        ✨ Generate RPP dengan AI
+                                    </>
+                                )}
+                            </Button>
+                            <p className="text-xs text-gray-500 mt-2 text-center">
+                                AI akan otomatis mengisi semua field berdasarkan informasi di atas.
+                                Anda masih bisa mengedit hasilnya sebelum menyimpan.
+                            </p>
+                        </div>
                     </div>
                 );
 
@@ -301,33 +356,6 @@ export default function CreateRppPage() {
                                 placeholder="Tuliskan analisis materi pelajaran seperti jenis pengetahuan yang akan dicapai, relevansi dengan kehidupan nyata, tingkat kesulitan..."
                                 rows={4}
                             />
-                        </div>
-
-                        <div>
-                            <Label>C. Dimensi Profil Lulusan</Label>
-                            <p className="text-sm text-gray-600 mb-2">Pilih dimensi profil lulusan yang akan dicapai dalam pembelajaran</p>
-                            <div className="space-y-2">
-                                {Object.entries(DimensiProfilLulusanLabels).map(([key, label]) => (
-                                    <div key={key} className="flex items-center space-x-2">
-                                        <Checkbox
-                                            id={`dpl-${key}`}
-                                            checked={(formData.dimensiProfilLulusan || []).includes(key)}
-                                            onCheckedChange={(checked) => {
-                                                const current = formData.dimensiProfilLulusan || [];
-                                                updateFormData(
-                                                    'dimensiProfilLulusan',
-                                                    checked
-                                                        ? [...current, key]
-                                                        : current.filter(d => d !== key)
-                                                );
-                                            }}
-                                        />
-                                        <Label htmlFor={`dpl-${key}`} className="text-sm font-normal">
-                                            {label}
-                                        </Label>
-                                    </div>
-                                ))}
-                            </div>
                         </div>
                     </div>
                 );
