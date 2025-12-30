@@ -38,8 +38,8 @@ import { useRole, Role, NavItem, NavGroup } from "./role-context";
 
 
 const accessByRole: Record<Role, string[]> = {
-  ADMIN: ["/", "/profile", "/change-password", "/users", "/siswa", "/kenaikan-kelas", "/guru", "/kelas", "/jurusan", "/tahun-ajaran", "/mata-pelajaran", "/jadwal-pelajaran", "/materi", "/materi-management", "/tugas", "/tugas-management", "/forum", "/attendance", "/database", "/cbt", "/bank-soal", "/paket-soal", "/ujian", "/penilaian", "/laporan", "/keuangan", "/keamanan", "/settings", "/pengumuman"],
-  GURU: ["/", "/profile", "/change-password", "/kelas", "/mata-pelajaran", "/jadwal-pelajaran", "/materi", "/materi-management", "/tugas", "/tugas-management", "/forum", "/pengumuman", "/attendance", "/cbt", "/bank-soal", "/paket-soal", "/ujian", "/penilaian", "/laporan"],
+  ADMIN: ["/", "/profile", "/change-password", "/users", "/siswa", "/kenaikan-kelas", "/guru", "/kelas", "/jurusan", "/tahun-ajaran", "/mata-pelajaran", "/jadwal-pelajaran", "/rpp", "/materi", "/materi-management", "/tugas", "/tugas-management", "/forum", "/attendance", "/database", "/cbt", "/bank-soal", "/paket-soal", "/ujian", "/penilaian", "/laporan", "/keuangan", "/keamanan", "/settings", "/pengumuman"],
+  GURU: ["/", "/profile", "/change-password", "/kelas", "/mata-pelajaran", "/jadwal-pelajaran", "/rpp", "/materi", "/materi-management", "/tugas", "/tugas-management", "/forum", "/pengumuman", "/attendance", "/cbt", "/bank-soal", "/paket-soal", "/ujian", "/penilaian", "/laporan"],
   SISWA: ["/", "/profile", "/change-password", "/jadwal-pelajaran", "/kehadiran-saya", "/materi", "/tugas", "/forum", "/pengumuman", "/cbt", "/ujian-saya", "/keamanan"],
   PETUGAS_ABSENSI: ["/", "/profile", "/change-password", "/attendance"],
 };

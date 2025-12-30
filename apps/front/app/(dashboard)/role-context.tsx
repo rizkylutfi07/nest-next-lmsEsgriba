@@ -18,6 +18,7 @@ import {
   Package,
   Settings,
   MessageSquare,
+  FileText,
 } from "lucide-react";
 
 export type Role = "ADMIN" | "GURU" | "SISWA" | "PETUGAS_ABSENSI";
@@ -102,6 +103,7 @@ const navByRole: Record<Role, NavGroup[]> = {
       label: "LMS",
       collapsible: true,
       items: [
+        { label: "RPP Deep Learning", icon: FileText, href: "/rpp", note: "Rencana pembelajaran" },
         { label: "Kelola Materi", icon: BookOpen, href: "/materi-management", note: "Upload & edit materi" },
         { label: "Kelola Tugas", icon: ClipboardList, href: "/tugas-management", note: "Buat & nilai tugas" },
         { label: "Forum Diskusi", icon: Activity, href: "/forum", note: "Monitor diskusi" },
@@ -155,6 +157,7 @@ const navByRole: Record<Role, NavGroup[]> = {
       label: "LMS",
       collapsible: true,
       items: [
+        { label: "RPP Deep Learning", icon: FileText, href: "/rpp", note: "Rencana pembelajaran" },
         { label: "Kelola Materi", icon: BookOpen, href: "/materi-management", note: "Upload materi" },
         { label: "Kelola Tugas", icon: ClipboardList, href: "/tugas-management", note: "Buat & nilai tugas" },
         { label: "Forum Diskusi", icon: Activity, href: "/forum", note: "Jawab & moderasi" },

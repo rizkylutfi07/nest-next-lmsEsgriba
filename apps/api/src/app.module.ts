@@ -30,6 +30,7 @@ import { ForumModule } from './forum/forum.module';
 import { NotifikasiModule } from './notifikasi/notifikasi.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { PengumumanModule } from './pengumuman/pengumuman.module';
+import { RppModule } from './rpp/rpp.module';
 
 @Module({
   imports: [
@@ -69,6 +70,7 @@ import { PengumumanModule } from './pengumuman/pengumuman.module';
     NotifikasiModule,
     AnalyticsModule,
     PengumumanModule,
+    RppModule,
   ],
   controllers: [AppController],
   providers: [AppService],

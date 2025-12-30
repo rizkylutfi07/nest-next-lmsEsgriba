@@ -263,3 +263,53 @@ export const analyticsApi = {
     getGuruDashboard: () =>
         fetchApi('/analytics/guru'),
 };
+
+// RPP API
+export const rppApi = {
+    getAll: (params?: {
+        mataPelajaranId?: string;
+        kelasId?: string;
+        guruId?: string;
+        status?: string;
+        search?: string;
+        page?: number;
+        limit?: number;
+    }) =>
+        fetchApi(`/rpp?${new URLSearchParams(params as any).toString()}`),
+
+    getOne: (id: string) =>
+        fetchApi(`/rpp/${id}`),
+
+    getMyRpp: (params?: { search?: string; page?: number; limit?: number }) =>
+        fetchApi(`/rpp/my?${new URLSearchParams(params as any).toString()}`),
+
+    getStats: () =>
+        fetchApi('/rpp/stats'),
+
+    create: (data: any) =>
+        fetchApi('/rpp', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
+
+    update: (id: string, data: any) =>
+        fetchApi(`/rpp/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        }),
+
+    delete: (id: string) =>
+        fetchApi(`/rpp/${id}`, {
+            method: 'DELETE',
+        }),
+
+    publish: (id: string) =>
+        fetchApi(`/rpp/${id}/publish`, {
+            method: 'POST',
+        }),
+
+    duplicate: (id: string) =>
+        fetchApi(`/rpp/${id}/duplicate`, {
+            method: 'POST',
+        }),
+};
