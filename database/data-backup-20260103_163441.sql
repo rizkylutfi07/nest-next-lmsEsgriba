@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict yEhuqqQPHkLNcHltRoCYUfJ29gAECEfOOPHk0iUY9fs6dsFRbo5Qr8o5Jtr9qZD
+\restrict pNPDmsxY4qcb7geGjiVmEae23a75IPgWq3856i2WtSIHKDwHKAICHNrQg7ovWSa
 
 -- Dumped from database version 17.7
 -- Dumped by pg_dump version 17.7
@@ -19,22 +19,241 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
---
--- Name: public; Type: SCHEMA; Schema: -; Owner: postgres
---
-
--- *not* creating schema, since initdb creates it
-
-
-ALTER SCHEMA public OWNER TO postgres;
-
---
--- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: postgres
---
-
-COMMENT ON SCHEMA public IS '';
-
-
+ALTER TABLE IF EXISTS ONLY public."_GuruMataPelajaran" DROP CONSTRAINT IF EXISTS "_GuruMataPelajaran_B_fkey";
+ALTER TABLE IF EXISTS ONLY public."_GuruMataPelajaran" DROP CONSTRAINT IF EXISTS "_GuruMataPelajaran_A_fkey";
+ALTER TABLE IF EXISTS ONLY public."Ujian" DROP CONSTRAINT IF EXISTS "Ujian_paketSoalId_fkey";
+ALTER TABLE IF EXISTS ONLY public."Ujian" DROP CONSTRAINT IF EXISTS "Ujian_mataPelajaranId_fkey";
+ALTER TABLE IF EXISTS ONLY public."Ujian" DROP CONSTRAINT IF EXISTS "Ujian_kelasId_fkey";
+ALTER TABLE IF EXISTS ONLY public."Ujian" DROP CONSTRAINT IF EXISTS "Ujian_guruId_fkey";
+ALTER TABLE IF EXISTS ONLY public."UjianSoal" DROP CONSTRAINT IF EXISTS "UjianSoal_ujianId_fkey";
+ALTER TABLE IF EXISTS ONLY public."UjianSoal" DROP CONSTRAINT IF EXISTS "UjianSoal_bankSoalId_fkey";
+ALTER TABLE IF EXISTS ONLY public."UjianSiswa" DROP CONSTRAINT IF EXISTS "UjianSiswa_ujianId_fkey";
+ALTER TABLE IF EXISTS ONLY public."UjianSiswa" DROP CONSTRAINT IF EXISTS "UjianSiswa_siswaId_fkey";
+ALTER TABLE IF EXISTS ONLY public."UjianKelas" DROP CONSTRAINT IF EXISTS "UjianKelas_ujianId_fkey";
+ALTER TABLE IF EXISTS ONLY public."UjianKelas" DROP CONSTRAINT IF EXISTS "UjianKelas_kelasId_fkey";
+ALTER TABLE IF EXISTS ONLY public."Tugas" DROP CONSTRAINT IF EXISTS "Tugas_mataPelajaranId_fkey";
+ALTER TABLE IF EXISTS ONLY public."Tugas" DROP CONSTRAINT IF EXISTS "Tugas_kelasId_fkey";
+ALTER TABLE IF EXISTS ONLY public."Tugas" DROP CONSTRAINT IF EXISTS "Tugas_guruId_fkey";
+ALTER TABLE IF EXISTS ONLY public."TugasSiswa" DROP CONSTRAINT IF EXISTS "TugasSiswa_tugasId_fkey";
+ALTER TABLE IF EXISTS ONLY public."TugasSiswa" DROP CONSTRAINT IF EXISTS "TugasSiswa_siswaId_fkey";
+ALTER TABLE IF EXISTS ONLY public."TugasSiswaFile" DROP CONSTRAINT IF EXISTS "TugasSiswaFile_tugasSiswaId_fkey";
+ALTER TABLE IF EXISTS ONLY public."TugasAttachment" DROP CONSTRAINT IF EXISTS "TugasAttachment_tugasId_fkey";
+ALTER TABLE IF EXISTS ONLY public."Siswa" DROP CONSTRAINT IF EXISTS "Siswa_userId_fkey";
+ALTER TABLE IF EXISTS ONLY public."Siswa" DROP CONSTRAINT IF EXISTS "Siswa_tahunAjaranId_fkey";
+ALTER TABLE IF EXISTS ONLY public."Siswa" DROP CONSTRAINT IF EXISTS "Siswa_kelasId_fkey";
+ALTER TABLE IF EXISTS ONLY public."SiswaKelasHistory" DROP CONSTRAINT IF EXISTS "SiswaKelasHistory_tahunAjaranId_fkey";
+ALTER TABLE IF EXISTS ONLY public."SiswaKelasHistory" DROP CONSTRAINT IF EXISTS "SiswaKelasHistory_siswaId_fkey";
+ALTER TABLE IF EXISTS ONLY public."SiswaKelasHistory" DROP CONSTRAINT IF EXISTS "SiswaKelasHistory_kelasId_fkey";
+ALTER TABLE IF EXISTS ONLY public."RPP" DROP CONSTRAINT IF EXISTS "RPP_mataPelajaranId_fkey";
+ALTER TABLE IF EXISTS ONLY public."RPP" DROP CONSTRAINT IF EXISTS "RPP_guruId_fkey";
+ALTER TABLE IF EXISTS ONLY public."RPPKelas" DROP CONSTRAINT IF EXISTS "RPPKelas_rppId_fkey";
+ALTER TABLE IF EXISTS ONLY public."RPPKelas" DROP CONSTRAINT IF EXISTS "RPPKelas_kelasId_fkey";
+ALTER TABLE IF EXISTS ONLY public."ProgressSiswa" DROP CONSTRAINT IF EXISTS "ProgressSiswa_siswaId_fkey";
+ALTER TABLE IF EXISTS ONLY public."ProgressSiswa" DROP CONSTRAINT IF EXISTS "ProgressSiswa_mataPelajaranId_fkey";
+ALTER TABLE IF EXISTS ONLY public."Pengumuman" DROP CONSTRAINT IF EXISTS "Pengumuman_authorId_fkey";
+ALTER TABLE IF EXISTS ONLY public."PaketSoal" DROP CONSTRAINT IF EXISTS "PaketSoal_mataPelajaranId_fkey";
+ALTER TABLE IF EXISTS ONLY public."PaketSoal" DROP CONSTRAINT IF EXISTS "PaketSoal_guruId_fkey";
+ALTER TABLE IF EXISTS ONLY public."PaketSoalKelas" DROP CONSTRAINT IF EXISTS "PaketSoalKelas_paketSoalId_fkey";
+ALTER TABLE IF EXISTS ONLY public."PaketSoalKelas" DROP CONSTRAINT IF EXISTS "PaketSoalKelas_kelasId_fkey";
+ALTER TABLE IF EXISTS ONLY public."PaketSoalItem" DROP CONSTRAINT IF EXISTS "PaketSoalItem_paketSoalId_fkey";
+ALTER TABLE IF EXISTS ONLY public."PaketSoalItem" DROP CONSTRAINT IF EXISTS "PaketSoalItem_bankSoalId_fkey";
+ALTER TABLE IF EXISTS ONLY public."Materi" DROP CONSTRAINT IF EXISTS "Materi_mataPelajaranId_fkey";
+ALTER TABLE IF EXISTS ONLY public."Materi" DROP CONSTRAINT IF EXISTS "Materi_kelasId_fkey";
+ALTER TABLE IF EXISTS ONLY public."Materi" DROP CONSTRAINT IF EXISTS "Materi_guruId_fkey";
+ALTER TABLE IF EXISTS ONLY public."MateriBookmark" DROP CONSTRAINT IF EXISTS "MateriBookmark_siswaId_fkey";
+ALTER TABLE IF EXISTS ONLY public."MateriBookmark" DROP CONSTRAINT IF EXISTS "MateriBookmark_materiId_fkey";
+ALTER TABLE IF EXISTS ONLY public."MateriAttachment" DROP CONSTRAINT IF EXISTS "MateriAttachment_materiId_fkey";
+ALTER TABLE IF EXISTS ONLY public."Kelas" DROP CONSTRAINT IF EXISTS "Kelas_waliKelasId_fkey";
+ALTER TABLE IF EXISTS ONLY public."Kelas" DROP CONSTRAINT IF EXISTS "Kelas_jurusanId_fkey";
+ALTER TABLE IF EXISTS ONLY public."JadwalPelajaran" DROP CONSTRAINT IF EXISTS "JadwalPelajaran_mataPelajaranId_fkey";
+ALTER TABLE IF EXISTS ONLY public."JadwalPelajaran" DROP CONSTRAINT IF EXISTS "JadwalPelajaran_kelasId_fkey";
+ALTER TABLE IF EXISTS ONLY public."JadwalPelajaran" DROP CONSTRAINT IF EXISTS "JadwalPelajaran_guruId_fkey";
+ALTER TABLE IF EXISTS ONLY public."Guru" DROP CONSTRAINT IF EXISTS "Guru_userId_fkey";
+ALTER TABLE IF EXISTS ONLY public."ForumThread" DROP CONSTRAINT IF EXISTS "ForumThread_kategoriId_fkey";
+ALTER TABLE IF EXISTS ONLY public."ForumReaction" DROP CONSTRAINT IF EXISTS "ForumReaction_postId_fkey";
+ALTER TABLE IF EXISTS ONLY public."ForumPost" DROP CONSTRAINT IF EXISTS "ForumPost_threadId_fkey";
+ALTER TABLE IF EXISTS ONLY public."ForumPost" DROP CONSTRAINT IF EXISTS "ForumPost_parentId_fkey";
+ALTER TABLE IF EXISTS ONLY public."ForumKategori" DROP CONSTRAINT IF EXISTS "ForumKategori_mataPelajaranId_fkey";
+ALTER TABLE IF EXISTS ONLY public."ForumKategori" DROP CONSTRAINT IF EXISTS "ForumKategori_kelasId_fkey";
+ALTER TABLE IF EXISTS ONLY public."BankSoal" DROP CONSTRAINT IF EXISTS "BankSoal_mataPelajaranId_fkey";
+ALTER TABLE IF EXISTS ONLY public."BankSoal" DROP CONSTRAINT IF EXISTS "BankSoal_kelasId_fkey";
+ALTER TABLE IF EXISTS ONLY public."BankSoal" DROP CONSTRAINT IF EXISTS "BankSoal_guruId_fkey";
+ALTER TABLE IF EXISTS ONLY public."Attendance" DROP CONSTRAINT IF EXISTS "Attendance_siswaId_fkey";
+DROP INDEX IF EXISTS public."_GuruMataPelajaran_B_index";
+DROP INDEX IF EXISTS public."User_email_key";
+DROP INDEX IF EXISTS public."Ujian_tanggalMulai_idx";
+DROP INDEX IF EXISTS public."Ujian_mataPelajaranId_idx";
+DROP INDEX IF EXISTS public."Ujian_kode_key";
+DROP INDEX IF EXISTS public."Ujian_kelasId_idx";
+DROP INDEX IF EXISTS public."Ujian_guruId_idx";
+DROP INDEX IF EXISTS public."UjianSoal_ujianId_idx";
+DROP INDEX IF EXISTS public."UjianSoal_ujianId_bankSoalId_key";
+DROP INDEX IF EXISTS public."UjianSiswa_ujianId_siswaId_key";
+DROP INDEX IF EXISTS public."UjianSiswa_ujianId_idx";
+DROP INDEX IF EXISTS public."UjianSiswa_tokenAkses_key";
+DROP INDEX IF EXISTS public."UjianSiswa_siswaId_idx";
+DROP INDEX IF EXISTS public."UjianKelas_ujianId_kelasId_key";
+DROP INDEX IF EXISTS public."UjianKelas_ujianId_idx";
+DROP INDEX IF EXISTS public."UjianKelas_kelasId_idx";
+DROP INDEX IF EXISTS public."Tugas_mataPelajaranId_idx";
+DROP INDEX IF EXISTS public."Tugas_kelasId_idx";
+DROP INDEX IF EXISTS public."Tugas_guruId_idx";
+DROP INDEX IF EXISTS public."Tugas_deadline_idx";
+DROP INDEX IF EXISTS public."TugasSiswa_tugasId_siswaId_key";
+DROP INDEX IF EXISTS public."TugasSiswa_tugasId_idx";
+DROP INDEX IF EXISTS public."TugasSiswa_status_idx";
+DROP INDEX IF EXISTS public."TugasSiswa_siswaId_idx";
+DROP INDEX IF EXISTS public."TugasSiswaFile_tugasSiswaId_idx";
+DROP INDEX IF EXISTS public."TugasAttachment_tugasId_idx";
+DROP INDEX IF EXISTS public."TahunAjaran_tahun_key";
+DROP INDEX IF EXISTS public."Siswa_userId_key";
+DROP INDEX IF EXISTS public."Siswa_nisn_key";
+DROP INDEX IF EXISTS public."SiswaKelasHistory_siswaId_idx";
+DROP INDEX IF EXISTS public."SiswaKelasHistory_kelasId_tahunAjaranId_idx";
+DROP INDEX IF EXISTS public."Settings_key_key";
+DROP INDEX IF EXISTS public."RPP_status_idx";
+DROP INDEX IF EXISTS public."RPP_mataPelajaranId_idx";
+DROP INDEX IF EXISTS public."RPP_kode_key";
+DROP INDEX IF EXISTS public."RPP_isPublished_idx";
+DROP INDEX IF EXISTS public."RPP_guruId_idx";
+DROP INDEX IF EXISTS public."RPPKelas_rppId_kelasId_key";
+DROP INDEX IF EXISTS public."RPPKelas_rppId_idx";
+DROP INDEX IF EXISTS public."RPPKelas_kelasId_idx";
+DROP INDEX IF EXISTS public."ProgressSiswa_siswaId_mataPelajaranId_key";
+DROP INDEX IF EXISTS public."ProgressSiswa_siswaId_idx";
+DROP INDEX IF EXISTS public."ProgressSiswa_mataPelajaranId_idx";
+DROP INDEX IF EXISTS public."PaketSoal_mataPelajaranId_idx";
+DROP INDEX IF EXISTS public."PaketSoal_kode_key";
+DROP INDEX IF EXISTS public."PaketSoal_guruId_idx";
+DROP INDEX IF EXISTS public."PaketSoalKelas_paketSoalId_kelasId_key";
+DROP INDEX IF EXISTS public."PaketSoalKelas_paketSoalId_idx";
+DROP INDEX IF EXISTS public."PaketSoalKelas_kelasId_idx";
+DROP INDEX IF EXISTS public."PaketSoalItem_paketSoalId_idx";
+DROP INDEX IF EXISTS public."PaketSoalItem_paketSoalId_bankSoalId_key";
+DROP INDEX IF EXISTS public."Notifikasi_userId_idx";
+DROP INDEX IF EXISTS public."Notifikasi_isRead_idx";
+DROP INDEX IF EXISTS public."Notifikasi_createdAt_idx";
+DROP INDEX IF EXISTS public."Materi_mataPelajaranId_idx";
+DROP INDEX IF EXISTS public."Materi_kelasId_idx";
+DROP INDEX IF EXISTS public."Materi_isPublished_idx";
+DROP INDEX IF EXISTS public."Materi_guruId_idx";
+DROP INDEX IF EXISTS public."MateriBookmark_siswaId_idx";
+DROP INDEX IF EXISTS public."MateriBookmark_materiId_siswaId_key";
+DROP INDEX IF EXISTS public."MateriAttachment_materiId_idx";
+DROP INDEX IF EXISTS public."MataPelajaran_kode_key";
+DROP INDEX IF EXISTS public."Jurusan_kode_key";
+DROP INDEX IF EXISTS public."JadwalPelajaran_kelasId_idx";
+DROP INDEX IF EXISTS public."JadwalPelajaran_hari_idx";
+DROP INDEX IF EXISTS public."Guru_userId_key";
+DROP INDEX IF EXISTS public."Guru_nip_key";
+DROP INDEX IF EXISTS public."Guru_email_key";
+DROP INDEX IF EXISTS public."ForumThread_kategoriId_idx";
+DROP INDEX IF EXISTS public."ForumThread_createdAt_idx";
+DROP INDEX IF EXISTS public."ForumThread_authorId_idx";
+DROP INDEX IF EXISTS public."ForumReaction_userId_idx";
+DROP INDEX IF EXISTS public."ForumReaction_postId_userId_tipe_key";
+DROP INDEX IF EXISTS public."ForumReaction_postId_idx";
+DROP INDEX IF EXISTS public."ForumPost_threadId_idx";
+DROP INDEX IF EXISTS public."ForumPost_parentId_idx";
+DROP INDEX IF EXISTS public."ForumPost_authorId_idx";
+DROP INDEX IF EXISTS public."ForumKategori_mataPelajaranId_idx";
+DROP INDEX IF EXISTS public."ForumKategori_kelasId_idx";
+DROP INDEX IF EXISTS public."BankSoal_mataPelajaranId_idx";
+DROP INDEX IF EXISTS public."BankSoal_kode_key";
+DROP INDEX IF EXISTS public."BankSoal_kelasId_idx";
+DROP INDEX IF EXISTS public."BankSoal_guruId_idx";
+DROP INDEX IF EXISTS public."Attendance_tanggal_idx";
+DROP INDEX IF EXISTS public."Attendance_siswaId_tanggal_key";
+DROP INDEX IF EXISTS public."Attendance_siswaId_tanggal_idx";
+ALTER TABLE IF EXISTS ONLY public._prisma_migrations DROP CONSTRAINT IF EXISTS _prisma_migrations_pkey;
+ALTER TABLE IF EXISTS ONLY public."_GuruMataPelajaran" DROP CONSTRAINT IF EXISTS "_GuruMataPelajaran_AB_pkey";
+ALTER TABLE IF EXISTS ONLY public."User" DROP CONSTRAINT IF EXISTS "User_pkey";
+ALTER TABLE IF EXISTS ONLY public."Ujian" DROP CONSTRAINT IF EXISTS "Ujian_pkey";
+ALTER TABLE IF EXISTS ONLY public."UjianSoal" DROP CONSTRAINT IF EXISTS "UjianSoal_pkey";
+ALTER TABLE IF EXISTS ONLY public."UjianSiswa" DROP CONSTRAINT IF EXISTS "UjianSiswa_pkey";
+ALTER TABLE IF EXISTS ONLY public."UjianKelas" DROP CONSTRAINT IF EXISTS "UjianKelas_pkey";
+ALTER TABLE IF EXISTS ONLY public."Tugas" DROP CONSTRAINT IF EXISTS "Tugas_pkey";
+ALTER TABLE IF EXISTS ONLY public."TugasSiswa" DROP CONSTRAINT IF EXISTS "TugasSiswa_pkey";
+ALTER TABLE IF EXISTS ONLY public."TugasSiswaFile" DROP CONSTRAINT IF EXISTS "TugasSiswaFile_pkey";
+ALTER TABLE IF EXISTS ONLY public."TugasAttachment" DROP CONSTRAINT IF EXISTS "TugasAttachment_pkey";
+ALTER TABLE IF EXISTS ONLY public."TahunAjaran" DROP CONSTRAINT IF EXISTS "TahunAjaran_pkey";
+ALTER TABLE IF EXISTS ONLY public."Siswa" DROP CONSTRAINT IF EXISTS "Siswa_pkey";
+ALTER TABLE IF EXISTS ONLY public."SiswaKelasHistory" DROP CONSTRAINT IF EXISTS "SiswaKelasHistory_pkey";
+ALTER TABLE IF EXISTS ONLY public."Settings" DROP CONSTRAINT IF EXISTS "Settings_pkey";
+ALTER TABLE IF EXISTS ONLY public."RPP" DROP CONSTRAINT IF EXISTS "RPP_pkey";
+ALTER TABLE IF EXISTS ONLY public."RPPKelas" DROP CONSTRAINT IF EXISTS "RPPKelas_pkey";
+ALTER TABLE IF EXISTS ONLY public."ProgressSiswa" DROP CONSTRAINT IF EXISTS "ProgressSiswa_pkey";
+ALTER TABLE IF EXISTS ONLY public."Pengumuman" DROP CONSTRAINT IF EXISTS "Pengumuman_pkey";
+ALTER TABLE IF EXISTS ONLY public."PaketSoal" DROP CONSTRAINT IF EXISTS "PaketSoal_pkey";
+ALTER TABLE IF EXISTS ONLY public."PaketSoalKelas" DROP CONSTRAINT IF EXISTS "PaketSoalKelas_pkey";
+ALTER TABLE IF EXISTS ONLY public."PaketSoalItem" DROP CONSTRAINT IF EXISTS "PaketSoalItem_pkey";
+ALTER TABLE IF EXISTS ONLY public."Notifikasi" DROP CONSTRAINT IF EXISTS "Notifikasi_pkey";
+ALTER TABLE IF EXISTS ONLY public."Materi" DROP CONSTRAINT IF EXISTS "Materi_pkey";
+ALTER TABLE IF EXISTS ONLY public."MateriBookmark" DROP CONSTRAINT IF EXISTS "MateriBookmark_pkey";
+ALTER TABLE IF EXISTS ONLY public."MateriAttachment" DROP CONSTRAINT IF EXISTS "MateriAttachment_pkey";
+ALTER TABLE IF EXISTS ONLY public."MataPelajaran" DROP CONSTRAINT IF EXISTS "MataPelajaran_pkey";
+ALTER TABLE IF EXISTS ONLY public."Kelas" DROP CONSTRAINT IF EXISTS "Kelas_pkey";
+ALTER TABLE IF EXISTS ONLY public."Jurusan" DROP CONSTRAINT IF EXISTS "Jurusan_pkey";
+ALTER TABLE IF EXISTS ONLY public."JadwalPelajaran" DROP CONSTRAINT IF EXISTS "JadwalPelajaran_pkey";
+ALTER TABLE IF EXISTS ONLY public."Guru" DROP CONSTRAINT IF EXISTS "Guru_pkey";
+ALTER TABLE IF EXISTS ONLY public."ForumThread" DROP CONSTRAINT IF EXISTS "ForumThread_pkey";
+ALTER TABLE IF EXISTS ONLY public."ForumReaction" DROP CONSTRAINT IF EXISTS "ForumReaction_pkey";
+ALTER TABLE IF EXISTS ONLY public."ForumPost" DROP CONSTRAINT IF EXISTS "ForumPost_pkey";
+ALTER TABLE IF EXISTS ONLY public."ForumKategori" DROP CONSTRAINT IF EXISTS "ForumKategori_pkey";
+ALTER TABLE IF EXISTS ONLY public."BankSoal" DROP CONSTRAINT IF EXISTS "BankSoal_pkey";
+ALTER TABLE IF EXISTS ONLY public."Attendance" DROP CONSTRAINT IF EXISTS "Attendance_pkey";
+DROP TABLE IF EXISTS public._prisma_migrations;
+DROP TABLE IF EXISTS public."_GuruMataPelajaran";
+DROP TABLE IF EXISTS public."User";
+DROP TABLE IF EXISTS public."UjianSoal";
+DROP TABLE IF EXISTS public."UjianSiswa";
+DROP TABLE IF EXISTS public."UjianKelas";
+DROP TABLE IF EXISTS public."Ujian";
+DROP TABLE IF EXISTS public."TugasSiswaFile";
+DROP TABLE IF EXISTS public."TugasSiswa";
+DROP TABLE IF EXISTS public."TugasAttachment";
+DROP TABLE IF EXISTS public."Tugas";
+DROP TABLE IF EXISTS public."TahunAjaran";
+DROP TABLE IF EXISTS public."SiswaKelasHistory";
+DROP TABLE IF EXISTS public."Siswa";
+DROP TABLE IF EXISTS public."Settings";
+DROP TABLE IF EXISTS public."RPPKelas";
+DROP TABLE IF EXISTS public."RPP";
+DROP TABLE IF EXISTS public."ProgressSiswa";
+DROP TABLE IF EXISTS public."Pengumuman";
+DROP TABLE IF EXISTS public."PaketSoalKelas";
+DROP TABLE IF EXISTS public."PaketSoalItem";
+DROP TABLE IF EXISTS public."PaketSoal";
+DROP TABLE IF EXISTS public."Notifikasi";
+DROP TABLE IF EXISTS public."MateriBookmark";
+DROP TABLE IF EXISTS public."MateriAttachment";
+DROP TABLE IF EXISTS public."Materi";
+DROP TABLE IF EXISTS public."MataPelajaran";
+DROP TABLE IF EXISTS public."Kelas";
+DROP TABLE IF EXISTS public."Jurusan";
+DROP TABLE IF EXISTS public."JadwalPelajaran";
+DROP TABLE IF EXISTS public."Guru";
+DROP TABLE IF EXISTS public."ForumThread";
+DROP TABLE IF EXISTS public."ForumReaction";
+DROP TABLE IF EXISTS public."ForumPost";
+DROP TABLE IF EXISTS public."ForumKategori";
+DROP TABLE IF EXISTS public."BankSoal";
+DROP TABLE IF EXISTS public."Attendance";
+DROP TYPE IF EXISTS public."TipeSoal";
+DROP TYPE IF EXISTS public."TipePenilaian";
+DROP TYPE IF EXISTS public."TipeNotifikasi";
+DROP TYPE IF EXISTS public."TipeMateri";
+DROP TYPE IF EXISTS public."StatusUjian";
+DROP TYPE IF EXISTS public."StatusTahunAjaran";
+DROP TYPE IF EXISTS public."StatusSiswa";
+DROP TYPE IF EXISTS public."StatusRPP";
+DROP TYPE IF EXISTS public."StatusPengumpulan";
+DROP TYPE IF EXISTS public."StatusPengerjaan";
+DROP TYPE IF EXISTS public."StatusGuru";
+DROP TYPE IF EXISTS public."Role";
+DROP TYPE IF EXISTS public."Hari";
+DROP TYPE IF EXISTS public."DimensiProfilLulusan";
+DROP TYPE IF EXISTS public."AttendanceStatus";
 --
 -- Name: AttendanceStatus; Type: TYPE; Schema: public; Owner: postgres
 --
@@ -49,6 +268,24 @@ CREATE TYPE public."AttendanceStatus" AS ENUM (
 
 
 ALTER TYPE public."AttendanceStatus" OWNER TO postgres;
+
+--
+-- Name: DimensiProfilLulusan; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public."DimensiProfilLulusan" AS ENUM (
+    'KEIMANAN_KETAQWAAN',
+    'KEWARGAAN',
+    'PENALARAN_KRITIS',
+    'KREATIFITAS',
+    'KOLABORASI',
+    'KEMANDIRIAN',
+    'KESEHATAN',
+    'KOMUNIKASI'
+);
+
+
+ALTER TYPE public."DimensiProfilLulusan" OWNER TO postgres;
 
 --
 -- Name: Hari; Type: TYPE; Schema: public; Owner: postgres
@@ -121,6 +358,19 @@ CREATE TYPE public."StatusPengumpulan" AS ENUM (
 
 
 ALTER TYPE public."StatusPengumpulan" OWNER TO postgres;
+
+--
+-- Name: StatusRPP; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public."StatusRPP" AS ENUM (
+    'DRAFT',
+    'PUBLISHED',
+    'ARCHIVED'
+);
+
+
+ALTER TYPE public."StatusRPP" OWNER TO postgres;
 
 --
 -- Name: StatusSiswa; Type: TYPE; Schema: public; Owner: postgres
@@ -262,10 +512,11 @@ CREATE TABLE public."BankSoal" (
     "pilihanJawaban" jsonb,
     "jawabanBenar" text,
     bobot integer DEFAULT 1 NOT NULL,
-    penjelasan text,
     "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     "updatedAt" timestamp(3) without time zone NOT NULL,
-    "deletedAt" timestamp(3) without time zone
+    "deletedAt" timestamp(3) without time zone,
+    "guruId" text,
+    "kelasId" text
 );
 
 
@@ -554,6 +805,20 @@ CREATE TABLE public."PaketSoalItem" (
 ALTER TABLE public."PaketSoalItem" OWNER TO postgres;
 
 --
+-- Name: PaketSoalKelas; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."PaketSoalKelas" (
+    id text NOT NULL,
+    "paketSoalId" text NOT NULL,
+    "kelasId" text NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."PaketSoalKelas" OWNER TO postgres;
+
+--
 -- Name: Pengumuman; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -591,6 +856,63 @@ CREATE TABLE public."ProgressSiswa" (
 
 
 ALTER TABLE public."ProgressSiswa" OWNER TO postgres;
+
+--
+-- Name: RPP; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."RPP" (
+    id text NOT NULL,
+    kode text NOT NULL,
+    "mataPelajaranId" text NOT NULL,
+    "guruId" text NOT NULL,
+    "capaianPembelajaran" text NOT NULL,
+    "tujuanPembelajaran" jsonb NOT NULL,
+    status public."StatusRPP" DEFAULT 'DRAFT'::public."StatusRPP" NOT NULL,
+    "isPublished" boolean DEFAULT false NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    "deletedAt" timestamp(3) without time zone,
+    "alokasiWaktu" integer NOT NULL,
+    "asesmenAkhir" text,
+    "asesmenAwal" text,
+    "asesmenProses" text,
+    "dimensiProfilLulusan" jsonb,
+    fase text,
+    "identifikasiMateri" text,
+    "identifikasiPesertaDidik" text,
+    "kegiatanAwal" jsonb,
+    "kegiatanMemahami" jsonb,
+    "kegiatanMengaplikasi" jsonb,
+    "kegiatanMerefleksi" jsonb,
+    "kegiatanPenutup" jsonb,
+    "kemitraanPembelajaran" text,
+    "lingkunganPembelajaran" text,
+    "lintasDisiplinIlmu" text,
+    materi text NOT NULL,
+    "namaGuru" text,
+    "pemanfaatanDigital" text,
+    "praktikPedagogik" text,
+    "tahunAjaran" text,
+    "topikPembelajaran" text NOT NULL
+);
+
+
+ALTER TABLE public."RPP" OWNER TO postgres;
+
+--
+-- Name: RPPKelas; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."RPPKelas" (
+    id text NOT NULL,
+    "rppId" text NOT NULL,
+    "kelasId" text NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."RPPKelas" OWNER TO postgres;
 
 --
 -- Name: Settings; Type: TABLE; Schema: public; Owner: postgres
@@ -893,7 +1215,7 @@ COPY public."Attendance" (id, "siswaId", tanggal, "jamMasuk", "jamKeluar", statu
 -- Data for Name: BankSoal; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public."BankSoal" (id, kode, pertanyaan, tipe, "mataPelajaranId", "pilihanJawaban", "jawabanBenar", bobot, penjelasan, "createdAt", "updatedAt", "deletedAt") FROM stdin;
+COPY public."BankSoal" (id, kode, pertanyaan, tipe, "mataPelajaranId", "pilihanJawaban", "jawabanBenar", bobot, "createdAt", "updatedAt", "deletedAt", "guruId", "kelasId") FROM stdin;
 \.
 
 
@@ -1113,15 +1435,15 @@ cmj5czn6h00054iuds6wh2zr0	TKR	Teknik Kendaraan Ringan	\N	2025-12-14 06:43:43.768
 --
 
 COPY public."Kelas" (id, nama, tingkat, kapasitas, "createdAt", "updatedAt", "deletedAt", "waliKelasId", "jurusanId") FROM stdin;
-cmj5ec9zf0000jsudgpxci2hf	X Akuntansi	X	30	2025-12-14 07:21:32.811	2025-12-14 07:21:32.811	\N	\N	cmj5cz42g00034iudqf3vd4tn
-cmj5ec9zx0001jsud5cnf1k74	XI Akuntansi	XI	30	2025-12-14 07:21:32.829	2025-12-14 07:21:32.829	\N	\N	cmj5cz42g00034iudqf3vd4tn
-cmj5eca050002jsudq5rc3oa3	XII Akuntansi	XII	30	2025-12-14 07:21:32.837	2025-12-14 07:21:32.837	\N	\N	cmj5cz42g00034iudqf3vd4tn
-cmj5eca0e0003jsud1uxj50o4	X Teknik Komputer dan Jaringan	X	30	2025-12-14 07:21:32.846	2025-12-14 07:21:32.846	\N	\N	cmj5czfhl00044iudsyvwnrok
-cmj5eca0k0004jsuddjewnal1	XI Teknik Komputer dan Jaringan	XI	30	2025-12-14 07:21:32.852	2025-12-14 07:21:32.852	\N	\N	cmj5czfhl00044iudsyvwnrok
-cmj5eca0o0005jsud0ambwla7	XII Teknik Komputer dan Jaringan	XII	30	2025-12-14 07:21:32.856	2025-12-14 07:21:32.856	\N	\N	cmj5czfhl00044iudsyvwnrok
-cmj5eca0w0006jsud9bca11b3	X Teknik Kendaraan Ringan	X	30	2025-12-14 07:21:32.864	2025-12-14 07:21:32.864	\N	\N	cmj5czn6h00054iuds6wh2zr0
-cmj5eca130007jsudvzwt5rjx	XI Teknik Kendaraan Ringan	XI	30	2025-12-14 07:21:32.871	2025-12-14 07:21:32.871	\N	\N	cmj5czn6h00054iuds6wh2zr0
-cmj5eca170008jsudb4r1h58n	XII Teknik Kendaraan Ringan	XII	30	2025-12-14 07:21:32.875	2025-12-14 07:21:32.875	\N	\N	cmj5czn6h00054iuds6wh2zr0
+cmj5eca170008jsudb4r1h58n	XII Teknik Kendaraan Ringan	XII	30	2025-12-14 07:21:32.875	2025-12-30 15:29:46.063	\N	cmj9z8y1b002c5dudh3e7fyuu	cmj5czn6h00054iuds6wh2zr0
+cmj5eca130007jsudvzwt5rjx	XI Teknik Kendaraan Ringan	XI	30	2025-12-14 07:21:32.871	2025-12-30 15:31:25.529	\N	cmj9z8ybn002q5dud7n4058u9	cmj5czn6h00054iuds6wh2zr0
+cmj5eca0w0006jsud9bca11b3	X Teknik Kendaraan Ringan	X	30	2025-12-14 07:21:32.864	2025-12-30 15:31:31.482	\N	cmj9z8ya7002o5dudm0yzma1k	cmj5czn6h00054iuds6wh2zr0
+cmj5eca0o0005jsud0ambwla7	XII Teknik Komputer dan Jaringan	XII	30	2025-12-14 07:21:32.856	2025-12-30 15:31:39.152	\N	cmj9z8yj000305dudtwddc0j1	cmj5czfhl00044iudsyvwnrok
+cmj5eca0k0004jsuddjewnal1	XI Teknik Komputer dan Jaringan	XI	30	2025-12-14 07:21:32.852	2025-12-30 15:31:50.978	\N	cmj9z8xzs002a5dudw0c717l2	cmj5czfhl00044iudsyvwnrok
+cmj5eca0e0003jsud1uxj50o4	X Teknik Komputer dan Jaringan	X	30	2025-12-14 07:21:32.846	2025-12-30 15:31:58.01	\N	cmj9z8yly00345dudadjrqvfh	cmj5czfhl00044iudsyvwnrok
+cmj5eca050002jsudq5rc3oa3	XII Akuntansi	XII	30	2025-12-14 07:21:32.837	2025-12-30 15:32:08.21	\N	cmj9z8y2q002e5dud69l0gx00	cmj5cz42g00034iudqf3vd4tn
+cmj5ec9zx0001jsud5cnf1k74	XI Akuntansi	XI	30	2025-12-14 07:21:32.829	2025-12-30 15:32:21.516	\N	cmj9z8y8o002m5dudwnycw1jf	cmj5cz42g00034iudqf3vd4tn
+cmj5ec9zf0000jsudgpxci2hf	X Akuntansi	X	30	2025-12-14 07:21:32.811	2025-12-30 15:32:29.025	\N	cmj9z8y4a002g5dudjlq4s2jp	cmj5cz42g00034iudqf3vd4tn
 \.
 
 
@@ -1208,6 +1530,14 @@ COPY public."PaketSoalItem" (id, "paketSoalId", "bankSoalId", urutan, "createdAt
 
 
 --
+-- Data for Name: PaketSoalKelas; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."PaketSoalKelas" (id, "paketSoalId", "kelasId", "createdAt") FROM stdin;
+\.
+
+
+--
 -- Data for Name: Pengumuman; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -1224,11 +1554,42 @@ COPY public."ProgressSiswa" (id, "siswaId", "mataPelajaranId", "materiDibaca", "
 
 
 --
+-- Data for Name: RPP; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."RPP" (id, kode, "mataPelajaranId", "guruId", "capaianPembelajaran", "tujuanPembelajaran", status, "isPublished", "createdAt", "updatedAt", "deletedAt", "alokasiWaktu", "asesmenAkhir", "asesmenAwal", "asesmenProses", "dimensiProfilLulusan", fase, "identifikasiMateri", "identifikasiPesertaDidik", "kegiatanAwal", "kegiatanMemahami", "kegiatanMengaplikasi", "kegiatanMerefleksi", "kegiatanPenutup", "kemitraanPembelajaran", "lingkunganPembelajaran", "lintasDisiplinIlmu", materi, "namaGuru", "pemanfaatanDigital", "praktikPedagogik", "tahunAjaran", "topikPembelajaran") FROM stdin;
+cmjsihj2y0000v5ud7f0f6syr	RPP-DPK	cmj9z7q9n001s5dudxr525koc	cmj9z8yem002u5dudolwskcz4	Pada akhir fase F, peserta didik mampu mengelola dan mengamankan jaringan komputer berbasis kabel dan nirkabel, termasuk mengkonfigurasi perangkat jaringan aktif, menerapkan protokol jaringan, serta melakukan pemeliharaan dan perbaikan. Secara spesifik, peserta didik mampu mengkonfigurasi perangkat jaringan Mikrotik untuk membangun konektivitas dasar dan layanan jaringan esensial sesuai standar operasional prosedur dan kebutuhan fungsional.	["Setelah mengikuti sesi diskusi dan demonstrasi, peserta didik mampu menjelaskan fungsi dan konsep dasar komponen Mikrotik (misalnya, Winbox, IP Address, DHCP Server, DNS, Gateway) dengan tepat dan percaya diri.", "Melalui kegiatan praktikum mandiri, peserta didik mampu mengaplikasikan langkah-langkah setting dasar Mikrotik (identitas router, konfigurasi IP Address, DHCP Server, DNS, dan Gateway) pada perangkat fisik atau virtual dengan akurat dan sesuai prosedur.", "Melalui studi kasus sederhana, peserta didik mampu menganalisis dan mengidentifikasi potensi permasalahan pada konfigurasi dasar Mikrotik serta mengusulkan solusi secara logis dan kritis."]	PUBLISHED	t	2025-12-30 11:36:18.393	2025-12-30 11:45:05.838	2025-12-30 11:45:05.835	90	1. **Unjuk Kerja/Praktik:** Peserta didik diminta untuk mendemonstrasikan konfigurasi dasar Mikrotik sesuai skenario yang diberikan (misalnya, 'Konfigurasikan Mikrotik ini agar dapat memberikan internet ke 3 komputer klien dan 1 perangkat Wi-Fi'). Penilaian berdasarkan rubrik yang mencakup ketepatan konfigurasi, fungsionalitas, efisiensi, dan kemampuan troubleshooting.\n2. **Pertanyaan Lisan/Tertulis:** Pertanyaan yang menguji pemahaman konseptual dan kemampuan penalaran kritis, misalnya 'Jelaskan perbedaan antara IP Address statis dan dinamis pada Mikrotik!', atau 'Jika klien tidak mendapatkan IP dari DHCP Server Mikrotik, langkah-langkah apa saja yang akan kamu lakukan untuk mendiagnosis masalah tersebut?'	Kuis lisan singkat di awal pembelajaran untuk mengidentifikasi pengetahuan awal peserta didik terkait konsep dasar jaringan seperti IP Address, DHCP, DNS, dan fungsi router.	1. **Observasi Praktikum:** Guru melakukan observasi langsung selama praktikum, mencatat ketepatan langkah, kemandirian, efisiensi waktu, serta kemampuan peserta didik dalam mengidentifikasi dan memecahkan masalah saat konfigurasi. Guru dapat menggunakan lembar observasi dengan rubrik.\n2. **Diskusi & Tanya Jawab:** Penilaian keaktifan peserta didik dalam diskusi kelompok dan kemampuan menjawab pertanyaan guru terkait konsep dan prosedur konfigurasi Mikrotik.\n3. **Penyelesaian LKS:** Penilaian kelengkapan dan kebenaran hasil konfigurasi yang tercatat dalam Lembar Kerja Siswa (LKS).	["KEWARGAAN", "PENALARAN_KRITIS"]	fase f	Materi 'Setting Dasar Mikrotik' merupakan pengetahuan prosedural yang sangat aplikatif, namun juga membutuhkan pemahaman konseptual yang kuat (misalnya, fungsi IP address, DHCP, DNS, gateway). Relevansi materi ini sangat tinggi karena Mikrotik adalah perangkat jaringan yang banyak digunakan di berbagai skala industri di Indonesia, sehingga penguasaan materi ini menjadi kompetensi esensial bagi teknisi jaringan. Tingkat kesulitan materi ini moderat; langkah-langkah dasarnya relatif mudah diikuti, namun pemahaman mendalam tentang setiap parameter dan kemampuan untuk memecahkan masalah membutuhkan penalaran kritis dan pengalaman.	Peserta didik fase F (kelas XI/XII SMK) pada program keahlian TKJ umumnya memiliki dasar pengetahuan tentang komputer dan jaringan, namun dengan tingkat pemahaman yang bervariasi. Sebagian mungkin telah terpapar konsep jaringan dasar seperti IP address dan router, sementara yang lain mungkin baru mengenalnya secara mendalam. Mereka memiliki minat yang tinggi terhadap praktik langsung, eksplorasi teknologi, dan pemecahan masalah nyata yang relevan dengan dunia kerja. Kesiapan belajar mereka akan dipengaruhi oleh pengalaman sebelumnya dan motivasi untuk menguasai keterampilan teknis yang dibutuhkan di industri. Beberapa mungkin memiliki gaya belajar visual-kinestetik yang kuat, sehingga pendekatan praktikum sangat cocok.	{"prinsip": ["Mindful", "Meaningful", "Bermakna (Meaningful)", "Berkesadaran (Mindful)"], "kegiatan": "1. **Pembukaan & Sapaan (2 menit):** Guru menyapa peserta didik dengan hangat, mengucapkan salam, dan mengajak untuk berdoa bersama sebagai wujud rasa syukur dan kesiapan belajar (Mindful).\\n2. **Cek Kehadiran & Kesiapan (2 menit):** Guru melakukan pengecekan kehadiran dan memastikan kesiapan fisik serta mental peserta didik untuk memulai pembelajaran.\\n3. **Apersepsi & Motivasi (4 menit):** Guru memantik diskusi singkat tentang pentingnya router dalam kehidupan sehari-hari (misalnya, 'Bagaimana internet di rumah atau sekolah bisa terhubung?') dan mengaitkannya dengan peran Mikrotik sebagai salah satu perangkat router populer. Guru juga menjelaskan relevansi materi 'Setting Dasar Mikrotik' dengan kompetensi yang dibutuhkan di dunia kerja sebagai teknisi jaringan, menumbuhkan motivasi dan kesadaran akan makna pembelajaran (Meaningful).\\n4. **Penyampaian Tujuan Pembelajaran & Dimensi P3 (2 menit):** Guru menyampaikan tujuan pembelajaran yang akan dicapai dan mengaitkannya dengan dimensi Profil Pelajar Pancasila 'Kewargaan' (misalnya, tanggung jawab dalam mengelola infrastruktur jaringan) dan 'Penalaran Kritis' (kemampuan memecahkan masalah jaringan)."}	{"prinsip": ["Meaningful", "Mindful", "Bermakna (Meaningful)", "Berkesadaran (Mindful)"], "kegiatan": "1. **Identifikasi Pengetahuan Awal (5 menit):** Guru menyajikan pertanyaan pemantik seperti 'Apa yang kalian ketahui tentang IP Address?', 'Mengapa router dibutuhkan?', 'Pernahkah kalian melihat atau menggunakan perangkat Mikrotik?' untuk mengidentifikasi pengetahuan awal peserta didik dan memicu rasa ingin tahu (Mindful).\\n2. **Eksplorasi Konsep (10 menit):** Guru memfasilitasi diskusi singkat tentang konsep dasar jaringan dan fungsi utama sebuah router. Guru kemudian menampilkan antarmuka Winbox dan mendemonstrasikan secara singkat cara login ke Mikrotik. Peserta didik diajak untuk mengamati dan bertanya (Meaningful).\\n3. **Studi Kasus Sederhana (10 menit):** Guru menyajikan skenario sederhana 'Sebuah kantor kecil ingin memiliki jaringan internet yang terbagi ke beberapa komputer dan perangkat Wi-Fi. Komponen Mikrotik apa saja yang perlu diatur?' Peserta didik secara berpasangan berdiskusi untuk mengidentifikasi komponen Mikrotik yang perlu di-setting. Guru membimbing diskusi untuk memastikan pemahaman konsep dasar (Meaningful, Mindful)."}	{"prinsip": ["Meaningful", "Joyful", "Menggembirakan (Joyful)", "Bermakna (Meaningful)"], "kegiatan": "1. **Demonstrasi Interaktif (15 menit):** Guru mendemonstrasikan langkah-langkah setting dasar Mikrotik (mengganti identitas, konfigurasi IP Address, DHCP Server, DNS, dan Gateway) secara langsung menggunakan perangkat Mikrotik dan Winbox. Guru menjelaskan setiap langkah secara detail dan memberikan kesempatan peserta didik untuk bertanya. (Meaningful)\\n2. **Praktikum Mandiri/Berpasangan (25 menit):** Peserta didik menerima Lembar Kerja Siswa (LKS) yang berisi panduan langkah demi langkah untuk melakukan setting dasar Mikrotik pada perangkat fisik atau virtual yang telah disediakan. Mereka bekerja secara mandiri atau berpasangan. Guru berkeliling untuk memantau, memberikan bimbingan, dan menstimulasi pemikiran kritis dengan pertanyaan seperti 'Jika terjadi error, apa langkah pertama yang akan kamu cek?' (Joyful, Meaningful, Penalaran Kritis).\\n3. **Tantangan Pemecahan Masalah (5 menit):** Guru memberikan tantangan kecil, misalnya 'Setelah setting selesai, coba ping ke google.com. Jika tidak bisa, identifikasi di mana letak masalahnya dan bagaimana solusinya?' Ini mendorong peserta didik untuk menerapkan penalaran kritis dalam menghadapi masalah nyata. (Joyful, Penalaran Kritis)"}	{"prinsip": ["Mindful", "Bermakna (Meaningful)"], "kegiatan": "1. **Refleksi Diri (5 menit):** Setiap peserta didik diminta untuk menuliskan secara singkat (atau menyampaikan secara lisan) tiga hal yang paling menantang dalam proses setting dasar Mikrotik, dua hal yang paling mereka pelajari, dan satu hal yang ingin mereka eksplorasi lebih lanjut. (Mindful)\\n2. **Diskusi Reflektif (3 menit):** Guru memfasilitasi diskusi singkat tentang pengalaman praktikum. 'Bagaimana perasaan kalian setelah berhasil mengkonfigurasi Mikrotik?', 'Apakah kalian menemukan kesulitan? Bagaimana cara kalian mengatasinya?' Ini juga kesempatan untuk mengaitkan kembali dengan dimensi Profil Pelajar Pancasila 'Penalaran Kritis' (bagaimana mereka mengatasi masalah) dan 'Kewargaan' (tanggung jawab dalam melakukan konfigurasi jaringan yang benar)."}	{"prinsip": ["Mindful", "Bermakna (Meaningful)", "Menggembirakan (Joyful)"], "kegiatan": "1. **Rangkuman (2 menit):** Guru bersama peserta didik merangkum poin-poin penting dari materi 'Setting Dasar Mikrotik' yang telah dipelajari.\\n2. **Umpan Balik & Apresiasi (2 menit):** Guru memberikan umpan balik positif atas partisipasi dan usaha peserta didik, serta memberikan apresiasi atas kerja keras mereka. Guru juga menanyakan umpan balik singkat dari peserta didik tentang pembelajaran hari ini.\\n3. **Informasi Lanjutan & Doa (2 menit):** Guru menyampaikan materi atau topik yang akan dibahas pada pertemuan berikutnya dan menutup pembelajaran dengan doa bersama."}	Tidak ada kemitraan dengan pihak luar secara spesifik untuk sesi ini, namun materi ini dapat dikembangkan di kemudian hari dengan praktisi industri.	Laboratorium Komputer yang dilengkapi dengan perangkat Mikrotik RouterBoard (fisik atau virtual/simulasi seperti EVE-NG/GNS3) untuk setiap kelompok/individu, komputer klien, koneksi internet, proyektor, dan papan tulis interaktif. Budaya belajar yang diterapkan adalah kolaboratif, eksploratif, dan berorientasi pada pemecahan masalah, dengan mendorong peserta didik untuk berani mencoba dan belajar dari kesalahan.	Matematika (untuk konsep subnetting IP address), Bahasa Inggris (untuk istilah teknis dan dokumentasi), Pendidikan Pancasila (untuk etika penggunaan teknologi dan keamanan siber).	Setting Dasar Mikrotik	\N	Aplikasi Winbox untuk konfigurasi Mikrotik, perangkat Mikrotik RouterOS (fisik/virtual), browser web untuk akses dokumentasi/referensi online (wiki.mikrotik.com, forum), proyektor untuk demonstrasi, dan mungkin platform LMS untuk berbagi materi/LKS.	Pendekatan Deep Learning dengan model Pembelajaran Berbasis Masalah (Problem-Based Learning) dan Pembelajaran Berbasis Proyek Sederhana (Project-Based Learning). Strategi yang digunakan meliputi demonstrasi interaktif, diskusi kelompok, praktikum mandiri, dan studi kasus. Metode yang diterapkan adalah ceramah singkat, tanya jawab, simulasi, dan praktik langsung (hands-on).	2025-2026	Konfigurasi Dasar Mikrotik RouterOS (Menggunakan Winbox): Pengaturan Identitas Router, Konfigurasi IP Address pada Interface, Konfigurasi DHCP Server, Konfigurasi DNS Client, dan Konfigurasi Gateway (Routing).
+cmjsiy5ed000096ud77slyg7m	RPP-DPK-001	cmj9z7q87001e5dudb1uk5u9j	cmj9z8yem002u5dudolwskcz4	Pada akhir fase F, peserta didik mampu menerapkan dasar-dasar sistem jaringan komputer, mengidentifikasi komponen jaringan, serta mengimplementasikan konfigurasi dasar jaringan kabel dan nirkabel secara mandiri atau berkelompok untuk mendukung konektivitas data dan informasi.	["Peserta didik mampu menjelaskan konsep dasar jaringan kabel dan nirkabel (jenis, komponen, topologi) dengan tepat setelah mengikuti diskusi dan presentasi. (PENALARAN_KRITIS)", "Peserta didik mampu mengidentifikasi dan membedakan komponen perangkat keras yang diperlukan untuk membangun jaringan kabel dan nirkabel melalui observasi dan eksplorasi. (PENALARAN_KRITIS)", "Peserta didik mampu mengimplementasikan konfigurasi dasar jaringan kabel menggunakan simulasi atau perangkat fisik sederhana secara kolaboratif dalam kelompok. (KREATIFITAS, KOLABORASI)"]	PUBLISHED	t	2025-12-30 11:49:13.811	2025-12-30 11:49:13.811	\N	90	Unjuk kerja/Portofolio: Hasil konfigurasi jaringan kabel dan nirkabel pada perangkat simulasi atau fisik yang diunggah atau didokumentasikan, disertai penjelasan singkat tentang langkah-langkah dan hasil pengujian. Penilaian refleksi individu (kedalaman pemahaman, kesadaran diri terhadap proses belajar).	Observasi partisipasi dan jawaban lisan peserta didik saat apersepsi dan asesmen diagnostik singkat tentang pengetahuan dasar jaringan (misalnya, 'Apa itu IP address?', 'Apa fungsi router?').	Observasi guru selama diskusi kelompok (keaktifan, kolaborasi, kemampuan berargumen, PENALARAN_KRITIS). Observasi performa saat praktikum (ketepatan mengikuti prosedur, kemampuan memecahkan masalah, KREATIFITAS dalam mencari solusi, KOLABORASI). Penilaian lembar kerja praktikum (kelengkapan konfigurasi, hasil pengujian konektivitas).	["PENALARAN_KRITIS", "KREATIFITAS", "KOLABORASI"]	Fase F/X/Ganjil	Materi 'Konfigurasi Jaringan Kabel dan Nirkabel' mencakup pengetahuan konseptual (jenis-jenis jaringan, protokol, topologi) dan prosedural (langkah-langkah konfigurasi perangkat). Materi ini sangat relevan dengan kehidupan sehari-hari peserta didik (penggunaan internet, Wi-Fi) dan menjadi dasar penting dalam program keahlian TKJ. Tingkat kesulitan materi ini moderat, membutuhkan pemahaman teori dasar sebelum dapat diaplikasikan secara praktis. Materi ini mendorong peserta didik untuk berpikir kritis dalam memecahkan masalah konfigurasi.	Peserta didik Fase F di SMK kelas X umumnya berada pada tahap perkembangan kognitif operasional formal, mampu berpikir abstrak namun masih memerlukan konteks konkret. Mereka memiliki tingkat literasi digital yang bervariasi, beberapa mungkin sudah memiliki pengetahuan dasar tentang jaringan dari pengalaman pribadi atau media sosial. Kesiapan belajar mereka dapat beragam, ada yang antusias dengan praktik, ada pula yang lebih suka teori. Minat mereka cenderung pada hal-hal aplikatif dan relevan dengan dunia kerja. Beberapa mungkin memiliki gaya belajar visual, auditori, atau kinestetik. Peserta didik diharapkan dapat bekerja secara kolaboratif dalam kelompok.	{"prinsip": ["Mindful", "Meaningful"], "kegiatan": "1. Guru membuka pelajaran dengan salam dan memimpin doa. (Mindful)\\n2. Guru mengecek kehadiran dan kesiapan belajar peserta didik.\\n3. Guru melakukan apersepsi dengan menampilkan video singkat atau gambar tentang penggunaan jaringan internet dalam kehidupan sehari-hari (misalnya, di rumah, sekolah, tempat kerja) dan menanyakan 'Apa yang kalian ketahui tentang bagaimana perangkat-perangkat ini bisa saling terhubung?' (Meaningful, Mindful)\\n4. Guru menjelaskan tujuan pembelajaran dan manfaat mempelajari konfigurasi jaringan dalam dunia kerja TKJ.\\n5. Guru melakukan asesmen diagnostik singkat (pertanyaan lisan atau polling sederhana) untuk mengetahui pengetahuan awal peserta didik tentang jaringan komputer. Contoh: 'Siapa yang tahu bedanya jaringan kabel dan nirkabel?'"}	{"prinsip": ["Meaningful", "Mindful"], "kegiatan": "1. Peserta didik dibagi menjadi beberapa kelompok kecil (3-4 orang).\\n2. Setiap kelompok diberikan studi kasus sederhana tentang kebutuhan jaringan di sebuah kantor kecil atau rumah. (Meaningful)\\n3. Guru memfasilitasi diskusi kelompok untuk mengidentifikasi jenis-jenis jaringan (LAN, WLAN), komponen utama (router, switch, kabel, NIC, AP), dan topologi dasar yang mungkin digunakan dalam studi kasus tersebut. Peserta didik dapat mencari informasi dari buku paket atau sumber online. (Meaningful, Mindful, PENALARAN_KRITIS)\\n4. Guru memberikan penjelasan singkat dan interaktif tentang konsep-konsep kunci (IP address, subnet mask, gateway, DHCP) yang akan digunakan dalam konfigurasi, menggunakan contoh-contoh yang relevan.\\n5. Setiap kelompok diminta mempresentasikan hasil diskusi awal mereka tentang komponen dan topologi yang akan mereka pilih."}	{"prinsip": ["Meaningful", "Joyful"], "kegiatan": "1. Guru mendemonstrasikan langkah-langkah dasar konfigurasi jaringan kabel pada perangkat lunak simulasi (misalnya, Cisco Packet Tracer) atau perangkat fisik sederhana (misalnya, menghubungkan PC ke switch, memberikan IP address statis). (Meaningful)\\n2. Setiap kelompok menerima lembar kerja praktikum yang berisi skenario konfigurasi dasar jaringan kabel dan nirkabel.\\n3. Peserta didik secara berkelompok memulai praktikum konfigurasi jaringan sesuai skenario, baik menggunakan Cisco Packet Tracer atau perangkat fisik yang tersedia. Mereka diminta untuk mengkonfigurasi IP Address, menguji konektivitas (ping), dan jika memungkinkan, mengkonfigurasi SSID dan password pada perangkat nirkabel. (Meaningful, Joyful, KREATIFITAS, KOLABORASI)\\n4. Guru memfasilitasi dan membimbing peserta didik, memberikan bantuan jika diperlukan, dan mendorong diskusi antar anggota kelompok untuk memecahkan masalah."}	{"prinsip": ["Mindful"], "kegiatan": "1. Setiap kelompok diminta untuk menuliskan secara singkat kendala yang mereka hadapi selama praktikum dan bagaimana mereka mengatasinya.\\n2. Guru memimpin diskusi singkat tentang 'Apa hal baru yang kalian pelajari hari ini?' dan 'Bagian mana dari konfigurasi yang paling menantang dan mengapa?'. (Mindful)\\n3. Peserta didik secara individu menuliskan satu hal penting yang mereka pahami dari pembelajaran hari ini dan satu pertanyaan yang masih ingin mereka ketahui."}	{"prinsip": ["Mindful"], "kegiatan": "1. Guru bersama peserta didik menyimpulkan poin-poin penting pembelajaran hari ini.\\n2. Guru memberikan apresiasi atas partisipasi aktif peserta didik.\\n3. Guru menyampaikan materi untuk pertemuan selanjutnya (misalnya, troubleshooting jaringan sederhana).\\n4. Guru menutup pelajaran dengan doa dan salam."}	Belum ada kemitraan khusus untuk sesi ini.	Laboratorium komputer dengan akses internet dan perangkat lunak simulasi jaringan (misalnya Cisco Packet Tracer) atau laboratorium praktik dengan perangkat jaringan fisik sederhana (switch, router Wi-Fi, kabel UTP, PC/laptop). Budaya belajar yang kolaboratif, saling membantu, dan mendorong eksperimen.	Informatika (algoritma, logika), Matematika (perhitungan IP address, subnetting), Bahasa Indonesia (komunikasi teknis, penulisan laporan).	Konfigurasi Jaringan Kabel dan Nirkabel	\N	Perangkat lunak simulasi jaringan (Cisco Packet Tracer) untuk praktikum virtual. Sumber belajar daring (video tutorial, artikel teknis) untuk eksplorasi mandiri. Media presentasi digital (PowerPoint, Google Slides) untuk penjelasan konsep dan presentasi hasil.	Pembelajaran Berbasis Proyek (Project-Based Learning) atau Pembelajaran Berbasis Masalah (Problem-Based Learning) dengan pendekatan Deep Learning, di mana peserta didik tidak hanya menghafal prosedur tetapi memahami 'mengapa' dan 'bagaimana' suatu konfigurasi bekerja, serta mampu memecahkan masalah. Metode diskusi, demonstrasi, dan praktikum mandiri/kelompok.	2025-2026	Konfigurasi Dasar Jaringan Kabel (LAN) dan Jaringan Nirkabel (WLAN) menggunakan perangkat simulasi atau perangkat fisik sederhana (router, switch, kabel UTP).
+\.
+
+
+--
+-- Data for Name: RPPKelas; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."RPPKelas" (id, "rppId", "kelasId", "createdAt") FROM stdin;
+cmjsihj3c0001v5ud9ro4r2zv	cmjsihj2y0000v5ud7f0f6syr	cmj5eca0k0004jsuddjewnal1	2025-12-30 11:36:18.407
+cmjsiy5eo000196ud9fcg2fmm	cmjsiy5ed000096ud77slyg7m	cmj5eca0e0003jsud1uxj50o4	2025-12-30 11:49:13.823
+\.
+
+
+--
 -- Data for Name: Settings; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public."Settings" (id, key, value, "createdAt", "updatedAt") FROM stdin;
 cmjaxivkf0000u0udfciy166n	late_time_threshold	07:00	2025-12-18 04:17:24.303	2025-12-18 04:17:24.303
+cmjsjzanb0001hkudfdbzvco7	school_address	Situbondo	2025-12-30 12:18:06.887	2025-12-30 13:50:02.082
+cmjsjzana0000hkudwsylon6p	school_name	SMKS PGRI Banyuputih	2025-12-30 12:18:06.886	2025-12-30 13:50:02.082
+cmjsjzanb0002hkudh035yqke	school_phone	08563682390	2025-12-30 12:18:06.887	2025-12-30 13:50:02.083
+cmjsjzane000ahkudr287pppa	school_youtube	@esgriba	2025-12-30 12:18:06.89	2025-12-30 13:50:02.086
+cmjsjzand0007hkudpkcf2o7s	school_logo	-	2025-12-30 12:18:06.889	2025-12-30 13:50:02.085
+cmjsjzanc0005hkudpnvxj2fh	school_principal_name	Irawan Adi Wasito, S.T.	2025-12-30 12:18:06.888	2025-12-30 13:50:02.084
+cmjsjzand0006hkudwelpwbui	school_principal_nip	-	2025-12-30 12:18:06.888	2025-12-30 13:50:02.084
+cmjsjzane0009hkud5c30rbb7	school_facebook	@esgriba	2025-12-30 12:18:06.889	2025-12-30 13:50:02.086
+cmjsjzanc0003hkude4xm6g20	school_email	esgriba20522645@gmail.com	2025-12-30 12:18:06.887	2025-12-30 13:50:02.083
+cmjsjzanc0004hkud3a36orf8	school_website	https://www.smkpgribanyuputih.sch.id/	2025-12-30 12:18:06.888	2025-12-30 13:50:02.084
+cmjsjzand0008hkudtjodll1q	school_instagram	@esgriba	2025-12-30 12:18:06.889	2025-12-30 13:50:02.085
 \.
 
 
@@ -1356,6 +1717,7 @@ COPY public."SiswaKelasHistory" (id, "siswaId", "kelasId", "tahunAjaranId", "tan
 --
 
 COPY public."TahunAjaran" (id, tahun, "tanggalMulai", "tanggalSelesai", status, "createdAt", "updatedAt", "deletedAt") FROM stdin;
+38ba958f-eb02-4e45-90c5-779f301fc4f9	2024/2025	2024-07-01 00:00:00	2024-12-31 00:00:00	AKTIF	2025-12-30 07:52:56.287	2025-12-30 07:52:56.287	\N
 cmj5cxv7e00014iudyynxuvmc	2025/2026	2025-12-16 00:00:00	2026-02-19 00:00:00	AKTIF	2025-12-14 06:42:20.858	2025-12-17 07:23:20.52	\N
 \.
 
@@ -1612,6 +1974,32 @@ cmj9z8xvg00245duda7dxbp56	cmj9z7q8q001j5dudx5o1zuri
 --
 
 COPY public._prisma_migrations (id, checksum, finished_at, migration_name, logs, rolled_back_at, started_at, applied_steps_count) FROM stdin;
+ae98c7eb-e7bf-45a3-abc2-e0ed829eae7b	609cb3817046359fc62b69f293e3903cd198aae0f3510bf462c59f9ad4035ff7	2025-12-30 07:52:56.215058+00	20251211102828_init	\N	\N	2025-12-30 07:52:56.208618+00	1
+8fdc794d-470e-44e8-9193-7f645ae15e34	0156d098f4db91ff3bbadcc1b79aadb5d97c09871b71938fd4dc6e53391a1532	2025-12-30 07:52:56.362528+00	20251216124905_add_settings_model	\N	\N	2025-12-30 07:52:56.356019+00	1
+937e5050-a748-41af-9cdd-8bab986f91ba	2640bf707564a1056f78c31ab21927c3e2ba43ac93d47d3f1ef832ccced34bc8	2025-12-30 07:52:56.222546+00	20251211151758_npm_run_prisma_generate	\N	\N	2025-12-30 07:52:56.216567+00	1
+b76eef30-e5ee-433c-b6fc-2e84ab8e0a42	0c7e0d4e778e1cc415cbfd0b3fbe7fdc91ffeb05229bf7599a2ebb8ceb9ffb3e	2025-12-30 07:52:56.248765+00	20251212095857_add_lms_entities	\N	\N	2025-12-30 07:52:56.224249+00	1
+c81da8c7-add8-453a-b20d-a1a181aa85d4	b43cc7d286cb1c9e4eed35a237d4805ddb2ad96144c39cfb102c2eae959a72e4	2025-12-30 07:52:56.516583+00	20251221112959_add_lms_features	\N	\N	2025-12-30 07:52:56.449159+00	1
+7d3f37ec-67ff-4314-87f9-683574bc239d	750d8a254ceaaf152f260f65242d25249ecaaf9678faa3f041f061007f1ee44d	2025-12-30 07:52:56.261952+00	20251212112639_add_jurusan_and_update_kelas	\N	\N	2025-12-30 07:52:56.250322+00	1
+ad1d39a2-a708-462f-9de6-fb46a9f59e65	8334127d9f47b107a04a7d4f45e7b1a9f28120a32076d8418b80a0fbdd0d7fd3	2025-12-30 07:52:56.370034+00	20251217022933_remove_semester_from_tahun_ajaran	\N	\N	2025-12-30 07:52:56.364081+00	1
+338e1430-8098-4f7a-aa3f-1527b7890a67	998edaffc3e7e33bda76f385a440e3df4dbf0428564a2a15763cd5aa26535719	2025-12-30 07:52:56.273583+00	20251212122610_add_many_to_many_guru_mata_pelajaran	\N	\N	2025-12-30 07:52:56.263446+00	1
+ba7053b6-fc5a-48ab-8d0a-9be18ea2a9dd	92f08fc24273bbcd87412a6494250a94461f6da2ba78cc5cc67527b74e451431	2025-12-30 07:52:56.283794+00	20251212125923_add_user_integration_to_siswa_guru	\N	\N	2025-12-30 07:52:56.275252+00	1
+e2313e93-4441-4961-a123-a9baa31e28f9	2af40a7de13d912e0dc5428dfaad47807ad86bb19d9b998236759c7c6779f568	2025-12-30 07:52:56.291911+00	20251212145913_make_tahun_ajaran_required_in_kelas	\N	\N	2025-12-30 07:52:56.285428+00	1
+9705efaa-3135-4b86-b602-c891c226877d	ca56657a42dc94fe3aa791065e17521b02eadc0abb8a196bd6d74998eaca7b18	2025-12-30 07:52:56.397274+00	20251217074227_remove_tingkat_kesulitan	\N	\N	2025-12-30 07:52:56.371914+00	1
+b8c8f6c4-34de-4c52-8cc2-1803509ea8d5	90480c68541aad550a5a12bc2e8485029efc1fb1fa25a9940a1323042c4385e2	2025-12-30 07:52:56.300155+00	20251214051132	\N	\N	2025-12-30 07:52:56.293457+00	1
+2ef88588-d725-43b7-a869-7507961bdb3c	f4eb6ab1a9e0366ad782133ad765d973cb1b2ab0a48a1f7e9034e305b6634ff0	2025-12-30 07:52:56.314444+00	20251214063132_refactor_tahun_ajaran_to_siswa	\N	\N	2025-12-30 07:52:56.301782+00	1
+fa187df7-f8af-43b4-a07d-11c200ec16e6	25d03367cc79cdbff0ec8e1c2d3c33a3b806c75a4e4b1fecd1932f16e476b4e5	2025-12-30 07:52:56.331122+00	20251214084212_add_attendance_model	\N	\N	2025-12-30 07:52:56.316153+00	1
+1d4fb474-9796-47b3-88af-1c93a5ae33ae	b49d31efb8891a0baa5b7c1c11b5468cc50c80552ec5a7b78852605d377c5bef	2025-12-30 07:52:56.412813+00	20251217091002_add_paket_soal	\N	\N	2025-12-30 07:52:56.398855+00	1
+cf34a161-11cc-41a6-a1a3-9cdf7f86a53f	9c5dce6d4875f6332cacf7463b5274add07688e63ce466bb55322ca48798db91	2025-12-30 07:52:56.33742+00	20251216110639_add_petugas_absensi_role	\N	\N	2025-12-30 07:52:56.332689+00	1
+827ca0a9-2a2c-4972-8ca4-d1168c2be6cb	750d3916e193e86a376975d2c2776442d2927c8c75e0e51903d350dd990c2f6b	2025-12-30 07:52:56.343455+00	20251216115114_add_magang_status	\N	\N	2025-12-30 07:52:56.338909+00	1
+86b2ccb0-341c-4a2d-82dd-53334f652bb3	8b0c125c9e6596cb9e1284407b263669b73ce9632cae5ae62bcf77135a2d8b2a	2025-12-30 07:52:56.526185+00	20251227144854	\N	\N	2025-12-30 07:52:56.518331+00	1
+e56934fa-c926-4522-9791-c5a87f0f06fa	da85a17d1e1e9d2f1e72621609dbf630c551db1a7cb10b87199cd81e646623ef	2025-12-30 07:52:56.354457+00	20251216115239_rename_magang_to_pkl	\N	\N	2025-12-30 07:52:56.345014+00	1
+ee4a6955-a494-45c7-a582-1cc4f1907a24	c709d568b3e9f35bfae33784143ab1dc0f924ed7188d7682fe83a2230a1ee496	2025-12-30 07:52:56.419397+00	20251217092251_remove_tingkat_kesulitan	\N	\N	2025-12-30 07:52:56.41443+00	1
+de80e5de-2804-4904-9fac-3b2ee66e3011	c8a78ac8421e0546ebf611754745d56f60ef00986d8fbaec0ea700f0b022c21e	2025-12-30 07:52:56.427589+00	20251217092712_add_guru_to_paket_soal	\N	\N	2025-12-30 07:52:56.420973+00	1
+af25e687-6c4d-4858-89a9-4a96fffc2488	39e302b56339b64f0b94a36c409a5271427d4159a7bda50059e41db697152c50	2025-12-30 07:52:56.439114+00	20251217114742_add_multi_class_student_selection	\N	\N	2025-12-30 07:52:56.429106+00	1
+6d675a3c-690c-4d8e-a57e-06c3d19e44ba	dd18dc80c02140eb9c3d3521d8ec38d7b8cebdd8904ed44e14d9253313ecad58	2025-12-30 07:52:56.539986+00	20251228114822_remove_penjelasan_column	\N	\N	2025-12-30 07:52:56.52764+00	1
+22525396-ca63-48ff-b931-e5851d24325b	1e2dc8a2aa1a8521d2ffe0b9e6dc3039cea60c545ec602bdfe0492285e12afd8	2025-12-30 07:52:56.44731+00	20251217120042_add_guru_to_ujian	\N	\N	2025-12-30 07:52:56.440737+00	1
+bd7530a8-7e2b-49eb-af45-409890a1a837	08c45dbcc1c059307cbb748ed2abf7eb27633741c2f3d2848282546515b8643f	2025-12-30 07:52:56.558558+00	20251230062100_add_rpp_deep_learning	\N	\N	2025-12-30 07:52:56.541599+00	1
+6c137ca6-d349-493c-90a6-7e5d05401118	421897ab0b79d60efa1cb5f781d0f940f44d4ebf634bc78a85dcbaf9c02eedef	2025-12-30 07:52:56.570641+00	20251230062917_update_rpp_to_official_format	\N	\N	2025-12-30 07:52:56.560248+00	1
 \.
 
 
@@ -1744,6 +2132,14 @@ ALTER TABLE ONLY public."PaketSoalItem"
 
 
 --
+-- Name: PaketSoalKelas PaketSoalKelas_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."PaketSoalKelas"
+    ADD CONSTRAINT "PaketSoalKelas_pkey" PRIMARY KEY (id);
+
+
+--
 -- Name: PaketSoal PaketSoal_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1765,6 +2161,22 @@ ALTER TABLE ONLY public."Pengumuman"
 
 ALTER TABLE ONLY public."ProgressSiswa"
     ADD CONSTRAINT "ProgressSiswa_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: RPPKelas RPPKelas_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."RPPKelas"
+    ADD CONSTRAINT "RPPKelas_pkey" PRIMARY KEY (id);
+
+
+--
+-- Name: RPP RPP_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."RPP"
+    ADD CONSTRAINT "RPP_pkey" PRIMARY KEY (id);
 
 
 --
@@ -1906,6 +2318,20 @@ CREATE UNIQUE INDEX "Attendance_siswaId_tanggal_key" ON public."Attendance" USIN
 --
 
 CREATE INDEX "Attendance_tanggal_idx" ON public."Attendance" USING btree (tanggal);
+
+
+--
+-- Name: BankSoal_guruId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "BankSoal_guruId_idx" ON public."BankSoal" USING btree ("guruId");
+
+
+--
+-- Name: BankSoal_kelasId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "BankSoal_kelasId_idx" ON public."BankSoal" USING btree ("kelasId");
 
 
 --
@@ -2133,6 +2559,27 @@ CREATE INDEX "PaketSoalItem_paketSoalId_idx" ON public."PaketSoalItem" USING btr
 
 
 --
+-- Name: PaketSoalKelas_kelasId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "PaketSoalKelas_kelasId_idx" ON public."PaketSoalKelas" USING btree ("kelasId");
+
+
+--
+-- Name: PaketSoalKelas_paketSoalId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "PaketSoalKelas_paketSoalId_idx" ON public."PaketSoalKelas" USING btree ("paketSoalId");
+
+
+--
+-- Name: PaketSoalKelas_paketSoalId_kelasId_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "PaketSoalKelas_paketSoalId_kelasId_key" ON public."PaketSoalKelas" USING btree ("paketSoalId", "kelasId");
+
+
+--
 -- Name: PaketSoal_guruId_idx; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -2172,6 +2619,62 @@ CREATE INDEX "ProgressSiswa_siswaId_idx" ON public."ProgressSiswa" USING btree (
 --
 
 CREATE UNIQUE INDEX "ProgressSiswa_siswaId_mataPelajaranId_key" ON public."ProgressSiswa" USING btree ("siswaId", "mataPelajaranId");
+
+
+--
+-- Name: RPPKelas_kelasId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "RPPKelas_kelasId_idx" ON public."RPPKelas" USING btree ("kelasId");
+
+
+--
+-- Name: RPPKelas_rppId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "RPPKelas_rppId_idx" ON public."RPPKelas" USING btree ("rppId");
+
+
+--
+-- Name: RPPKelas_rppId_kelasId_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "RPPKelas_rppId_kelasId_key" ON public."RPPKelas" USING btree ("rppId", "kelasId");
+
+
+--
+-- Name: RPP_guruId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "RPP_guruId_idx" ON public."RPP" USING btree ("guruId");
+
+
+--
+-- Name: RPP_isPublished_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "RPP_isPublished_idx" ON public."RPP" USING btree ("isPublished");
+
+
+--
+-- Name: RPP_kode_key; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "RPP_kode_key" ON public."RPP" USING btree (kode);
+
+
+--
+-- Name: RPP_mataPelajaranId_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "RPP_mataPelajaranId_idx" ON public."RPP" USING btree ("mataPelajaranId");
+
+
+--
+-- Name: RPP_status_idx; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX "RPP_status_idx" ON public."RPP" USING btree (status);
 
 
 --
@@ -2407,6 +2910,22 @@ ALTER TABLE ONLY public."Attendance"
 
 
 --
+-- Name: BankSoal BankSoal_guruId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."BankSoal"
+    ADD CONSTRAINT "BankSoal_guruId_fkey" FOREIGN KEY ("guruId") REFERENCES public."Guru"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: BankSoal BankSoal_kelasId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."BankSoal"
+    ADD CONSTRAINT "BankSoal_kelasId_fkey" FOREIGN KEY ("kelasId") REFERENCES public."Kelas"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
 -- Name: BankSoal BankSoal_mataPelajaranId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2575,6 +3094,22 @@ ALTER TABLE ONLY public."PaketSoalItem"
 
 
 --
+-- Name: PaketSoalKelas PaketSoalKelas_kelasId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."PaketSoalKelas"
+    ADD CONSTRAINT "PaketSoalKelas_kelasId_fkey" FOREIGN KEY ("kelasId") REFERENCES public."Kelas"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: PaketSoalKelas PaketSoalKelas_paketSoalId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."PaketSoalKelas"
+    ADD CONSTRAINT "PaketSoalKelas_paketSoalId_fkey" FOREIGN KEY ("paketSoalId") REFERENCES public."PaketSoal"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
 -- Name: PaketSoal PaketSoal_guruId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2612,6 +3147,38 @@ ALTER TABLE ONLY public."ProgressSiswa"
 
 ALTER TABLE ONLY public."ProgressSiswa"
     ADD CONSTRAINT "ProgressSiswa_siswaId_fkey" FOREIGN KEY ("siswaId") REFERENCES public."Siswa"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: RPPKelas RPPKelas_kelasId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."RPPKelas"
+    ADD CONSTRAINT "RPPKelas_kelasId_fkey" FOREIGN KEY ("kelasId") REFERENCES public."Kelas"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: RPPKelas RPPKelas_rppId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."RPPKelas"
+    ADD CONSTRAINT "RPPKelas_rppId_fkey" FOREIGN KEY ("rppId") REFERENCES public."RPP"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: RPP RPP_guruId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."RPP"
+    ADD CONSTRAINT "RPP_guruId_fkey" FOREIGN KEY ("guruId") REFERENCES public."Guru"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- Name: RPP RPP_mataPelajaranId_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."RPP"
+    ADD CONSTRAINT "RPP_mataPelajaranId_fkey" FOREIGN KEY ("mataPelajaranId") REFERENCES public."MataPelajaran"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 
 --
@@ -2815,16 +3382,8 @@ ALTER TABLE ONLY public."_GuruMataPelajaran"
 
 
 --
--- Name: SCHEMA public; Type: ACL; Schema: -; Owner: postgres
---
-
-REVOKE USAGE ON SCHEMA public FROM PUBLIC;
-GRANT CREATE ON SCHEMA public TO PUBLIC;
-
-
---
 -- PostgreSQL database dump complete
 --
 
-\unrestrict yEhuqqQPHkLNcHltRoCYUfJ29gAECEfOOPHk0iUY9fs6dsFRbo5Qr8o5Jtr9qZD
+\unrestrict pNPDmsxY4qcb7geGjiVmEae23a75IPgWq3856i2WtSIHKDwHKAICHNrQg7ovWSa
 
