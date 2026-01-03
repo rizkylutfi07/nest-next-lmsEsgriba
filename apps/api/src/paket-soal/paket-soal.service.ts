@@ -359,15 +359,16 @@ export class PaketSoalService {
                             i++;
                             if (lines[i]) jawaban.push(lines[i]);
                         }
-                    } else if (line.match(/^KUNCI JAWABAN:/i)) {
+                    } else if (line.match(/^KUNCI JAWABAN/i)) {
                         // For multiple choice, extract letter (A-E)
                         // For essay, extract full text answer
                         if (jenisSoal === 'PILIHAN_GANDA' || jenisSoal === 'BENAR_SALAH') {
-                            const match = line.match(/KUNCI JAWABAN:\s*([A-E])/i);
+                            // More tolerant regex - handles various formats with or without colon
+                            const match = line.match(/KUNCI JAWABAN[:\s]*([A-E])/i);
                             if (match) kunciJawaban = match[1].toUpperCase();
                         } else if (jenisSoal === 'ESSAY' || jenisSoal === 'ISIAN_SINGKAT') {
                             // For essay/short answer, capture multi-line answer
-                            kunciJawaban = line.replace(/^KUNCI JAWABAN:/i, '').trim();
+                            kunciJawaban = line.replace(/^KUNCI JAWABAN[:\s]*/i, '').trim();
                             // Collect multi-line answer until end of block
                             while (i + 1 < lines.length && !lines[i + 1].match(/^\[NOMOR/i)) {
                                 i++;
@@ -396,10 +397,8 @@ export class PaketSoalService {
                         issues.push('Pilihan jawaban kurang dari 2');
                     }
                     if (!kunciJawaban) issues.push('Kunci jawaban tidak ditemukan');
-                } else if (jenisSoal === 'ESSAY' || jenisSoal === 'ISIAN_SINGKAT') {
-                    // For essay, kunci jawaban is optional but recommended
-                    if (!kunciJawaban) issues.push('Kunci jawaban/rubrik tidak ditemukan (opsional)');
                 }
+                // Note: For ESSAY and ISIAN_SINGKAT, kunci jawaban is optional - no validation needed
 
                 const soalData = {
                     nomor: nomorSoal,
@@ -593,16 +592,46 @@ export class PaketSoalService {
 
                 // Extract KUNCI JAWABAN
                 if (jenisSoal === 'PILIHAN_GANDA' || jenisSoal === 'BENAR_SALAH') {
-                    const kunciMatch = workingBlock.match(/KUNCI JAWABAN:\s*([A-E])/i);
+                    // More tolerant regex that handles:
+                    // - HTML tags like </strong>, </b>, </p> between label and answer
+                    // - Various spacing and formatting
+                    // - Both bold and non-bold text
+                    const kunciMatch = workingBlock.match(/KUNCI JAWABAN[:\s]*(?:<[^>]*>)*\s*([A-E])/i);
                     if (kunciMatch) {
                         kunciJawaban = kunciMatch[1].toUpperCase();
+                    } else {
+                        // Fallback: Try to find letter after stripping all HTML from the kunci section
+                        const kunciSection = workingBlock.match(/KUNCI JAWABAN[\s\S]*?([A-E])(?:[^A-Za-z]|$)/i);
+                        if (kunciSection) {
+                            kunciJawaban = kunciSection[1].toUpperCase();
+                        }
                     }
                 } else if (jenisSoal === 'ESSAY' || jenisSoal === 'ISIAN_SINGKAT') {
-                    // For essay, extract full text answer
-                    const kunciMatch = workingBlock.match(/KUNCI JAWABAN:([\s\S]*?)(?:<p>\[NOMOR|$)/i);
-                    if (kunciMatch) {
-                        kunciJawaban = this.cleanHtmlContent(kunciMatch[1]).trim();
+                    // For essay, extract full text/image answer - more tolerant patterns
+                    // Try multiple patterns with different terminators
+
+                    // Pattern 1: Standard format ending before next [NOMOR or end
+                    let kunciMatch = workingBlock.match(/KUNCI JAWABAN[:\s]*(?:<[^>]*>)*\s*([\s\S]*?)(?=<p>\s*\[NOMOR|\[NOMOR|$)/i);
+
+                    // Pattern 2: If pattern 1 fails, try simpler extraction
+                    if (!kunciMatch || !kunciMatch[1]?.trim()) {
+                        kunciMatch = workingBlock.match(/KUNCI JAWABAN[:\s]*([\s\S]*?)$/i);
                     }
+
+                    if (kunciMatch && kunciMatch[1]) {
+                        const rawContent = kunciMatch[1];
+                        // Check if content has images
+                        if (rawContent.includes('<img')) {
+                            // Preserve the HTML with images
+                            kunciJawaban = rawContent.trim();
+                        } else {
+                            // Clean text content
+                            kunciJawaban = this.cleanHtmlContent(rawContent).trim();
+                        }
+                    }
+
+                    // Debug log for essay
+                    console.log(`📝 Essay KUNCI JAWABAN parsed: ${kunciJawaban ? (kunciJawaban.length > 50 ? kunciJawaban.substring(0, 50) + '...' : kunciJawaban) : 'NULL'}`);
                 }
 
                 // Mark correct answer for multiple choice questions

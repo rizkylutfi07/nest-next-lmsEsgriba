@@ -144,7 +144,7 @@ export default function UjianPage() {
                         <div>
                             <h1 className="text-3xl font-bold flex items-center gap-2">
                                 <FileCheck className="h-8 w-8" />
-                                Ujian Akan Datang
+                                Rencana Ujian
                             </h1>
                             <p className="text-sm text-muted-foreground">
                                 Buat dan kelola ujian yang akan dilaksanakan

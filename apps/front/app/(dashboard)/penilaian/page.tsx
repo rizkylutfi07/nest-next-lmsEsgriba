@@ -429,7 +429,8 @@ function AnswerDetailModal({ data, onClose }: { data: any; onClose: () => void }
   const isCorrect = (soal: any, ans: any) => {
     if (!ans) return false;
     if (soal.bankSoal.tipe === "PILIHAN_GANDA" || soal.bankSoal.tipe === "BENAR_SALAH") {
-      const correct = soal.bankSoal.pilihanJawaban?.find((p: any) => p.isCorrect);
+      // Check both isCorrect flag in pilihanJawaban and jawabanBenar field
+      const correct = soal.bankSoal.pilihanJawaban?.find((p: any) => p.isCorrect === true || p.id === soal.bankSoal.jawabanBenar);
       return correct?.id === ans;
     }
     if (soal.bankSoal.tipe === "ISIAN_SINGKAT") {
@@ -481,21 +482,27 @@ function AnswerDetailModal({ data, onClose }: { data: any; onClose: () => void }
                         <div className="space-y-2 mt-4 ml-1">
                           {soal.bankSoal.pilihanJawaban?.map((p: any) => {
                             const isSelected = p.id === ans;
-                            const isKey = p.isCorrect;
+                            // Check both isCorrect flag and jawabanBenar field (which stores the correct option ID like "A", "B", etc.)
+                            const isKey = p.isCorrect === true || p.id === soal.bankSoal.jawabanBenar;
                             let itemClass = "border-transparent bg-muted/30";
                             if (isSelected && isKey) itemClass = "border-green-500 bg-green-500/10";
                             else if (isSelected && !isKey) itemClass = "border-red-500 bg-red-500/10";
-                            else if (isKey) itemClass = "border-green-500/50 bg-green-500/5 dashed border";
+                            else if (isKey) itemClass = "border-green-500 border-dashed bg-green-500/5";
 
                             return (
                               <div key={p.id} className={cn("flex items-center gap-3 p-3 rounded-lg border text-sm", itemClass)}>
                                 <div className={cn("w-4 h-4 rounded-full border flex items-center justify-center",
-                                  isSelected ? (isKey ? "border-green-600 bg-green-600" : "border-red-600 bg-red-600") : "border-muted-foreground"
+                                  isSelected ? (isKey ? "border-green-600 bg-green-600" : "border-red-600 bg-red-600") : (isKey ? "border-green-500" : "border-muted-foreground")
                                 )}>
                                   {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
                                 </div>
-                                <div dangerouslySetInnerHTML={{ __html: p.text }} />
-                                {isKey && <Badge className="ml-auto bg-green-600 hover:bg-green-700">Kunci</Badge>}
+                                <div className="flex-1" dangerouslySetInnerHTML={{ __html: p.text }} />
+                                {isKey && (
+                                  <div className="flex items-center gap-1.5 ml-auto">
+                                    <CheckCircle className="text-green-600" size={16} />
+                                    <Badge className="bg-green-600 hover:bg-green-700">Kunci Benar</Badge>
+                                  </div>
+                                )}
                               </div>
                             )
                           })}
@@ -513,9 +520,10 @@ function AnswerDetailModal({ data, onClose }: { data: any; onClose: () => void }
                           {soal.bankSoal.jawabanBenar && (
                             <div>
                               <span className="text-xs font-semibold text-muted-foreground uppercase">Kunci Jawaban</span>
-                              <div className="mt-1 text-sm bg-green-500/10 border border-green-500/20 p-3 rounded text-green-900 dark:text-green-100">
-                                {soal.bankSoal.jawabanBenar}
-                              </div>
+                              <div
+                                className="mt-1 text-sm bg-green-500/10 border border-green-500/20 p-3 rounded text-green-900 dark:text-green-100 prose prose-sm max-w-none [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded"
+                                dangerouslySetInnerHTML={{ __html: soal.bankSoal.jawabanBenar }}
+                              />
                             </div>
                           )}
                         </div>
@@ -622,7 +630,10 @@ function GradeModal({ data, onClose, onSaved, isLoading, token }: any) {
                     {soal.bankSoal.jawabanBenar && (
                       <div className="text-sm text-muted-foreground">
                         <span className="font-medium text-foreground">Kunci: </span>
-                        <span>{soal.bankSoal.jawabanBenar}</span>
+                        <div
+                          className="mt-1 prose prose-sm max-w-none [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded [&_img]:max-h-40"
+                          dangerouslySetInnerHTML={{ __html: soal.bankSoal.jawabanBenar }}
+                        />
                       </div>
                     )}
 

@@ -285,9 +285,10 @@ export default function BankSoalPage() {
                                                     {item.tipe.replace("_", " ")}
                                                 </Badge>
                                             </div>
-                                            <p className="text-sm font-medium line-clamp-2">
-                                                {item.pertanyaan}
-                                            </p>
+                                            <div
+                                                className="text-sm font-medium line-clamp-2 prose prose-sm max-w-none [&_img]:max-h-20 [&_img]:w-auto [&_img]:inline-block [&_img]:rounded"
+                                                dangerouslySetInnerHTML={{ __html: item.pertanyaan }}
+                                            />
                                             {item.mataPelajaran && (
                                                 <p className="text-xs text-muted-foreground mt-1">
                                                     {item.mataPelajaran.nama}
@@ -618,36 +619,37 @@ function FormModal({ title, item, onClose, onSubmit, isLoading }: any) {
                             </div>
                         )}
 
-                        {/* Kunci Jawaban untuk Essay/Isian Singkat */}
-                        {(formData.tipe === "ESSAY" || formData.tipe === "ISIAN_SINGKAT") && (
-                            <div>
-                                <label className="mb-2 block text-sm font-medium">
-                                    Kunci Jawaban {formData.tipe === "ESSAY" ? "(Rubrik Penilaian)" : ""}
-                                </label>
-                                <textarea
-                                    value={formData.jawabanBenar || ""}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, jawabanBenar: e.target.value })
-                                    }
-                                    className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-                                    rows={4}
-                                    placeholder={formData.tipe === "ESSAY" 
-                                        ? "Masukkan kunci jawaban atau rubrik penilaian untuk soal essay..."
-                                        : "Masukkan jawaban yang benar..."
-                                    }
-                                />
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    {formData.tipe === "ESSAY" 
-                                        ? "Kunci jawaban akan digunakan sebagai referensi saat mengoreksi jawaban siswa"
-                                        : "Jawaban yang diharapkan dari siswa"
-                                    }
-                                </p>
-                            </div>
-                        )}
+                    {/* Kunci Jawaban untuk Essay/Isian Singkat */}
+                    {(formData.tipe === "ESSAY" || formData.tipe === "ISIAN_SINGKAT") && (
+                        <div>
+                            <label className="mb-2 block text-sm font-medium">
+                                Kunci Jawaban {formData.tipe === "ESSAY" ? "(Rubrik Penilaian)" : ""}
+                            </label>
+                            <textarea
+                                value={formData.jawabanBenar || ""}
+                                onChange={(e) =>
+                                    setFormData({ ...formData, jawabanBenar: e.target.value })
+                                }
+                                className="w-full rounded-lg border border-border bg-background px-4 py-2 outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+                                rows={4}
+                                placeholder={formData.tipe === "ESSAY"
+                                    ? "Masukkan kunci jawaban atau rubrik penilaian untuk soal essay..."
+                                    : "Masukkan jawaban yang benar..."
+                                }
+                            />
+                            <p className="text-xs text-muted-foreground mt-1">
+                                {formData.tipe === "ESSAY"
+                                    ? "Kunci jawaban akan digunakan sebagai referensi saat mengoreksi jawaban siswa"
+                                    : "Jawaban yang diharapkan dari siswa"
+                                }
+                            </p>
+                        </div>
+                    )}
 
                     <div className="flex gap-2 pt-4">
                         <Button
                             type="button"
+                            onClick={onClose}
                             className="border border-border bg-transparent text-muted-foreground flex-1"
                         >
                             Batal
